@@ -4,7 +4,10 @@
       "Bash(unzip -l \"Ourverse_Product_Plan.docx\")",
       "Bash(unzip -p \"Ourverse_Product_Plan.docx\" \"word/document.xml\")",
       "Bash(find D:CodebasesOurverseourversenode_modulesnextdistserver -type f \\\\\\(-name *proxy* -o -name *middleware* \\\\\\))",
-      "Bash(find D:/Codebases/Ourverse/ourverse/app D:/Codebases/Ourverse/ourverse/lib D:/Codebases/Ourverse/ourverse/proxy.js -not -path */node_modules/* -not -path */.next/*)"
+      "Bash(find D:/Codebases/Ourverse/ourverse/app D:/Codebases/Ourverse/ourverse/lib D:/Codebases/Ourverse/ourverse/proxy.js -not -path */node_modules/* -not -path */.next/*)",
+      "Bash(find \"D:\\\\Codebases\\\\Ourverse\\\\ourverse\\\\app\\\\\\(app\\)\" -type f -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(find \"D:\\\\Codebases\\\\Ourverse\\\\ourverse\\\\app\\\\\\(auth\\)\" -type f -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" -o -name \"*.tsx\")",
+      "Bash(ls:*)"
     ]
   }
 }

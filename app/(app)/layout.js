@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
+import Link from 'next/link'
 
 export default async function AppLayout({ children }) {
   const supabase = await createClient()
@@ -22,17 +23,25 @@ export default async function AppLayout({ children }) {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <span className="text-violet-700 font-semibold text-lg tracking-tight">
+          <Link href="/dashboard" className="text-violet-700 font-semibold text-lg tracking-tight">
             Ourverse
-          </span>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/ledger"
+              className="text-sm text-gray-500 hover:text-violet-700 font-medium transition-colors"
             >
-              Sign out
-            </button>
-          </form>
+              Ledger
+            </Link>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
       <main className="max-w-lg mx-auto px-4 py-6">
