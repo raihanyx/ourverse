@@ -72,6 +72,16 @@ export async function joinCouple(prevState, formData) {
     return { error: "That's your own invite code — share it with your partner instead." }
   }
 
+  // Check how many users are already in this couple — max 2
+  const { count } = await supabase
+    .from('users')
+    .select('id', { count: 'exact', head: true })
+    .eq('couple_id', couple.id)
+
+  if (count >= 2) {
+    return { error: 'This couple space is already full.' }
+  }
+
   const { error: profileError } = await supabase
     .from('users')
     .update({ couple_id: couple.id })
