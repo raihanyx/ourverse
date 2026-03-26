@@ -9,18 +9,18 @@ export default function LoginPage() {
 
   return (
     <>
-      <h2 className="text-xl font-semibold text-gray-900 mb-1">Welcome back</h2>
-      <p className="text-sm text-gray-400 mb-6">Sign in to your couple space</p>
+      <h2 className="text-xl font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Welcome back</h2>
+      <p className="text-sm text-[#A07060] dark:text-[#C49080] mb-6">Sign in to your couple space</p>
 
       <form action={formAction} className="space-y-4">
         {state?.error && (
-          <div className="text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-3 rounded-xl">
+          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#4A2820] border border-[#EDE0DC] dark:border-[#3D2C29] px-4 py-3 rounded-xl">
             {state.error}
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
             Email
           </label>
           <input
@@ -29,15 +29,13 @@ export default function LoginPage() {
             type="email"
             autoComplete="email"
             required
-            className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent
-                       placeholder:text-gray-300 transition-shadow"
+            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60] transition-colors"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label htmlFor="password" className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
             Password
           </label>
           <input
@@ -46,9 +44,7 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm
-                       focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent
-                       placeholder:text-gray-300 transition-shadow"
+            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60] transition-colors"
             placeholder="••••••••"
           />
         </div>
@@ -56,17 +52,15 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isPending}
-          className="w-full h-11 bg-violet-600 text-white rounded-xl font-medium text-sm
-                     hover:bg-violet-700 active:bg-violet-800 disabled:opacity-50
-                     transition-colors mt-2"
+          className="w-full py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#E8675A] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors mt-2"
         >
           {isPending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-gray-400 mt-6">
+      <p className="text-center text-sm text-[#A07060] dark:text-[#C49080] mt-6">
         New here?{' '}
-        <Link href="/signup" className="text-violet-600 font-medium hover:underline">
+        <Link href="/signup" className="text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline">
           Create an account
         </Link>
       </p>

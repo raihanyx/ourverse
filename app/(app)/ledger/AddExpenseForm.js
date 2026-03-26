@@ -5,18 +5,23 @@ import { addExpense } from '@/app/actions/expenses'
 
 function FieldError({ message }) {
   if (!message) return null
-  return <p className="text-xs text-red-500 mt-1">{message}</p>
+  return <p className="text-xs text-[#C2493A] dark:text-[#F0907F] mt-1">{message}</p>
 }
 
 function inputClass(hasError) {
-  return `w-full h-11 px-3.5 rounded-xl border text-sm
-          focus:outline-none focus:ring-2 focus:border-transparent
-          placeholder:text-gray-300 transition-colors
+  return `w-full px-3 py-[10px] rounded-[10px] border text-sm
+          focus:outline-none transition-colors
+          placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60]
+          bg-[#FDF7F6] dark:bg-[#2A1F1D]
           ${hasError
-            ? 'border-red-300 focus:ring-red-300'
-            : 'border-gray-200 focus:ring-violet-400'
+            ? 'border-red-400 focus:border-red-400'
+            : 'border-[#EDE0DC] dark:border-[#3D2C29] focus:border-[#C2493A] dark:focus:border-[#F0907F]'
           }`
 }
+
+const selectClass = `w-full px-3 py-[10px] rounded-[10px] border text-sm
+                     border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D]
+                     focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors`
 
 export default function AddExpenseForm({
   currentUserName,
@@ -38,16 +43,16 @@ export default function AddExpenseForm({
     <form action={formAction} className="space-y-4">
       <input type="hidden" name="partner_id" value={partnerId ?? ''} />
 
-      {/* General error (server/network failure) */}
+      {/* General error */}
       {state?.error && (
-        <div className="text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-3 rounded-xl">
+        <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#4A2820] border border-[#EDE0DC] dark:border-[#3D2C29] px-4 py-3 rounded-xl">
           {state.error}
         </div>
       )}
 
       {/* Expense name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
           What was it for?
         </label>
         <input
@@ -62,7 +67,7 @@ export default function AddExpenseForm({
       {/* Amount + currency */}
       <div className="flex gap-3">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
             Amount
           </label>
           <input
@@ -76,15 +81,10 @@ export default function AddExpenseForm({
           <FieldError message={e.amount} />
         </div>
         <div className="w-28">
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">
+          <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
             Currency
           </label>
-          <select
-            name="currency"
-            defaultValue="IDR"
-            className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm bg-white
-                       focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
-          >
+          <select name="currency" defaultValue="IDR" className={selectClass}>
             <option value="IDR">IDR</option>
             <option value="THB">THB</option>
             <option value="AUD">AUD</option>
@@ -95,15 +95,10 @@ export default function AddExpenseForm({
 
       {/* Who paid */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
           Who paid?
         </label>
-        <select
-          name="who_paid"
-          defaultValue="me"
-          className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm bg-white
-                     focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
-        >
+        <select name="who_paid" defaultValue="me" className={selectClass}>
           <option value="me">Me ({currentUserName})</option>
           {partnerId && (
             <option value="partner">{partnerName}</option>
@@ -113,15 +108,10 @@ export default function AddExpenseForm({
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
           Category
         </label>
-        <select
-          name="category"
-          defaultValue="food"
-          className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm bg-white
-                     focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
-        >
+        <select name="category" defaultValue="food" className={selectClass}>
           <option value="food">Food</option>
           <option value="transport">Transport</option>
           <option value="accommodation">Accommodation</option>
@@ -132,7 +122,7 @@ export default function AddExpenseForm({
 
       {/* Date */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
           Date
         </label>
         <input
@@ -146,17 +136,18 @@ export default function AddExpenseForm({
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
           Notes{' '}
-          <span className="text-gray-300 font-normal">(optional)</span>
+          <span className="text-[#C4A89E] dark:text-[#8A6A60] font-normal">(optional)</span>
         </label>
         <input
           name="notes"
           type="text"
           placeholder="Any extra details..."
-          className="w-full h-11 px-3.5 rounded-xl border border-gray-200 text-sm
-                     focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent
-                     placeholder:text-gray-300"
+          className={`w-full px-3 py-[10px] rounded-[10px] border text-sm
+                      border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D]
+                      focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
+                      placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60]`}
         />
       </div>
 
@@ -164,16 +155,14 @@ export default function AddExpenseForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 h-11 rounded-xl border border-gray-200 text-sm text-gray-500
-                     hover:bg-gray-50 transition-colors"
+          className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2C29] text-sm text-[#A07060] dark:text-[#C49080] hover:bg-[#FDF7F6] dark:hover:bg-[#2A1F1D] transition-colors"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 h-11 bg-violet-600 text-white rounded-xl font-medium text-sm
-                     hover:bg-violet-700 disabled:opacity-50 transition-colors"
+          className="flex-1 py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors"
         >
           {isPending ? 'Adding…' : 'Add expense'}
         </button>

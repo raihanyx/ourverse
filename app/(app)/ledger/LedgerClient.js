@@ -8,11 +8,11 @@ import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
 
 const CATEGORY_COLORS = {
-  food:          'bg-amber-50 text-amber-700',
-  transport:     'bg-blue-50 text-blue-700',
-  accommodation: 'bg-indigo-50 text-indigo-700',
-  shopping:      'bg-pink-50 text-pink-700',
-  other:         'bg-gray-100 text-gray-500',
+  food:          'bg-[#FEF3C7] text-[#92400E] dark:bg-[#3A2A12] dark:text-[#F0A840]',
+  transport:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
+  accommodation: 'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
+  shopping:      'bg-[#FCE7F3] text-[#9D174D] dark:bg-[#3A1A2A] dark:text-[#F472B6]',
+  other:         'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
 }
 
 function TotalsBadges({ expenses, baseCurrency, rates }) {
@@ -24,7 +24,7 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
   const rateLines = getRateLines(baseCurrency, rates)
 
   if (entries.length === 0) {
-    return <p className="text-sm text-gray-400">Nothing owed</p>
+    return <p className="text-sm text-[#A07060] dark:text-[#C49080]">Nothing owed</p>
   }
 
   return (
@@ -33,7 +33,7 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
         {entries.map(([currency, amount]) => (
           <span
             key={currency}
-            className="text-sm font-semibold text-violet-700 bg-violet-50 px-3 py-1 rounded-full"
+            className="text-[13px] font-semibold text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#4A2820] px-3 py-1 rounded-full"
           >
             {formatAmount(amount, currency)}
           </span>
@@ -42,14 +42,14 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
 
       {/* Unified total in base currency */}
       {rates && unifiedTotal !== null && unifiedTotal > 0 && (
-        <p className="text-xs text-gray-400 mt-2">
+        <p className="text-xs text-[#A07060] dark:text-[#C49080] mt-2">
           ≈ {formatAmount(unifiedTotal, baseCurrency)} at current rates
         </p>
       )}
 
       {/* Rate transparency */}
       {rates && rateLines.length > 0 && (
-        <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+        <p className="text-xs text-[#C4A89E] dark:text-[#8A6A60] mt-1 leading-relaxed">
           {rateLines.join(' · ')}
         </p>
       )}
@@ -60,40 +60,46 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
 function ExpenseRow({ expense, onToggle, isPending }) {
   return (
     <div
-      className={`flex items-start gap-3 py-3.5 border-b border-gray-50 last:border-0
+      className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2C29] last:border-0
                   transition-opacity ${expense.is_paid ? 'opacity-40' : ''}`}
     >
       <div className="flex-1 min-w-0">
         <p
-          className={`text-sm font-medium text-gray-900 truncate
-                      ${expense.is_paid ? 'line-through text-gray-400' : ''}`}
+          className={`text-sm font-medium truncate
+                      ${expense.is_paid
+                        ? 'line-through text-[#A07060] dark:text-[#C49080]'
+                        : 'text-[#1C1210] dark:text-[#FAF3F1]'
+                      }`}
         >
           {expense.name}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-gray-400">{expense.date}</span>
+          <span className="text-xs text-[#A07060] dark:text-[#C49080]">{expense.date}</span>
           <span
             className={`text-xs px-1.5 py-0.5 rounded-md font-medium
-                        ${CATEGORY_COLORS[expense.category] ?? 'bg-gray-100 text-gray-500'}`}
+                        ${CATEGORY_COLORS[expense.category] ?? 'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]'}`}
           >
             {expense.category}
           </span>
           {expense.notes && (
-            <span className="text-xs text-gray-300 truncate max-w-[120px]">
+            <span className="text-xs text-[#C4A89E] dark:text-[#8A6A60] truncate max-w-[120px]">
               {expense.notes}
             </span>
           )}
         </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold text-gray-900">
+        <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
           {formatAmount(expense.amount, expense.currency)}
         </p>
         <button
           onClick={() => onToggle(expense.id)}
           disabled={isPending}
-          className="text-xs text-violet-500 hover:text-violet-700 mt-0.5
-                     disabled:opacity-40 transition-colors"
+          className={`text-xs mt-0.5 disabled:opacity-40 transition-colors
+                      ${expense.is_paid
+                        ? 'text-[#C4A89E] dark:text-[#8A6A60] hover:text-[#A07060] dark:hover:text-[#C49080]'
+                        : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]'
+                      }`}
         >
           {expense.is_paid ? 'Undo' : 'Mark paid'}
         </button>
@@ -190,19 +196,19 @@ export default function LedgerClient({
     <>
       <div className="space-y-5">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Ledger</h1>
+          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Ledger</h1>
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-gray-100 rounded-xl p-1">
+        <div className="flex bg-[#F0E8E4] dark:bg-[#1E1512] rounded-xl p-1">
           {tabs.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors
                           ${activeTab === tab.key
-                            ? 'bg-white text-gray-900 shadow-sm'
-                            : 'text-gray-500 hover:text-gray-700'
+                            ? 'bg-white dark:bg-[#342420] text-[#1C1210] dark:text-[#FAF3F1] shadow-sm'
+                            : 'text-[#A07060] dark:text-[#8A6A60] hover:text-[#1C1210] dark:hover:text-[#FAF3F1]'
                           }`}
             >
               {tab.label}
@@ -211,8 +217,8 @@ export default function LedgerClient({
         </div>
 
         {/* Totals card */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">
+        <div className="bg-white dark:bg-[#342420] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2C29] p-[18px]">
+          <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#C49080] uppercase tracking-wider mb-2">
             {activeTab === 'owe_me'
               ? `${partnerName} owes you`
               : `You owe ${partnerName}`}
@@ -225,10 +231,10 @@ export default function LedgerClient({
         </div>
 
         {/* Expense list */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5">
+        <div className="bg-white dark:bg-[#342420] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2C29] px-[18px]">
           {sorted.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-gray-300 text-sm">No expenses here yet</p>
+              <p className="text-[#C4A89E] dark:text-[#8A6A60] text-sm">No expenses here yet</p>
             </div>
           ) : (
             sorted.map(expense => (
@@ -249,9 +255,10 @@ export default function LedgerClient({
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-violet-600 text-white rounded-full
-                     text-3xl shadow-lg shadow-violet-200 hover:bg-violet-700 active:bg-violet-800
-                     flex items-center justify-center transition-colors z-20"
+          className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
+                     text-[28px] flex items-center justify-center z-20 transition-colors
+                     shadow-[0_4px_14px_rgba(194,73,58,0.30)] dark:shadow-[0_4px_14px_rgba(232,103,90,0.25)]
+                     hover:bg-[#A83D30] dark:hover:bg-[#E8675A]"
           aria-label="Add expense"
         >
           +
@@ -262,15 +269,16 @@ export default function LedgerClient({
       {showForm && (
         <div className="fixed inset-0 z-20 flex flex-col justify-end">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)]"
             onClick={() => setShowForm(false)}
           />
-          <div className="relative bg-white rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto">
+          <div className="relative bg-white dark:bg-[#342420] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto">
+            <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2C29] mx-auto mb-[14px]" />
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-base font-semibold text-gray-900">Add expense</h2>
+              <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Add expense</h2>
               <button
                 onClick={() => setShowForm(false)}
-                className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+                className="text-[#A07060] dark:text-[#C49080] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors"
                 aria-label="Close"
               >
                 ×
