@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatAmount, sumByCurrency } from '@/lib/currency'
 import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
-import Link from 'next/link'
 import CurrencySettings from './CurrencySettings'
 import RealtimeRefresh from './RealtimeRefresh'
+import BalanceCard from './BalanceCard'
+import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
   title: 'Dashboard — Ourverse',
@@ -79,6 +80,7 @@ export default async function DashboardPage() {
     : null
 
   return (
+    <PageTransition>
     <div className="space-y-5">
       <RealtimeRefresh coupleId={profile.couple_id} />
 
@@ -87,86 +89,44 @@ export default async function DashboardPage() {
           Hey, {profile?.name}
         </h1>
         {partner && (
-          <p className="text-[#A07060] dark:text-[#C49080] text-sm mt-0.5">
+          <p className="text-[#A07060] dark:text-[#D4A090] text-sm mt-0.5">
             Connected with {partner.name}
           </p>
         )}
       </div>
 
       {/* Balance card */}
-      <div className="bg-white dark:bg-[#342420] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2C29] p-[18px]">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#C49080] uppercase tracking-wider">
-            Balance
-          </h2>
-          <Link
-            href="/ledger"
-            className="text-xs text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline"
-          >
-            View ledger →
-          </Link>
-        </div>
-
-        {noExpensesYet ? (
-          <div>
-            <p className="text-sm text-[#A07060] dark:text-[#C49080] mb-1">No expenses logged yet.</p>
-            <Link href="/ledger" className="text-sm text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline">
-              Add your first one →
-            </Link>
-          </div>
-        ) : balanceSettled ? (
-          <p className="text-sm font-medium text-[#A07060] dark:text-[#C49080]">
-            You&apos;re all settled up ✓
-          </p>
-        ) : (
-          <div className="space-y-1.5">
-            {theyOweMeEntries.length > 0 && (
-              <p className="text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] break-words">
-                {partnerName} owes you{' '}
-                {theyOweMeEntries.map(([c, v]) => formatAmount(v, c)).join(' · ')}
-              </p>
-            )}
-            {iOweThemEntries.length > 0 && (
-              <p className="text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] break-words">
-                You owe {partnerName}{' '}
-                {iOweThemEntries.map(([c, v]) => formatAmount(v, c)).join(' · ')}
-              </p>
-            )}
-            {/* Converted totals in base currency — only shown when rates are available */}
-            {(theyOweMeUnified !== null || iOweThemUnified !== null) && (
-              <div className="mt-1 space-y-0.5">
-                {theyOweMeUnified !== null && theyOweMeEntries.length > 0 && (
-                  <p className="text-xs text-[#A07060] dark:text-[#C49080]">≈ {partnerName} owes you {formatAmount(theyOweMeUnified, baseCurrency)}</p>
-                )}
-                {iOweThemUnified !== null && iOweThemEntries.length > 0 && (
-                  <p className="text-xs text-[#A07060] dark:text-[#C49080]">≈ You owe {partnerName} {formatAmount(iOweThemUnified, baseCurrency)}</p>
-                )}
-                <p className="text-xs text-[#C4A89E] dark:text-[#8A6A60]">at current rates · updated hourly</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      <BalanceCard
+        theyOweMeEntries={theyOweMeEntries}
+        iOweThemEntries={iOweThemEntries}
+        theyOweMeUnified={theyOweMeUnified}
+        iOweThemUnified={iOweThemUnified}
+        baseCurrency={baseCurrency}
+        partnerName={partnerName}
+        noExpensesYet={noExpensesYet}
+        balanceSettled={balanceSettled}
+      />
 
       {/* Couple space card */}
-      <div className="bg-white dark:bg-[#342420] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2C29] p-[18px] space-y-4">
-        <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#C49080] uppercase tracking-wider">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4">
+        <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider">
           Your couple space
         </h2>
 
         <div>
-          <p className="text-xs text-[#A07060] dark:text-[#C49080] mb-0.5">Invite code</p>
+          <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-0.5">Invite code</p>
           <p className="text-2xl font-bold tracking-[0.2em] font-mono text-[#C2493A] dark:text-[#F0907F]">
             {couple?.invite_code}
           </p>
         </div>
 
         {memberSince && (
-          <p className="text-xs text-[#C4A89E] dark:text-[#8A6A60]">Together since {memberSince}</p>
+          <p className="text-xs text-[#C4A89E] dark:text-[#A07868]">Together since {memberSince}</p>
         )}
 
         <CurrencySettings current={baseCurrency} />
       </div>
     </div>
+    </PageTransition>
   )
 }

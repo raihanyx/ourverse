@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { togglePaid } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency } from '@/lib/currency'
@@ -24,7 +25,7 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
   const rateLines = getRateLines(baseCurrency, rates)
 
   if (entries.length === 0) {
-    return <p className="text-sm text-[#A07060] dark:text-[#C49080]">Nothing owed</p>
+    return <p className="text-sm text-[#A07060] dark:text-[#D4A090]">Nothing owed</p>
   }
 
   return (
@@ -33,7 +34,7 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
         {entries.map(([currency, amount]) => (
           <span
             key={currency}
-            className="text-[13px] font-semibold text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#4A2820] px-3 py-1 rounded-full"
+            className="text-[13px] font-semibold text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] px-3 py-1 rounded-full"
           >
             {formatAmount(amount, currency)}
           </span>
@@ -42,14 +43,14 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
 
       {/* Unified total in base currency */}
       {rates && unifiedTotal !== null && unifiedTotal > 0 && (
-        <p className="text-xs text-[#A07060] dark:text-[#C49080] mt-2">
+        <p className="text-xs text-[#A07060] dark:text-[#D4A090] mt-2">
           ≈ {formatAmount(unifiedTotal, baseCurrency)} at current rates
         </p>
       )}
 
       {/* Rate transparency */}
       {rates && rateLines.length > 0 && (
-        <p className="text-xs text-[#C4A89E] dark:text-[#8A6A60] mt-1 leading-relaxed">
+        <p className="text-xs text-[#C4A89E] dark:text-[#A07868] mt-1 leading-relaxed">
           {rateLines.join(' · ')}
         </p>
       )}
@@ -60,21 +61,21 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
 function ExpenseRow({ expense, onToggle, isPending }) {
   return (
     <div
-      className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2C29] last:border-0
-                  transition-opacity ${expense.is_paid ? 'opacity-40' : ''}`}
+      className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
+                  expense-row-transition ${expense.is_paid ? 'opacity-40 dark:opacity-50' : ''}`}
     >
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm font-medium truncate
                       ${expense.is_paid
-                        ? 'line-through text-[#A07060] dark:text-[#C49080]'
+                        ? 'line-through text-[#A07060] dark:text-[#D4A090]'
                         : 'text-[#1C1210] dark:text-[#FAF3F1]'
                       }`}
         >
           {expense.name}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-[#A07060] dark:text-[#C49080]">{expense.date}</span>
+          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{expense.date}</span>
           <span
             className={`text-xs px-1.5 py-0.5 rounded-md font-medium
                         ${CATEGORY_COLORS[expense.category] ?? 'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]'}`}
@@ -82,14 +83,14 @@ function ExpenseRow({ expense, onToggle, isPending }) {
             {expense.category}
           </span>
           {expense.notes && (
-            <span className="text-xs text-[#C4A89E] dark:text-[#8A6A60] truncate max-w-[120px]">
+            <span className="text-xs text-[#C4A89E] dark:text-[#A07868] truncate max-w-[120px]">
               {expense.notes}
             </span>
           )}
         </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
+        <p className={`text-sm font-semibold text-[#1C1210] ${expense.is_paid ? 'dark:text-[#D4A090]' : 'dark:text-[#FAF3F1]'}`}>
           {formatAmount(expense.amount, expense.currency)}
         </p>
         <button
@@ -97,7 +98,7 @@ function ExpenseRow({ expense, onToggle, isPending }) {
           disabled={isPending}
           className={`text-xs mt-0.5 disabled:opacity-40 transition-colors
                       ${expense.is_paid
-                        ? 'text-[#C4A89E] dark:text-[#8A6A60] hover:text-[#A07060] dark:hover:text-[#C49080]'
+                        ? 'text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090]'
                         : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]'
                       }`}
         >
@@ -120,7 +121,10 @@ export default function LedgerClient({
 }) {
   const [expenses, setExpenses] = useState(initialExpenses)
   const [activeTab, setActiveTab] = useState('owe_me')
+  const [tabAnimClass, setTabAnimClass] = useState('')
+  const prevTabRef = useRef('owe_me')
   const [showForm, setShowForm] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const refetch = useCallback(async () => {
@@ -166,9 +170,26 @@ export default function LedgerClient({
     return () => { supabase.removeChannel(channel) }
   }, [coupleId])
 
+  function handleClose() {
+    setIsClosing(true)
+    setTimeout(() => {
+      setShowForm(false)
+      setIsClosing(false)
+    }, 220)
+  }
+
   async function handleExpenseAdded() {
-    setShowForm(false)
+    handleClose()
     await refetch()
+  }
+
+  function handleTabChange(tabKey) {
+    const tabOrder = ['owe_me', 'i_owe']
+    const newIndex = tabOrder.indexOf(tabKey)
+    const prevIndex = tabOrder.indexOf(prevTabRef.current)
+    setTabAnimClass(newIndex > prevIndex ? 'animate-tab-right' : 'animate-tab-left')
+    prevTabRef.current = tabKey
+    setActiveTab(tabKey)
   }
 
   function handleToggle(expenseId) {
@@ -200,15 +221,15 @@ export default function LedgerClient({
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-[#F0E8E4] dark:bg-[#1E1512] rounded-xl p-1">
+        <div className="flex bg-[#F0E8E4] dark:bg-[#120D0B] rounded-xl p-1">
           {tabs.map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
               className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors
                           ${activeTab === tab.key
-                            ? 'bg-white dark:bg-[#342420] text-[#1C1210] dark:text-[#FAF3F1] shadow-sm'
-                            : 'text-[#A07060] dark:text-[#8A6A60] hover:text-[#1C1210] dark:hover:text-[#FAF3F1]'
+                            ? 'bg-white dark:bg-[#2E201C] text-[#1C1210] dark:text-[#FAF3F1] shadow-sm'
+                            : 'text-[#A07060] dark:text-[#A07868] hover:text-[#1C1210] dark:hover:text-[#FAF3F1]'
                           }`}
             >
               {tab.label}
@@ -216,69 +237,74 @@ export default function LedgerClient({
           ))}
         </div>
 
-        {/* Totals card */}
-        <div className="bg-white dark:bg-[#342420] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2C29] p-[18px]">
-          <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#C49080] uppercase tracking-wider mb-2">
-            {activeTab === 'owe_me'
-              ? `${partnerName} owes you`
-              : `You owe ${partnerName}`}
-          </p>
-          <TotalsBadges
-            expenses={activeList}
-            baseCurrency={baseCurrency}
-            rates={rates}
-          />
-        </div>
+        {/* Animated tab content */}
+        <div key={activeTab} className={`space-y-5 ${tabAnimClass}`}>
+          {/* Totals card */}
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+            <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-2">
+              {activeTab === 'owe_me'
+                ? `${partnerName} owes you`
+                : `You owe ${partnerName}`}
+            </p>
+            <TotalsBadges
+              expenses={activeList}
+              baseCurrency={baseCurrency}
+              rates={rates}
+            />
+          </div>
 
-        {/* Expense list */}
-        <div className="bg-white dark:bg-[#342420] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2C29] px-[18px]">
-          {sorted.length === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-[#C4A89E] dark:text-[#8A6A60] text-sm">No expenses here yet</p>
-            </div>
-          ) : (
-            sorted.map(expense => (
-              <ExpenseRow
-                key={expense.id}
-                expense={expense}
-                onToggle={handleToggle}
-                isPending={isPending}
-              />
-            ))
-          )}
+          {/* Expense list */}
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+            {sorted.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">No expenses here yet</p>
+              </div>
+            ) : (
+              sorted.map(expense => (
+                <ExpenseRow
+                  key={expense.id}
+                  expense={expense}
+                  onToggle={handleToggle}
+                  isPending={isPending}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         <div className="h-20" />
       </div>
 
-      {/* FAB */}
-      {!showForm && (
+      {/* FAB — portalled to document.body to escape the PageTransition transform context */}
+      {!showForm && typeof document !== 'undefined' && createPortal(
         <button
           onClick={() => setShowForm(true)}
           className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
                      text-[28px] flex items-center justify-center z-20 transition-colors
                      shadow-[0_4px_14px_rgba(194,73,58,0.30)] dark:shadow-[0_4px_14px_rgba(232,103,90,0.25)]
                      hover:bg-[#A83D30] dark:hover:bg-[#E8675A]"
+          style={{ animation: 'fadeIn 300ms ease-out' }}
           aria-label="Add expense"
         >
           +
-        </button>
+        </button>,
+        document.body
       )}
 
       {/* Slide-up form panel */}
       {showForm && (
         <div className="fixed inset-0 z-20 flex flex-col justify-end">
           <div
-            className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)]"
-            onClick={() => setShowForm(false)}
+            className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+            onClick={handleClose}
           />
-          <div className="relative bg-white dark:bg-[#342420] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto">
-            <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2C29] mx-auto mb-[14px]" />
+          <div className={`relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}>
+            <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Add expense</h2>
               <button
-                onClick={() => setShowForm(false)}
-                className="text-[#A07060] dark:text-[#C49080] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors"
+                onClick={handleClose}
+                className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors"
                 aria-label="Close"
               >
                 ×
@@ -289,7 +315,7 @@ export default function LedgerClient({
               partnerId={partnerId}
               partnerName={partnerName}
               onSuccess={handleExpenseAdded}
-              onCancel={() => setShowForm(false)}
+              onCancel={handleClose}
             />
           </div>
         </div>

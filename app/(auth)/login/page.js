@@ -10,17 +10,17 @@ export default function LoginPage() {
   return (
     <>
       <h2 className="text-xl font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Welcome back</h2>
-      <p className="text-sm text-[#A07060] dark:text-[#C49080] mb-6">Sign in to your couple space</p>
+      <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-6">Sign in to your couple space</p>
 
       <form action={formAction} className="space-y-4">
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#4A2820] border border-[#EDE0DC] dark:border-[#3D2C29] px-4 py-3 rounded-xl">
+          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
             {state.error}
           </div>
         )}
 
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+          <label htmlFor="email" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
             Email
           </label>
           <input
@@ -29,13 +29,13 @@ export default function LoginPage() {
             type="email"
             autoComplete="email"
             required
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60] transition-colors"
+            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="you@example.com"
           />
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+          <label htmlFor="password" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
             Password
           </label>
           <input
@@ -44,7 +44,7 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60] transition-colors"
+            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="••••••••"
           />
         </div>
@@ -58,7 +58,7 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p className="text-center text-sm text-[#A07060] dark:text-[#C49080] mt-6">
+      <p className="text-center text-sm text-[#A07060] dark:text-[#D4A090] mt-6">
         New here?{' '}
         <Link href="/signup" className="text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline">
           Create an account

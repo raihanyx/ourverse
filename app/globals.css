@@ -7,7 +7,7 @@ body {
 }
 
 .dark body {
-  background: #2A1F1D;
+  background: #1A1210;
 }
 
 input,
@@ -20,4 +20,55 @@ textarea {
 .dark select,
 .dark textarea {
   color: #FAF3F1;
+}
+
+/* ─── Page & tab animations ─────────────────────────── */
+@keyframes fadeSlideInRight {
+  from { opacity: 0; transform: translateX(10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeSlideInLeft {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-tab-right {
+  animation: fadeSlideInRight 180ms ease-out;
+}
+.animate-tab-left {
+  animation: fadeSlideInLeft 180ms ease-out;
+}
+
+/* ─── Sheet enter / exit ─────────────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideDown {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(100%); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.animate-slide-up   { animation: slideUp   280ms ease-out; }
+.animate-slide-down { animation: slideDown 220ms ease-in forwards; }
+.animate-fade-in    { animation: fadeIn    200ms ease-out; }
+.animate-fade-out   { animation: fadeOut   200ms ease-in forwards; }
+
+/* ─── Expense row paid toggle ────────────────────────── */
+.expense-row-transition {
+  transition: opacity 250ms ease-in-out;
+}
+
+/* ─── Reduced motion ─────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

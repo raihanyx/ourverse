@@ -44,6 +44,16 @@ export default function NavLinks() {
       >
         Ledger
       </Link>
+      <Link
+        href="/profile"
+        className={`text-[13px] font-medium transition-colors pb-0.5
+          ${pathname === '/profile'
+            ? 'text-[#C2493A] dark:text-[#F0907F] border-b-2 border-[#C2493A] dark:border-[#F0907F]'
+            : 'text-[#A07060] dark:text-[#C49080] border-b-2 border-transparent'
+          }`}
+      >
+        Profile
+      </Link>
       <button
         onClick={toggle}
         aria-label="Toggle theme"

@@ -11,16 +11,16 @@ function FieldError({ message }) {
 function inputClass(hasError) {
   return `w-full px-3 py-[10px] rounded-[10px] border text-sm
           focus:outline-none transition-colors
-          placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60]
-          bg-[#FDF7F6] dark:bg-[#2A1F1D]
+          placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868]
+          bg-[#FDF7F6] dark:bg-[#1A1210]
           ${hasError
             ? 'border-red-400 focus:border-red-400'
-            : 'border-[#EDE0DC] dark:border-[#3D2C29] focus:border-[#C2493A] dark:focus:border-[#F0907F]'
+            : 'border-[#EDE0DC] dark:border-[#3D2820] focus:border-[#C2493A] dark:focus:border-[#F0907F]'
           }`
 }
 
 const selectClass = `w-full px-3 py-[10px] rounded-[10px] border text-sm
-                     border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D]
+                     border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
                      focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors`
 
 export default function AddExpenseForm({
@@ -45,14 +45,14 @@ export default function AddExpenseForm({
 
       {/* General error */}
       {state?.error && (
-        <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#4A2820] border border-[#EDE0DC] dark:border-[#3D2C29] px-4 py-3 rounded-xl">
+        <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
           {state.error}
         </div>
       )}
 
       {/* Expense name */}
       <div>
-        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
           What was it for?
         </label>
         <input
@@ -67,7 +67,7 @@ export default function AddExpenseForm({
       {/* Amount + currency */}
       <div className="flex gap-3">
         <div className="flex-1">
-          <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+          <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
             Amount
           </label>
           <input
@@ -81,7 +81,7 @@ export default function AddExpenseForm({
           <FieldError message={e.amount} />
         </div>
         <div className="w-28">
-          <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+          <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
             Currency
           </label>
           <select name="currency" defaultValue="IDR" className={selectClass}>
@@ -95,7 +95,7 @@ export default function AddExpenseForm({
 
       {/* Who paid */}
       <div>
-        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
           Who paid?
         </label>
         <select name="who_paid" defaultValue="me" className={selectClass}>
@@ -108,7 +108,7 @@ export default function AddExpenseForm({
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
           Category
         </label>
         <select name="category" defaultValue="food" className={selectClass}>
@@ -122,7 +122,7 @@ export default function AddExpenseForm({
 
       {/* Date */}
       <div>
-        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
           Date
         </label>
         <input
@@ -136,18 +136,18 @@ export default function AddExpenseForm({
 
       {/* Notes */}
       <div>
-        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] mb-1.5">
+        <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
           Notes{' '}
-          <span className="text-[#C4A89E] dark:text-[#8A6A60] font-normal">(optional)</span>
+          <span className="text-[#C4A89E] dark:text-[#A07868] font-normal">(optional)</span>
         </label>
         <input
           name="notes"
           type="text"
           placeholder="Any extra details..."
           className={`w-full px-3 py-[10px] rounded-[10px] border text-sm
-                      border-[#EDE0DC] dark:border-[#3D2C29] bg-[#FDF7F6] dark:bg-[#2A1F1D]
+                      border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
                       focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                      placeholder:text-[#C4A89E] dark:placeholder:text-[#8A6A60]`}
+                      placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868]`}
         />
       </div>
 
@@ -155,7 +155,7 @@ export default function AddExpenseForm({
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2C29] text-sm text-[#A07060] dark:text-[#C49080] hover:bg-[#FDF7F6] dark:hover:bg-[#2A1F1D] transition-colors"
+          className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors"
         >
           Cancel
         </button>

@@ -21,8 +21,8 @@ export default async function AppLayout({ children }) {
   if (!profile?.couple_id) redirect('/onboarding')
 
   return (
-    <div className="min-h-screen bg-[#FDF7F6] dark:bg-[#2A1F1D]">
-      <header className="bg-[#FDF7F6] dark:bg-[#2A1F1D] border-b border-[#EDE0DC] dark:border-[#3D2C29] sticky top-0 z-10">
+    <div className="min-h-screen bg-[#FDF7F6] dark:bg-[#1A1210]">
+      <header className="bg-[#FDF7F6] dark:bg-[#1A1210] border-b border-[#EDE0DC] dark:border-[#2E1E1A] sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -35,7 +35,7 @@ export default async function AppLayout({ children }) {
             <form action={logout}>
               <button
                 type="submit"
-                className="text-sm text-[#C4A89E] dark:text-[#8A6A60] hover:text-[#A07060] dark:hover:text-[#C49080] transition-colors"
+                className="text-sm text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090] transition-colors"
               >
                 Sign out
               </button>

@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { fetchRates } from '@/lib/exchangeRates'
 import LedgerClient from './LedgerClient'
+import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
   title: 'Ledger — Ourverse',
@@ -42,15 +43,17 @@ export default async function LedgerPage() {
   ])
 
   return (
-    <LedgerClient
-      initialExpenses={expenses ?? []}
-      currentUserId={user.id}
-      currentUserName={profile.name}
-      partnerId={partner?.id ?? null}
-      partnerName={partner?.name ?? 'your partner'}
-      coupleId={profile.couple_id}
-      baseCurrency={profile?.base_currency ?? 'IDR'}
-      rates={ratesResult?.rates ?? null}
-    />
+    <PageTransition>
+      <LedgerClient
+        initialExpenses={expenses ?? []}
+        currentUserId={user.id}
+        currentUserName={profile.name}
+        partnerId={partner?.id ?? null}
+        partnerName={partner?.name ?? 'your partner'}
+        coupleId={profile.couple_id}
+        baseCurrency={profile?.base_currency ?? 'IDR'}
+        rates={ratesResult?.rates ?? null}
+      />
+    </PageTransition>
   )
 }
