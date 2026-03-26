@@ -2,8 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
-const VALID_CURRENCIES = ['IDR', 'THB', 'AUD', 'MMK']
+const VALID_CURRENCIES = SUPPORTED_CURRENCIES
 const VALID_CATEGORIES = ['food', 'transport', 'accommodation', 'shopping', 'other']
 
 export async function addExpense(prevState, formData) {

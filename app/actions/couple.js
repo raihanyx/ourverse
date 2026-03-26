@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 function generateInviteCode() {
   // Omit ambiguous chars: 0/O, 1/I/L
@@ -92,4 +94,27 @@ export async function joinCouple(prevState, formData) {
   }
 
   redirect('/dashboard')
+}
+
+export async function updateBaseCurrency(prevState, formData) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  const currency = formData.get('base_currency')
+  if (!SUPPORTED_CURRENCIES.includes(currency))
+    return { error: 'Invalid currency.' }
+
+  const { error } = await supabase
+    .from('users')
+    .update({ base_currency: currency })
+    .eq('id', user.id)
+
+  if (error) return { error: 'Could not update currency.' }
+
+  revalidatePath('/dashboard')
+  revalidatePath('/ledger')
+  return { success: true }
 }

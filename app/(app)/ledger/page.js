@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { fetchRates } from '@/lib/exchangeRates'
 import LedgerClient from './LedgerClient'
 
 export const metadata = {
@@ -16,7 +17,7 @@ export default async function LedgerPage() {
 
   const { data: profile } = await supabase
     .from('users')
-    .select('name, couple_id')
+    .select('name, couple_id, base_currency')
     .eq('id', user.id)
     .single()
 
@@ -29,12 +30,16 @@ export default async function LedgerPage() {
     .neq('id', user.id)
     .single()
 
-  const { data: expenses } = await supabase
-    .from('expenses')
-    .select('*')
-    .eq('couple_id', profile.couple_id)
-    .order('date', { ascending: false })
-    .order('created_at', { ascending: false })
+  // Fetch expenses and live rates in parallel
+  const [{ data: expenses }, ratesResult] = await Promise.all([
+    supabase
+      .from('expenses')
+      .select('*')
+      .eq('couple_id', profile.couple_id)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false }),
+    fetchRates(),
+  ])
 
   return (
     <LedgerClient
@@ -44,6 +49,8 @@ export default async function LedgerPage() {
       partnerId={partner?.id ?? null}
       partnerName={partner?.name ?? 'your partner'}
       coupleId={profile.couple_id}
+      baseCurrency={profile?.base_currency ?? 'IDR'}
+      rates={ratesResult?.rates ?? null}
     />
   )
 }

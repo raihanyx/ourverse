@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { togglePaid } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency } from '@/lib/currency'
+import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
 
 const CATEGORY_COLORS = {
@@ -14,25 +15,44 @@ const CATEGORY_COLORS = {
   other:         'bg-gray-100 text-gray-500',
 }
 
-function TotalsBadges({ expenses }) {
+function TotalsBadges({ expenses, baseCurrency, rates }) {
   const unpaid = expenses.filter(e => !e.is_paid)
   const totals = sumByCurrency(unpaid)
   const entries = Object.entries(totals).filter(([, v]) => v > 0)
+
+  const unifiedTotal = computeUnifiedTotal(totals, baseCurrency, rates)
+  const rateLines = getRateLines(baseCurrency, rates)
 
   if (entries.length === 0) {
     return <p className="text-sm text-gray-400">Nothing owed</p>
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
-      {entries.map(([currency, amount]) => (
-        <span
-          key={currency}
-          className="text-sm font-semibold text-violet-700 bg-violet-50 px-3 py-1 rounded-full"
-        >
-          {formatAmount(amount, currency)}
-        </span>
-      ))}
+    <div>
+      <div className="flex flex-wrap gap-2">
+        {entries.map(([currency, amount]) => (
+          <span
+            key={currency}
+            className="text-sm font-semibold text-violet-700 bg-violet-50 px-3 py-1 rounded-full"
+          >
+            {formatAmount(amount, currency)}
+          </span>
+        ))}
+      </div>
+
+      {/* Unified total in base currency */}
+      {rates && unifiedTotal !== null && unifiedTotal > 0 && (
+        <p className="text-xs text-gray-400 mt-2">
+          ≈ {formatAmount(unifiedTotal, baseCurrency)} at current rates
+        </p>
+      )}
+
+      {/* Rate transparency */}
+      {rates && rateLines.length > 0 && (
+        <p className="text-xs text-gray-300 mt-1 leading-relaxed">
+          {rateLines.join(' · ')}
+        </p>
+      )}
     </div>
   )
 }
@@ -89,13 +109,14 @@ export default function LedgerClient({
   partnerId,
   partnerName,
   coupleId,
+  baseCurrency,
+  rates,
 }) {
   const [expenses, setExpenses] = useState(initialExpenses)
   const [activeTab, setActiveTab] = useState('owe_me')
   const [showForm, setShowForm] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  // Re-fetch all expenses for this couple from the browser client
   const refetch = useCallback(async () => {
     const supabase = createClient()
     const { data } = await supabase
@@ -107,9 +128,7 @@ export default function LedgerClient({
     if (data) setExpenses(data)
   }, [coupleId])
 
-  // Realtime subscription — no server-side filter so it works on all Supabase configs.
-  // RLS ensures users only receive events for their own couple's expenses.
-  // We still check couple_id client-side as a safety net.
+  // Realtime subscription — no server-side filter (more reliable across configs)
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
@@ -138,13 +157,9 @@ export default function LedgerClient({
       )
       .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [coupleId])
 
-  // Called when the add-expense form succeeds: close form + guaranteed re-fetch.
-  // This ensures the new entry always appears even if realtime is slow or missed.
   async function handleExpenseAdded() {
     setShowForm(false)
     await refetch()
@@ -153,17 +168,14 @@ export default function LedgerClient({
   function handleToggle(expenseId) {
     startTransition(async () => {
       await togglePaid(expenseId)
-      // Re-fetch so the toggle is reflected immediately without waiting for realtime
       await refetch()
     })
   }
 
-  // Tab filtering
   const theyOweMe = expenses.filter(e => e.paid_by_user_id === currentUserId)
   const iOweThem = expenses.filter(e => e.paid_by_user_id === partnerId)
   const activeList = activeTab === 'owe_me' ? theyOweMe : iOweThem
 
-  // Sort: unpaid first, then paid; within each group newest first
   const sorted = [...activeList].sort((a, b) => {
     if (a.is_paid !== b.is_paid) return a.is_paid ? 1 : -1
     return new Date(b.date) - new Date(a.date) || new Date(b.created_at) - new Date(a.created_at)
@@ -198,14 +210,18 @@ export default function LedgerClient({
           ))}
         </div>
 
-        {/* Totals */}
+        {/* Totals card */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <p className="text-xs text-gray-400 uppercase tracking-wider font-medium mb-2">
             {activeTab === 'owe_me'
               ? `${partnerName} owes you`
               : `You owe ${partnerName}`}
           </p>
-          <TotalsBadges expenses={activeList} />
+          <TotalsBadges
+            expenses={activeList}
+            baseCurrency={baseCurrency}
+            rates={rates}
+          />
         </div>
 
         {/* Expense list */}
