@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { bulkSetPaid, togglePaid } from '@/app/actions/expenses'
@@ -20,7 +21,7 @@ function PaidExpenseRow({ expense, onUndo, isPending, isSelecting, isSelected, o
       onClick={isSelecting ? () => onSelect(expense.id) : undefined}
       className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0 expense-row-transition
                   ${isSelecting ? 'cursor-pointer' : ''}
-                  ${isSelected ? 'bg-[#FEF6F5] dark:bg-[#2A1510] opacity-100 dark:opacity-100' : 'opacity-40 dark:opacity-50'}`}
+                  ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] opacity-100 dark:opacity-100 first:rounded-t-2xl last:rounded-b-2xl' : 'opacity-40 dark:opacity-50'}`}
     >
       {isSelecting && (
         <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
@@ -197,8 +198,8 @@ export default function PaidExpensesClient({
         )}
       </div>
 
-      {/* Bulk action bar */}
-      {isSelecting && selectedIds.size > 0 && (
+      {/* Bulk action bar — portalled to avoid fixed positioning being broken by parent transforms */}
+      {isSelecting && selectedIds.size > 0 && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
           style={{ animation: 'fadeIn 150ms ease-out' }}
@@ -210,12 +211,13 @@ export default function PaidExpensesClient({
             <button
               onClick={handleBulkUndo}
               disabled={isPending}
-              className="h-9 px-4 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:bg-[#F5EDE9] dark:hover:bg-[#3D2820] disabled:opacity-40 transition-colors"
+              className="h-9 px-4 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] text-white text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors"
             >
               Undo paid
             </button>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <div className="h-6" />

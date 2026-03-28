@@ -66,7 +66,7 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
       className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
                   expense-row-transition
                   ${isSelecting ? 'cursor-pointer' : ''}
-                  ${isSelected ? 'bg-[#FEF6F5] dark:bg-[#2A1510]' : ''}
+                  ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}
                   ${!isSelecting && expense.is_paid ? 'opacity-40 dark:opacity-50' : ''}
                   ${isSelecting && expense.is_paid && !isSelected ? 'opacity-40 dark:opacity-50' : ''}`}
     >

@@ -58,11 +58,11 @@ export default function ProfileClient({ name, email }) {
               {state?.errors?.name && (
                 <p className="text-xs text-red-500">{state.errors.name}</p>
               )}
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-lg font-medium text-sm disabled:opacity-50 transition-colors"
+                  className="flex-1 h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-lg font-medium text-sm disabled:opacity-50 transition-colors"
                 >
                   {isPending ? 'Saving…' : 'Save'}
                 </button>
@@ -70,7 +70,7 @@ export default function ProfileClient({ name, email }) {
                   type="button"
                   onClick={handleCancel}
                   disabled={isPending}
-                  className="h-9 px-4 rounded-lg border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] disabled:opacity-50 transition-colors"
+                  className="flex-1 h-9 px-4 rounded-lg border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] disabled:opacity-50 transition-colors"
                 >
                   Cancel
                 </button>
