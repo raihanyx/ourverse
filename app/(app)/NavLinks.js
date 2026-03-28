@@ -36,20 +36,20 @@ export default function NavLinks() {
     <div className="flex items-center gap-4">
       <Link
         href="/ledger"
-        className={`text-[13px] font-medium transition-colors pb-0.5
+        className={`text-[13px] font-medium transition-colors border-b-2
           ${pathname === '/ledger'
-            ? 'text-[#C2493A] dark:text-[#F0907F] border-b-2 border-[#C2493A] dark:border-[#F0907F]'
-            : 'text-[#A07060] dark:text-[#C49080] border-b-2 border-transparent'
+            ? 'text-[#C2493A] dark:text-[#F0907F] border-[#C2493A] dark:border-[#F0907F]'
+            : 'text-[#A07060] dark:text-[#C49080] border-transparent'
           }`}
       >
         Ledger
       </Link>
       <Link
         href="/profile"
-        className={`text-[13px] font-medium transition-colors pb-0.5
+        className={`text-[13px] font-medium transition-colors border-b-2
           ${pathname === '/profile'
-            ? 'text-[#C2493A] dark:text-[#F0907F] border-b-2 border-[#C2493A] dark:border-[#F0907F]'
-            : 'text-[#A07060] dark:text-[#C49080] border-b-2 border-transparent'
+            ? 'text-[#C2493A] dark:text-[#F0907F] border-[#C2493A] dark:border-[#F0907F]'
+            : 'text-[#A07060] dark:text-[#C49080] border-transparent'
           }`}
       >
         Profile

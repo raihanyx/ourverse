@@ -1,8 +1,11 @@
 export default function LedgerLoading() {
   return (
     <div className="space-y-5">
-      {/* Heading */}
-      <div className="h-7 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
+      {/* Heading row */}
+      <div className="flex items-center justify-between">
+        <div className="h-7 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
+        <div className="h-4 w-12 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+      </div>
 
       {/* Tab bar */}
       <div className="flex bg-[#F0E8E4] dark:bg-[#120D0B] rounded-xl p-1 gap-1">
@@ -27,7 +30,7 @@ export default function LedgerLoading() {
               <div className="h-4 w-3/5 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
               <div className="h-3 w-2/5 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
             </div>
-            <div className="space-y-2 flex-shrink-0 items-end flex flex-col">
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
               <div className="h-4 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
               <div className="h-3 w-14 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
             </div>

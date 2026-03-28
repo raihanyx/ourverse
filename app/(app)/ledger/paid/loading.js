@@ -1,22 +1,33 @@
 export default function PaidExpensesLoading() {
   return (
     <div className="space-y-5">
+      {/* Heading row */}
       <div className="flex items-center justify-between">
-        <div className="h-7 w-32 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
-        <div className="h-4 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="h-7 w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
+        <div className="flex items-center gap-3">
+          <div className="h-4 w-12 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+          <div className="h-4 w-14 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        </div>
       </div>
+
+      {/* Tab bar */}
       <div className="flex bg-[#F0E8E4] dark:bg-[#120D0B] rounded-xl p-1 gap-1">
         <div className="flex-1 h-9 bg-[#EDE0DC] dark:bg-[#2E201C] rounded-lg animate-pulse" />
         <div className="flex-1 h-9 rounded-lg animate-pulse" />
       </div>
+
+      {/* Expense list */}
       <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
         {[1, 2, 3, 4].map(i => (
-          <div key={i} className="flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0">
+          <div
+            key={i}
+            className="flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0"
+          >
             <div className="flex-1 space-y-2 min-w-0">
               <div className="h-4 w-3/5 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
               <div className="h-3 w-2/5 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
             </div>
-            <div className="space-y-2 flex-shrink-0 items-end flex flex-col">
+            <div className="flex flex-col items-end gap-2 flex-shrink-0">
               <div className="h-4 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
               <div className="h-3 w-10 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
             </div>

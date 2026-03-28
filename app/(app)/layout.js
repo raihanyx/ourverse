@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { logout } from '@/app/actions/auth'
 import Link from 'next/link'
 import NavLinks from './NavLinks'
 
@@ -32,14 +31,6 @@ export default async function AppLayout({ children }) {
           </Link>
           <div className="flex items-center gap-3">
             <NavLinks />
-            <form action={logout}>
-              <button
-                type="submit"
-                className="text-sm text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090] transition-colors"
-              >
-                Sign out
-              </button>
-            </form>
           </div>
         </div>
       </header>
