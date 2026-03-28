@@ -7,7 +7,8 @@
       "Bash(find D:/Codebases/Ourverse/ourverse/app D:/Codebases/Ourverse/ourverse/lib D:/Codebases/Ourverse/ourverse/proxy.js -not -path */node_modules/* -not -path */.next/*)",
       "Bash(find \"D:\\\\Codebases\\\\Ourverse\\\\ourverse\\\\app\\\\\\(app\\)\" -type f -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" -o -name \"*.tsx\")",
       "Bash(find \"D:\\\\Codebases\\\\Ourverse\\\\ourverse\\\\app\\\\\\(auth\\)\" -type f -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.ts\" -o -name \"*.tsx\")",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

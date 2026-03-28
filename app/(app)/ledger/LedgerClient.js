@@ -7,6 +7,7 @@ import { togglePaid } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
+import Link from 'next/link'
 
 const CATEGORY_COLORS = {
   food:          'bg-[#FEF3C7] text-[#92400E] dark:bg-[#3A2A12] dark:text-[#F0A840]',
@@ -203,10 +204,23 @@ export default function LedgerClient({
   const iOweThem = expenses.filter(e => e.paid_by_user_id === partnerId)
   const activeList = activeTab === 'owe_me' ? theyOweMe : iOweThem
 
-  const sorted = [...activeList].sort((a, b) => {
-    if (a.is_paid !== b.is_paid) return a.is_paid ? 1 : -1
-    return new Date(b.date) - new Date(a.date) || new Date(b.created_at) - new Date(a.created_at)
-  })
+  const unpaidSorted = [...activeList]
+    .filter(e => !e.is_paid)
+    .sort((a, b) =>
+      new Date(b.date) - new Date(a.date) ||
+      new Date(b.created_at) - new Date(a.created_at)
+    )
+
+  const paidSorted = [...activeList]
+    .filter(e => e.is_paid)
+    .sort((a, b) =>
+      new Date(b.date) - new Date(a.date) ||
+      new Date(b.created_at) - new Date(a.created_at)
+    )
+
+  const PAID_PREVIEW_LIMIT = 5
+  const paidPreview = paidSorted.slice(0, PAID_PREVIEW_LIMIT)
+  const hasMorePaid = paidSorted.length > PAID_PREVIEW_LIMIT
 
   const tabs = [
     { key: 'owe_me', label: 'They owe me', list: theyOweMe },
@@ -255,19 +269,39 @@ export default function LedgerClient({
 
           {/* Expense list */}
           <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
-            {sorted.length === 0 ? (
+            {unpaidSorted.length === 0 && paidPreview.length === 0 ? (
               <div className="py-10 text-center">
                 <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">No expenses here yet</p>
               </div>
             ) : (
-              sorted.map(expense => (
-                <ExpenseRow
-                  key={expense.id}
-                  expense={expense}
-                  onToggle={handleToggle}
-                  isPending={isPending}
-                />
-              ))
+              <>
+                {unpaidSorted.map(expense => (
+                  <ExpenseRow
+                    key={expense.id}
+                    expense={expense}
+                    onToggle={handleToggle}
+                    isPending={isPending}
+                  />
+                ))}
+                {paidPreview.map(expense => (
+                  <ExpenseRow
+                    key={expense.id}
+                    expense={expense}
+                    onToggle={handleToggle}
+                    isPending={isPending}
+                  />
+                ))}
+                {hasMorePaid && (
+                  <div className="py-3 border-t border-[#F5EDE9] dark:border-[#3D2820]">
+                    <Link
+                      href={`/ledger/paid?tab=${activeTab}`}
+                      className="text-sm text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] transition-colors"
+                    >
+                      See all {paidSorted.length} paid expenses →
+                    </Link>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

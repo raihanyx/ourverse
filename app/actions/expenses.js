@@ -86,6 +86,7 @@ export async function togglePaid(expenseId) {
   if (error) return { error: 'Could not update expense.' }
 
   revalidatePath('/ledger')
+  revalidatePath('/ledger/paid')
   revalidatePath('/dashboard')
   return { success: true }
 }
