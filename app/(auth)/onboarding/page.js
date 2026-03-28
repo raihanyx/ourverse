@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import OnboardingClient from './OnboardingClient'
 
 export const metadata = {
-  title: 'Connect — Ourverse',
+  title: 'Connect | Ourverse',
 }
 
 export default async function OnboardingPage() {

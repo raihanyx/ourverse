@@ -5,7 +5,7 @@ import LedgerClient from './LedgerClient'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
-  title: 'Ledger — Ourverse',
+  title: 'Ledger | Ourverse',
 }
 
 export default async function LedgerPage() {

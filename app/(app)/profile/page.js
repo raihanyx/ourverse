@@ -4,7 +4,7 @@ import PageTransition from '@/app/components/PageTransition'
 import ProfileClient from './ProfileClient'
 
 export const metadata = {
-  title: 'Profile — Ourverse',
+  title: 'Profile | Ourverse',
 }
 
 export default async function ProfilePage() {

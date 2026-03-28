@@ -7,7 +7,7 @@ import TogetherCard from './TogetherCard'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
-  title: 'Dashboard — Ourverse',
+  title: 'Dashboard | Ourverse',
 }
 
 export default async function DashboardPage() {

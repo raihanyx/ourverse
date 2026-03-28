@@ -4,7 +4,7 @@ import PaidExpensesClient from './PaidExpensesClient'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
-  title: 'Paid expenses — Ourverse',
+  title: 'Paid expenses | Ourverse',
 }
 
 export default async function PaidExpensesPage({ searchParams }) {
