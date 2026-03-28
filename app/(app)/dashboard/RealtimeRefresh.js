@@ -10,13 +10,21 @@ export default function RealtimeRefresh({ coupleId }) {
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
-      .channel('dashboard-expenses-' + coupleId)
+      .channel('dashboard-' + coupleId)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'expenses' },
         (payload) => {
           const row = payload.new ?? payload.old
           if (row?.couple_id !== coupleId) return
+          router.refresh()
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'couples' },
+        (payload) => {
+          if (payload.new?.id !== coupleId) return
           router.refresh()
         }
       )

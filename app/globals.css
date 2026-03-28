@@ -65,6 +65,11 @@ textarea {
   transition: opacity 250ms ease-in-out;
 }
 
+/* ─── Date input calendar icon ──────────────────────── */
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* ─── Reduced motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

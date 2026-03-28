@@ -96,6 +96,15 @@ export async function joinCouple(prevState, formData) {
   redirect('/dashboard')
 }
 
+export async function saveAnniversaryDate(coupleId, dateString) {
+  const supabase = await createClient()
+  await supabase
+    .from('couples')
+    .update({ anniversary_date: dateString })
+    .eq('id', coupleId)
+  revalidatePath('/dashboard')
+}
+
 export async function updateBaseCurrency(prevState, formData) {
   const supabase = await createClient()
   const {

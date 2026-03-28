@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { bulkSetPaid, togglePaid } from '@/app/actions/expenses'
-import { formatAmount } from '@/lib/currency'
+import { formatAmount, formatDate } from '@/lib/currency'
 
 const CATEGORY_COLORS = {
   food:          'bg-[#FEF3C7] text-[#92400E] dark:bg-[#3A2A12] dark:text-[#F0A840]',
@@ -21,7 +21,7 @@ function PaidExpenseRow({ expense, onUndo, isPending, isSelecting, isSelected, o
       onClick={isSelecting ? () => onSelect(expense.id) : undefined}
       className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0 expense-row-transition
                   ${isSelecting ? 'cursor-pointer' : ''}
-                  ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] opacity-100 dark:opacity-100 first:rounded-t-2xl last:rounded-b-2xl' : 'opacity-40 dark:opacity-50'}`}
+                  ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}`}
     >
       {isSelecting && (
         <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
@@ -31,12 +31,12 @@ function PaidExpenseRow({ expense, onUndo, isPending, isSelecting, isSelected, o
           }`}
         />
       )}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate line-through text-[#A07060] dark:text-[#D4A090]">
+      <div className="flex-1 min-w-0 opacity-40 dark:opacity-50">
+        <p className="text-sm font-medium truncate text-[#A07060] dark:text-[#D4A090]">
           {expense.name}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{expense.date}</span>
+          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{formatDate(expense.date)}</span>
           <span
             className={`text-xs px-1.5 py-0.5 rounded-md font-medium
                         ${CATEGORY_COLORS[expense.category] ?? 'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]'}`}
@@ -51,14 +51,14 @@ function PaidExpenseRow({ expense, onUndo, isPending, isSelecting, isSelected, o
         </div>
       </div>
       <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold text-[#1C1210] dark:text-[#D4A090]">
+        <p className="text-sm font-semibold opacity-40 dark:opacity-50 text-[#1C1210] dark:text-[#D4A090]">
           {formatAmount(expense.amount, expense.currency)}
         </p>
         {!isSelecting && (
           <button
             onClick={() => onUndo(expense.id)}
             disabled={isPending}
-            className="text-xs mt-0.5 disabled:opacity-40 transition-colors text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090]"
+            className="text-[13px] mt-0.5 disabled:opacity-40 transition-colors font-medium text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]"
           >
             Undo
           </button>
@@ -199,18 +199,20 @@ export default function PaidExpensesClient({
       </div>
 
       {/* Bulk action bar — portalled to avoid fixed positioning being broken by parent transforms */}
-      {isSelecting && selectedIds.size > 0 && typeof document !== 'undefined' && createPortal(
+      {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
           style={{ animation: 'fadeIn 150ms ease-out' }}
         >
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
-            <span className="text-sm text-[#A07060] dark:text-[#D4A090]">
-              {selectedIds.size} selected
-            </span>
+            {selectedIds.size === 0 ? (
+              <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
+            ) : (
+              <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
+            )}
             <button
               onClick={handleBulkUndo}
-              disabled={isPending}
+              disabled={isPending || selectedIds.size === 0}
               className="h-9 px-4 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] text-white text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors"
             >
               Undo paid

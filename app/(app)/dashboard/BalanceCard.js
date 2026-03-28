@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { formatAmount } from '@/lib/currency'
+import CurrencySettings from './CurrencySettings'
 
 export default function BalanceCard({
   theyOweMeEntries,
@@ -104,6 +105,10 @@ export default function BalanceCard({
           </div>
         </div>
       )}
+
+      <div className="border-t border-[#F5EDE9] dark:border-[#3D2820] mt-3 pt-3">
+        <CurrencySettings current={baseCurrency} />
+      </div>
     </div>
   )
 }

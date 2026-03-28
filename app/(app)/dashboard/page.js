@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatAmount, sumByCurrency } from '@/lib/currency'
 import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
-import CurrencySettings from './CurrencySettings'
 import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
+import TogetherCard from './TogetherCard'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
@@ -107,6 +107,11 @@ export default async function DashboardPage() {
         balanceSettled={balanceSettled}
       />
 
+      <TogetherCard
+        anniversaryDate={couple?.anniversary_date ?? null}
+        coupleId={profile.couple_id}
+      />
+
       {/* Couple space card */}
       <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4">
         <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider">
@@ -121,10 +126,8 @@ export default async function DashboardPage() {
         </div>
 
         {memberSince && (
-          <p className="text-xs text-[#C4A89E] dark:text-[#A07868]">Together since {memberSince}</p>
+          <p className="text-xs text-[#C4A89E] dark:text-[#A07868]">On Ourverse since {memberSince}</p>
         )}
-
-        <CurrencySettings current={baseCurrency} />
       </div>
     </div>
     </PageTransition>

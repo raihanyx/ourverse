@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { togglePaid, bulkSetPaid } from '@/app/actions/expenses'
-import { formatAmount, sumByCurrency } from '@/lib/currency'
+import { formatAmount, sumByCurrency, formatDate } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
 import Link from 'next/link'
@@ -89,7 +89,7 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
           {expense.name}
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{expense.date}</span>
+          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{formatDate(expense.date)}</span>
           <span
             className={`text-xs px-1.5 py-0.5 rounded-md font-medium
                         ${CATEGORY_COLORS[expense.category] ?? 'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]'}`}
