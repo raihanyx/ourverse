@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
-import { togglePaid } from '@/app/actions/expenses'
+import { togglePaid, bulkSetPaid } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
@@ -59,12 +59,25 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
   )
 }
 
-function ExpenseRow({ expense, onToggle, isPending }) {
+function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onSelect }) {
   return (
     <div
+      onClick={isSelecting ? () => onSelect(expense.id) : undefined}
       className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
-                  expense-row-transition ${expense.is_paid ? 'opacity-40 dark:opacity-50' : ''}`}
+                  expense-row-transition
+                  ${isSelecting ? 'cursor-pointer' : ''}
+                  ${isSelected ? 'bg-[#FEF6F5] dark:bg-[#2A1510]' : ''}
+                  ${!isSelecting && expense.is_paid ? 'opacity-40 dark:opacity-50' : ''}
+                  ${isSelecting && expense.is_paid && !isSelected ? 'opacity-40 dark:opacity-50' : ''}`}
     >
+      {isSelecting && (
+        <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
+          ${isSelected
+            ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
+            : 'border-[#D4C8C4] dark:border-[#5A3830]'
+          }`}
+        />
+      )}
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm font-medium truncate
@@ -94,17 +107,19 @@ function ExpenseRow({ expense, onToggle, isPending }) {
         <p className={`text-sm font-semibold text-[#1C1210] ${expense.is_paid ? 'dark:text-[#D4A090]' : 'dark:text-[#FAF3F1]'}`}>
           {formatAmount(expense.amount, expense.currency)}
         </p>
-        <button
-          onClick={() => onToggle(expense.id)}
-          disabled={isPending}
-          className={`text-xs mt-0.5 disabled:opacity-40 transition-colors
-                      ${expense.is_paid
-                        ? 'text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090]'
-                        : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]'
-                      }`}
-        >
-          {expense.is_paid ? 'Undo' : 'Mark paid'}
-        </button>
+        {!isSelecting && (
+          <button
+            onClick={() => onToggle(expense.id)}
+            disabled={isPending}
+            className={`text-xs mt-0.5 disabled:opacity-40 transition-colors
+                        ${expense.is_paid
+                          ? 'text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090]'
+                          : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]'
+                        }`}
+          >
+            {expense.is_paid ? 'Undo' : 'Mark paid'}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -127,6 +142,9 @@ export default function LedgerClient({
   const [showForm, setShowForm] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -191,12 +209,57 @@ export default function LedgerClient({
     setTabAnimClass(newIndex > prevIndex ? 'animate-tab-right' : 'animate-tab-left')
     prevTabRef.current = tabKey
     setActiveTab(tabKey)
+    setSelectedIds(new Set())
   }
 
   function handleToggle(expenseId) {
     startTransition(async () => {
       await togglePaid(expenseId)
       await refetch()
+    })
+  }
+
+  function handleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function handleStartSelecting() {
+    setIsSelecting(true)
+    setSelectedIds(new Set())
+  }
+
+  function handleCancelSelecting() {
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+  }
+
+  function handleBulkMarkPaid() {
+    const ids = visibleExpenses
+      .filter(e => selectedIds.has(e.id) && !e.is_paid)
+      .map(e => e.id)
+    if (ids.length === 0) return
+    startTransition(async () => {
+      await bulkSetPaid(ids, true)
+      await refetch()
+      setIsSelecting(false)
+      setSelectedIds(new Set())
+    })
+  }
+
+  function handleBulkUndo() {
+    const ids = visibleExpenses
+      .filter(e => selectedIds.has(e.id) && e.is_paid)
+      .map(e => e.id)
+    if (ids.length === 0) return
+    startTransition(async () => {
+      await bulkSetPaid(ids, false)
+      await refetch()
+      setIsSelecting(false)
+      setSelectedIds(new Set())
     })
   }
 
@@ -222,6 +285,12 @@ export default function LedgerClient({
   const paidPreview = paidSorted.slice(0, PAID_PREVIEW_LIMIT)
   const hasMorePaid = paidSorted.length > PAID_PREVIEW_LIMIT
 
+  // All currently visible expenses (used for bulk action ID filtering)
+  const visibleExpenses = [...unpaidSorted, ...paidPreview]
+
+  const hasSelectedUnpaid = visibleExpenses.some(e => selectedIds.has(e.id) && !e.is_paid)
+  const hasSelectedPaid   = visibleExpenses.some(e => selectedIds.has(e.id) && e.is_paid)
+
   const tabs = [
     { key: 'owe_me', label: 'They owe me', list: theyOweMe },
     { key: 'i_owe', label: 'I owe them', list: iOweThem },
@@ -232,6 +301,14 @@ export default function LedgerClient({
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Ledger</h1>
+          {(unpaidSorted.length > 0 || paidPreview.length > 0) && (
+            <button
+              onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
+              className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+            >
+              {isSelecting ? 'Cancel' : 'Select'}
+            </button>
+          )}
         </div>
 
         {/* Tabs */}
@@ -281,6 +358,9 @@ export default function LedgerClient({
                     expense={expense}
                     onToggle={handleToggle}
                     isPending={isPending}
+                    isSelecting={isSelecting}
+                    isSelected={selectedIds.has(expense.id)}
+                    onSelect={handleSelect}
                   />
                 ))}
                 {paidPreview.map(expense => (
@@ -289,6 +369,9 @@ export default function LedgerClient({
                     expense={expense}
                     onToggle={handleToggle}
                     isPending={isPending}
+                    isSelecting={isSelecting}
+                    isSelected={selectedIds.has(expense.id)}
+                    onSelect={handleSelect}
                   />
                 ))}
                 {hasMorePaid && (
@@ -309,8 +392,8 @@ export default function LedgerClient({
         <div className="h-20" />
       </div>
 
-      {/* FAB — portalled to document.body to escape the PageTransition transform context */}
-      {!showForm && typeof document !== 'undefined' && createPortal(
+      {/* FAB — hidden during selection mode */}
+      {!showForm && !isSelecting && typeof document !== 'undefined' && createPortal(
         <button
           onClick={() => setShowForm(true)}
           className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
@@ -322,6 +405,41 @@ export default function LedgerClient({
         >
           +
         </button>,
+        document.body
+      )}
+
+      {/* Bulk action bar — portalled, appears when items are selected */}
+      {isSelecting && selectedIds.size > 0 && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
+          style={{ animation: 'fadeIn 150ms ease-out' }}
+        >
+          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <span className="text-sm text-[#A07060] dark:text-[#D4A090]">
+              {selectedIds.size} selected
+            </span>
+            <div className="flex gap-2">
+              {hasSelectedPaid && (
+                <button
+                  onClick={handleBulkUndo}
+                  disabled={isPending}
+                  className="h-9 px-4 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:bg-[#F5EDE9] dark:hover:bg-[#3D2820] disabled:opacity-40 transition-colors"
+                >
+                  Undo paid
+                </button>
+              )}
+              {hasSelectedUnpaid && (
+                <button
+                  onClick={handleBulkMarkPaid}
+                  disabled={isPending}
+                  className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
+                >
+                  Mark paid
+                </button>
+              )}
+            </div>
+          </div>
+        </div>,
         document.body
       )}
 

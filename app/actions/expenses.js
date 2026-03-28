@@ -63,6 +63,28 @@ export async function addExpense(prevState, formData) {
   return { success: true }
 }
 
+export async function bulkSetPaid(ids, isPaid) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+
+  const { error } = await supabase
+    .from('expenses')
+    .update({ is_paid: isPaid })
+    .in('id', ids)
+
+  if (error) return { error: 'Could not update expenses.' }
+
+  revalidatePath('/ledger')
+  revalidatePath('/ledger/paid')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function togglePaid(expenseId) {
   const supabase = await createClient()
   const {
