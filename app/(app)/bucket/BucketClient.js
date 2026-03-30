@@ -1,0 +1,425 @@
+'use client'
+
+import { useState, useEffect, useTransition } from 'react'
+import { createPortal } from 'react-dom'
+import { createClient } from '@/lib/supabase/client'
+import { bulkMarkDone } from '@/app/actions/bucket'
+import AddBucketForm from './AddBucketForm'
+import MarkDoneSheet from './MarkDoneSheet'
+
+const CATEGORY_COLORS = {
+  restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
+  travel:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
+  activity:   'bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]',
+  movie:      'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
+  other:      'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
+}
+
+const CATEGORY_LABELS = {
+  restaurant: 'Restaurant',
+  travel:     'Travel',
+  activity:   'Activity',
+  movie:      'Movie',
+  other:      'Other',
+}
+
+const FILTER_TABS = [
+  { key: 'all',        label: 'All' },
+  { key: 'restaurant', label: 'Restaurants' },
+  { key: 'travel',     label: 'Travel' },
+  { key: 'activity',   label: 'Activities' },
+  { key: 'movie',      label: 'Movies' },
+  { key: 'other',      label: 'Other' },
+  { key: 'done',       label: 'Done' },
+]
+
+const PICKER_CATEGORIES = [
+  { key: 'all',        label: 'All' },
+  { key: 'restaurant', label: 'Restaurants' },
+  { key: 'travel',     label: 'Travel' },
+  { key: 'activity',   label: 'Activities' },
+  { key: 'movie',      label: 'Movies' },
+  { key: 'other',      label: 'Other' },
+]
+
+function CategoryBadge({ category }) {
+  return (
+    <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${CATEGORY_COLORS[category] ?? CATEGORY_COLORS.other}`}>
+      {CATEGORY_LABELS[category] ?? category}
+    </span>
+  )
+}
+
+function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected, onSelect, isPending }) {
+  return (
+    <div
+      onClick={isSelecting && !item.is_done ? () => onSelect(item.id) : undefined}
+      className={`flex items-center gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
+        ${item.is_done ? 'opacity-45' : ''}
+        ${isSelecting && !item.is_done ? 'cursor-pointer' : ''}
+        ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}
+      `}
+    >
+      {isSelecting && !item.is_done && (
+        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
+          ${isSelected
+            ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
+            : 'border-[#D4C8C4] dark:border-[#5A3830]'
+          }`}
+        />
+      )}
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-medium truncate ${item.is_done ? 'line-through text-[#A07060] dark:text-[#D4A090]' : 'text-[#1C1210] dark:text-[#FAF3F1]'}`}>
+          {item.name}
+        </p>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <CategoryBadge category={item.category} />
+          {item.is_done && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium bg-[#DCFCE7] text-[#166534] dark:bg-[#14532D] dark:text-[#86EFAC]">
+              memory
+            </span>
+          )}
+          <span className="text-[11px] text-[#C4A89E] dark:text-[#A07868]">
+            Added by {addedByName}
+          </span>
+        </div>
+      </div>
+      {!isSelecting && !item.is_done && (
+        <button
+          onClick={() => onMarkDone(item)}
+          disabled={isPending}
+          className="text-xs text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] disabled:opacity-40 transition-colors flex-shrink-0"
+        >
+          Mark done
+        </button>
+      )}
+    </div>
+  )
+}
+
+export default function BucketClient({
+  initialItems,
+  currentUserId,
+  currentUserName,
+  partnerId,
+  partnerName,
+  coupleId,
+}) {
+  const [items, setItems] = useState(initialItems)
+  const [activeFilter, setActiveFilter] = useState('all')
+  const [randomCategory, setRandomCategory] = useState('all')
+  const [pickedItem, setPickedItem] = useState(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [isClosingAdd, setIsClosingAdd] = useState(false)
+  const [showDoneSheet, setShowDoneSheet] = useState(null)
+  const [isSelecting, setIsSelecting] = useState(false)
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [isPending, startTransition] = useTransition()
+
+  // Realtime
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('bucket-' + coupleId)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bucket_items' },
+        (payload) => {
+          const row = payload.new ?? payload.old
+          if (row?.couple_id !== coupleId) return
+
+          if (payload.eventType === 'INSERT') {
+            setItems(prev =>
+              prev.some(i => i.id === payload.new.id) ? prev : [payload.new, ...prev]
+            )
+          } else if (payload.eventType === 'UPDATE') {
+            setItems(prev => prev.map(i => i.id === payload.new.id ? payload.new : i))
+          } else if (payload.eventType === 'DELETE') {
+            setItems(prev => prev.filter(i => i.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [coupleId])
+
+  function getUserName(userId) {
+    if (userId === currentUserId) return currentUserName
+    if (userId === partnerId) return partnerName ?? 'Partner'
+    return 'Unknown'
+  }
+
+  const filteredItems = activeFilter === 'done'
+    ? items.filter(i => i.is_done)
+    : activeFilter === 'all'
+    ? items.filter(i => !i.is_done)
+    : items.filter(i => !i.is_done && i.category === activeFilter)
+
+  function getPickerPool() {
+    const undone = items.filter(i => !i.is_done)
+    if (randomCategory === 'all') return undone
+    return undone.filter(i => i.category === randomCategory)
+  }
+
+  function handlePick() {
+    const pool = getPickerPool()
+    if (pool.length === 0) { setPickedItem(null); return }
+    setPickedItem(pool[Math.floor(Math.random() * pool.length)])
+  }
+
+  function handlePickAgain() {
+    const pool = getPickerPool()
+    if (pool.length === 0) { setPickedItem(null); return }
+    const others = pool.filter(i => i.id !== pickedItem?.id)
+    const source = others.length > 0 ? others : pool
+    setPickedItem(source[Math.floor(Math.random() * source.length)])
+  }
+
+  function handleCloseAdd() {
+    setIsClosingAdd(true)
+    setTimeout(() => { setShowAddForm(false); setIsClosingAdd(false) }, 220)
+  }
+
+  function handleMarkDoneSuccess() {
+    setShowDoneSheet(null)
+    setPickedItem(null)
+  }
+
+  function handleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function handleCancelSelecting() {
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+  }
+
+  function handleBulkMarkDone() {
+    const ids = filteredItems
+      .filter(i => selectedIds.has(i.id) && !i.is_done)
+      .map(i => i.id)
+    if (ids.length === 0) return
+    startTransition(async () => {
+      await bulkMarkDone(ids, coupleId)
+      setIsSelecting(false)
+      setSelectedIds(new Set())
+      setPickedItem(null)
+    })
+  }
+
+  const undoneItems = items.filter(i => !i.is_done)
+  const pickerPool = getPickerPool()
+
+  return (
+    <>
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Bucket list</h1>
+          {undoneItems.length > 0 && (
+            <button
+              onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
+              style={{ fontSize: '11px', fontWeight: 500 }}
+              className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+            >
+              {isSelecting ? 'Cancel' : 'Select'}
+            </button>
+          )}
+        </div>
+
+        {/* Random picker card */}
+        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+          <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-3">
+            Pick something random
+          </p>
+          <div className="flex gap-2 flex-wrap mb-3">
+            {PICKER_CATEGORIES.map(cat => (
+              <button
+                key={cat.key}
+                onClick={() => setRandomCategory(cat.key)}
+                className={`text-[12px] font-medium px-3 py-1 rounded-full border transition-colors
+                  ${randomCategory === cat.key
+                    ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
+                    : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
+                  }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handlePick}
+            disabled={pickerPool.length === 0}
+            className="w-full h-10 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30] disabled:opacity-40 transition-colors"
+          >
+            {pickerPool.length === 0 ? 'Nothing in this category yet' : '✦ Pick for us'}
+          </button>
+        </div>
+
+        {/* Filter tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {FILTER_TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveFilter(tab.key)}
+              className={`flex-shrink-0 h-8 px-3 rounded-full text-[12px] font-medium border transition-colors
+                ${activeFilter === tab.key
+                  ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
+                  : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Picked item result card */}
+        {pickedItem && !isSelecting && (
+          <div className="rounded-[14px] border border-[#C2493A] dark:border-[#F0907F] p-[14px] bg-[#FDECEA] dark:bg-[#3D1E18]">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C2493A] dark:text-[#F0907F] mb-1">
+              Tonight, go here
+            </p>
+            <p className="text-[16px] font-bold text-[#C2493A] dark:text-[#F0907F] mb-1">
+              {pickedItem.name}
+            </p>
+            <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mb-3 capitalize">
+              {CATEGORY_LABELS[pickedItem.category] ?? pickedItem.category} · Added by {getUserName(pickedItem.added_by_user_id)}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowDoneSheet(pickedItem)}
+                className="flex-1 h-9 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] transition-colors"
+              >
+                Mark as done
+              </button>
+              <button
+                onClick={handlePickAgain}
+                className="flex-1 h-9 rounded-xl border border-[#C2493A] dark:border-[#F0907F] text-[#C2493A] dark:text-[#F0907F] text-sm font-medium hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors"
+              >
+                Pick again
+              </button>
+            </div>
+            <button
+              onClick={() => setPickedItem(null)}
+              style={{ fontSize: '11px', fontWeight: 500, textAlign: 'center', display: 'block', width: '100%', padding: '6px 0', marginTop: '6px', marginBottom: '-8px', cursor: 'pointer', border: 'none', background: 'transparent' }}
+              className="text-[#A07060] dark:text-[#D4A090]"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
+        {/* Item list */}
+        {filteredItems.length === 0 ? (
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-12 text-center">
+            <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">
+              {activeFilter === 'done' ? 'No done items yet' : 'Nothing here yet'}
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+            {filteredItems.map(item => (
+              <BucketItemRow
+                key={item.id}
+                item={item}
+                addedByName={getUserName(item.added_by_user_id)}
+                onMarkDone={setShowDoneSheet}
+                isSelecting={isSelecting}
+                isSelected={selectedIds.has(item.id)}
+                onSelect={handleSelect}
+                isPending={isPending}
+              />
+            ))}
+          </div>
+        )}
+
+        <div className="h-20" />
+      </div>
+
+      {/* FAB */}
+      {!showAddForm && !showDoneSheet && !isSelecting && typeof document !== 'undefined' && createPortal(
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
+                     text-[28px] flex items-center justify-center z-20 transition-colors
+                     shadow-[0_4px_14px_rgba(194,73,58,0.30)] dark:shadow-[0_4px_14px_rgba(232,103,90,0.25)]
+                     hover:bg-[#A83D30] dark:hover:bg-[#E8675A]"
+          style={{ animation: 'fadeIn 300ms ease-out' }}
+          aria-label="Add bucket item"
+        >
+          +
+        </button>,
+        document.body
+      )}
+
+      {/* Bulk action bar */}
+      {isSelecting && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
+          style={{ animation: 'fadeIn 150ms ease-out' }}
+        >
+          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            {selectedIds.size === 0 ? (
+              <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
+            ) : (
+              <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
+            )}
+            <button
+              onClick={handleBulkMarkDone}
+              disabled={isPending || selectedIds.size === 0}
+              className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
+            >
+              {isPending ? 'Saving…' : 'Mark done'}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Add form slide-up */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-20 flex flex-col justify-end">
+          <div
+            className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
+            onClick={handleCloseAdd}
+          />
+          <div className={`relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto ${isClosingAdd ? 'animate-slide-down' : 'animate-slide-up'}`}>
+            <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Add to bucket list</h2>
+              <button
+                onClick={handleCloseAdd}
+                className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <AddBucketForm
+              coupleId={coupleId}
+              currentUserId={currentUserId}
+              onSuccess={handleCloseAdd}
+              onCancel={handleCloseAdd}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Mark as done sheet */}
+      {showDoneSheet && typeof document !== 'undefined' && createPortal(
+        <MarkDoneSheet
+          item={showDoneSheet}
+          coupleId={coupleId}
+          onSuccess={handleMarkDoneSuccess}
+          onCancel={() => setShowDoneSheet(null)}
+        />,
+        document.body
+      )}
+    </>
+  )
+}

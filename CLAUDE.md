@@ -237,12 +237,15 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Custom favicon (O lettermark)
 - Sign out moved to profile page
 
-### Phase 4 — Life (Bucket list + Date calendar)
+### Phase 4 — Bucket List & Memories
 - Shared bucket list: restaurants, cafes, cities, activities
 - Both partners can add items
 - Mark as done (becomes a memory)
+- Memories view: browse past completed bucket list items
 - Random picker from bucket list
-- Date calendar: plan upcoming dates, look back at past ones
+
+### Phase 4.5 — Date Calendar
+- Plan upcoming dates, look back at past ones
 - Link calendar entries to bucket list items
 
 ### Phase 5 — Trips

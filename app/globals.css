@@ -70,6 +70,14 @@ textarea {
   filter: invert(1);
 }
 
+/* ─── Hide scrollbars on overflow-x scroll containers ── */
+.scrollbar-none {
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 /* ─── Reduced motion ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
