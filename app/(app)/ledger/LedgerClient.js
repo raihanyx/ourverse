@@ -7,6 +7,7 @@ import { togglePaid, bulkSetPaid } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency, formatDate } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
+import LedgerHelpSheet from './LedgerHelpSheet'
 import Link from 'next/link'
 
 const CATEGORY_COLORS = {
@@ -141,6 +142,7 @@ export default function LedgerClient({
   const prevTabRef = useRef('owe_me')
   const [showForm, setShowForm] = useState(false)
   const [isClosing, setIsClosing] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const [isSelecting, setIsSelecting] = useState(false)
@@ -301,14 +303,28 @@ export default function LedgerClient({
       <div className="space-y-5">
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Ledger</h1>
-          {(unpaidSorted.length > 0 || paidPreview.length > 0) && (
+          <div className="flex items-center gap-[10px]">
             <button
-              onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
-              className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              onClick={() => setShowHelp(true)}
+              className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1]"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
-              {isSelecting ? 'Cancel' : 'Select'}
+              <span style={{ fontSize: '14px' }}>💡</span>
+              <span style={{ fontSize: '11px', fontWeight: 500 }}>Tip</span>
             </button>
-          )}
+            {(unpaidSorted.length > 0 || paidPreview.length > 0) && (
+              <>
+                <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+                <button
+                  onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
+                  style={{ fontSize: '11px', fontWeight: 500 }}
+                  className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+                >
+                  {isSelecting ? 'Cancel' : 'Select'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Tabs */}
@@ -392,8 +408,8 @@ export default function LedgerClient({
         <div className="h-20" />
       </div>
 
-      {/* FAB — hidden during selection mode */}
-      {!showForm && !isSelecting && typeof document !== 'undefined' && createPortal(
+      {/* FAB — hidden during selection mode and help sheet */}
+      {!showForm && !isSelecting && !showHelp && typeof document !== 'undefined' && createPortal(
         <button
           onClick={() => setShowForm(true)}
           className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
@@ -442,6 +458,13 @@ export default function LedgerClient({
         </div>,
         document.body
       )}
+
+      {/* Help sheet */}
+      <LedgerHelpSheet
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+        baseCurrency={baseCurrency}
+      />
 
       {/* Slide-up form panel */}
       {showForm && (
