@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
-import { bulkMarkDone } from '@/app/actions/bucket'
+import { bulkMarkDone, bulkDeleteBucketItems } from '@/app/actions/bucket'
 import AddBucketForm from './AddBucketForm'
 import MarkDoneSheet from './MarkDoneSheet'
 
@@ -115,6 +115,7 @@ export default function BucketClient({
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [isPending, startTransition] = useTransition()
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   // Realtime
   useEffect(() => {
@@ -176,12 +177,30 @@ export default function BucketClient({
     setPickedItem(source[Math.floor(Math.random() * source.length)])
   }
 
+  async function refetchItems() {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('bucket_items')
+      .select('*')
+      .eq('couple_id', coupleId)
+      .order('created_at', { ascending: false })
+    if (data) setItems(data)
+  }
+
   function handleCloseAdd() {
     setIsClosingAdd(true)
     setTimeout(() => { setShowAddForm(false); setIsClosingAdd(false) }, 220)
   }
 
+  function handleAddSuccess() {
+    refetchItems()
+    handleCloseAdd()
+  }
+
   function handleMarkDoneSuccess() {
+    if (showDoneSheet) {
+      setItems(prev => prev.map(i => i.id === showDoneSheet.id ? { ...i, is_done: true } : i))
+    }
     setShowDoneSheet(null)
     setPickedItem(null)
   }
@@ -199,16 +218,32 @@ export default function BucketClient({
     setSelectedIds(new Set())
   }
 
+  function handleBulkDelete() {
+    const ids = filteredItems
+      .filter(i => selectedIds.has(i.id))
+      .map(i => i.id)
+    if (ids.length === 0) return
+    setItems(prev => prev.filter(i => !ids.includes(i.id)))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+    setPickedItem(null)
+    startDeleteTransition(async () => {
+      await bulkDeleteBucketItems(ids)
+    })
+  }
+
   function handleBulkMarkDone() {
     const ids = filteredItems
       .filter(i => selectedIds.has(i.id) && !i.is_done)
       .map(i => i.id)
     if (ids.length === 0) return
+    // Optimistically mark items as done so they disappear immediately
+    setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: true } : i))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+    setPickedItem(null)
     startTransition(async () => {
       await bulkMarkDone(ids, coupleId)
-      setIsSelecting(false)
-      setSelectedIds(new Set())
-      setPickedItem(null)
     })
   }
 
@@ -218,16 +253,16 @@ export default function BucketClient({
   return (
     <>
       <div className="space-y-5">
+        <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Bucket list</h1>
           {undoneItems.length > 0 && (
             <button
               onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-              style={{ fontSize: '11px', fontWeight: 500 }}
-              className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
             >
-              {isSelecting ? 'Cancel' : 'Select'}
+              {isSelecting ? 'Cancel' : 'Edit'}
             </button>
           )}
         </div>
@@ -259,6 +294,7 @@ export default function BucketClient({
           >
             {pickerPool.length === 0 ? 'Nothing in this category yet' : '✦ Pick for us'}
           </button>
+        </div>
         </div>
 
         {/* Filter tabs */}
@@ -369,13 +405,22 @@ export default function BucketClient({
             ) : (
               <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
             )}
-            <button
-              onClick={handleBulkMarkDone}
-              disabled={isPending || selectedIds.size === 0}
-              className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
-            >
-              {isPending ? 'Saving…' : 'Mark done'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleBulkDelete}
+                disabled={isDeleting || selectedIds.size === 0}
+                className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors"
+              >
+                {isDeleting ? 'Deleting…' : 'Delete'}
+              </button>
+              <button
+                onClick={handleBulkMarkDone}
+                disabled={isPending || selectedIds.size === 0}
+                className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
+              >
+                {isPending ? 'Saving…' : 'Mark done'}
+              </button>
+            </div>
           </div>
         </div>,
         document.body
@@ -403,7 +448,7 @@ export default function BucketClient({
             <AddBucketForm
               coupleId={coupleId}
               currentUserId={currentUserId}
-              onSuccess={handleCloseAdd}
+              onSuccess={handleAddSuccess}
               onCancel={handleCloseAdd}
             />
           </div>

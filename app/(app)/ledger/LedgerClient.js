@@ -301,6 +301,7 @@ export default function LedgerClient({
   return (
     <>
       <div className="space-y-5">
+        <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Ledger</h1>
           <div className="flex items-center gap-[10px]">
@@ -311,7 +312,7 @@ export default function LedgerClient({
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
               >
                 <span style={{ fontSize: '14px' }}>💡</span>
-                <span style={{ fontSize: '11px', fontWeight: 500 }}>Tip</span>
+                <span className="text-sm font-medium">Tip</span>
               </button>
             )}
             {(unpaidSorted.length > 0 || paidPreview.length > 0) && (
@@ -319,10 +320,9 @@ export default function LedgerClient({
                 {!isSelecting && <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />}
                 <button
                   onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
-                  style={{ fontSize: '11px', fontWeight: 500 }}
-                  className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+                  className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
                 >
-                  {isSelecting ? 'Cancel' : 'Select'}
+                  {isSelecting ? 'Cancel' : 'Edit'}
                 </button>
               </>
             )}
@@ -344,6 +344,7 @@ export default function LedgerClient({
               {tab.label}
             </button>
           ))}
+        </div>
         </div>
 
         {/* Animated tab content */}

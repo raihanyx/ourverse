@@ -26,7 +26,7 @@ export default async function MemoriesPage() {
 
   return (
     <PageTransition>
-      <MemoriesClient initialMemories={memories ?? []} />
+      <MemoriesClient initialMemories={memories ?? []} coupleId={profile.couple_id} />
     </PageTransition>
   )
 }

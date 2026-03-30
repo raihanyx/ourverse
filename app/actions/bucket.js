@@ -86,6 +86,7 @@ export async function bulkMarkDone(ids, coupleId) {
     .from('bucket_items')
     .select('id, name, category')
     .in('id', ids)
+    .eq('is_done', false)
 
   if (!bucketItems?.length) return { error: 'Items not found.' }
 
@@ -161,6 +162,54 @@ export async function deleteBucketItem(id) {
   const { error } = await supabase.from('bucket_items').delete().eq('id', id)
   if (error) return { error: 'Could not delete item.' }
 
+  revalidatePath('/bucket')
+  return { success: true }
+}
+
+export async function bulkDeleteBucketItems(ids) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+  if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+
+  const { error } = await supabase.from('bucket_items').delete().in('id', ids)
+  if (error) return { error: 'Could not delete items.' }
+
+  revalidatePath('/bucket')
+  revalidatePath('/memories')
+  return { success: true }
+}
+
+export async function bulkDeleteMemories(ids) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+  if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+
+  const { data: memories } = await supabase
+    .from('memories')
+    .select('id, bucket_item_id')
+    .in('id', ids)
+
+  if (!memories?.length) return { error: 'Memories not found.' }
+
+  const { error: deleteMemoriesError } = await supabase
+    .from('memories')
+    .delete()
+    .in('id', ids)
+
+  if (deleteMemoriesError) return { error: 'Could not delete memories.' }
+
+  const bucketItemIds = memories.map(m => m.bucket_item_id).filter(Boolean)
+  if (bucketItemIds.length > 0) {
+    await supabase.from('bucket_items').delete().in('id', bucketItemIds)
+  }
+
+  revalidatePath('/memories')
   revalidatePath('/bucket')
   return { success: true }
 }

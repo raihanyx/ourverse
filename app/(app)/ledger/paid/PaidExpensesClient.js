@@ -148,7 +148,7 @@ export default function PaidExpensesClient({
               onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
               className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
             >
-              {isSelecting ? 'Cancel' : 'Select'}
+              {isSelecting ? 'Cancel' : 'Edit'}
             </button>
           )}
           {!isSelecting && (
