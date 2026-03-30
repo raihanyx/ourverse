@@ -304,17 +304,19 @@ export default function LedgerClient({
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Ledger</h1>
           <div className="flex items-center gap-[10px]">
-            <button
-              onClick={() => setShowHelp(true)}
-              className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1]"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              <span style={{ fontSize: '14px' }}>💡</span>
-              <span style={{ fontSize: '11px', fontWeight: 500 }}>Tip</span>
-            </button>
+            {!isSelecting && (
+              <button
+                onClick={() => setShowHelp(true)}
+                className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1]"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                <span style={{ fontSize: '14px' }}>💡</span>
+                <span style={{ fontSize: '11px', fontWeight: 500 }}>Tip</span>
+              </button>
+            )}
             {(unpaidSorted.length > 0 || paidPreview.length > 0) && (
               <>
-                <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+                {!isSelecting && <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />}
                 <button
                   onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
                   style={{ fontSize: '11px', fontWeight: 500 }}
@@ -424,30 +426,32 @@ export default function LedgerClient({
         document.body
       )}
 
-      {/* Bulk action bar — portalled, appears when items are selected */}
-      {isSelecting && selectedIds.size > 0 && typeof document !== 'undefined' && createPortal(
+      {/* Bulk action bar — portalled, appears when in select mode */}
+      {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
           style={{ animation: 'fadeIn 150ms ease-out' }}
         >
           <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
-            <span className="text-sm text-[#A07060] dark:text-[#D4A090]">
-              {selectedIds.size} selected
-            </span>
+            {selectedIds.size === 0 ? (
+              <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
+            ) : (
+              <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
+            )}
             <div className="flex gap-2">
-              {hasSelectedPaid && (
+              {(hasSelectedPaid || selectedIds.size === 0) && (
                 <button
                   onClick={handleBulkUndo}
-                  disabled={isPending}
+                  disabled={isPending || selectedIds.size === 0}
                   className="h-9 px-4 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:bg-[#F5EDE9] dark:hover:bg-[#3D2820] disabled:opacity-40 transition-colors"
                 >
                   Undo paid
                 </button>
               )}
-              {hasSelectedUnpaid && (
+              {(hasSelectedUnpaid || selectedIds.size === 0) && (
                 <button
                   onClick={handleBulkMarkPaid}
-                  disabled={isPending}
+                  disabled={isPending || selectedIds.size === 0}
                   className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
                 >
                   Mark paid
