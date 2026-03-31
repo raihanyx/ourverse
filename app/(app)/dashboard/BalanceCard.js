@@ -22,7 +22,7 @@ export default function BalanceCard({
   const hasRates = theyOweMeUnified !== null || iOweThemUnified !== null
 
   return (
-    <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+    <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider">
           Balance
@@ -47,23 +47,31 @@ export default function BalanceCard({
           You&apos;re all settled up ✓
         </p>
       ) : (
-        <div className="space-y-1.5">
-          {/* Summary lines — unified totals or per-currency fallback */}
+        <div className="space-y-2.5">
+          {/* Summary rows — accent left-border with label + prominent amount */}
           {hasTheyOweMe && (
-            <p className="text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] break-words">
-              {partnerName} owes you{' '}
-              {theyOweMeUnified !== null
-                ? formatAmount(theyOweMeUnified, baseCurrency)
-                : theyOweMeEntries.map(([c, v]) => formatAmount(v, c)).join(' · ')}
-            </p>
+            <div className="pl-3 border-l-2 border-[#C2493A] dark:border-[#E8675A] py-0.5">
+              <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] font-medium uppercase tracking-wide mb-0.5">
+                {partnerName} owes you
+              </p>
+              <p className="text-[20px] font-bold text-[#1C1210] dark:text-[#FAF3F1] leading-none break-words">
+                {theyOweMeUnified !== null
+                  ? formatAmount(theyOweMeUnified, baseCurrency)
+                  : theyOweMeEntries.map(([c, v]) => formatAmount(v, c)).join(' · ')}
+              </p>
+            </div>
           )}
           {hasIOweThem && (
-            <p className="text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1] break-words">
-              You owe {partnerName}{' '}
-              {iOweThemUnified !== null
-                ? formatAmount(iOweThemUnified, baseCurrency)
-                : iOweThemEntries.map(([c, v]) => formatAmount(v, c)).join(' · ')}
-            </p>
+            <div className="pl-3 border-l-2 border-[#A07060] dark:border-[#C49080] py-0.5">
+              <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] font-medium uppercase tracking-wide mb-0.5">
+                You owe {partnerName}
+              </p>
+              <p className="text-[20px] font-bold text-[#1C1210] dark:text-[#FAF3F1] leading-none break-words">
+                {iOweThemUnified !== null
+                  ? formatAmount(iOweThemUnified, baseCurrency)
+                  : iOweThemEntries.map(([c, v]) => formatAmount(v, c)).join(' · ')}
+              </p>
+            </div>
           )}
 
           {/* Toggle button — only shown when there's a breakdown to reveal */}
