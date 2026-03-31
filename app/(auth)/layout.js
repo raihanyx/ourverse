@@ -8,7 +8,7 @@ export default function AuthLayout({ children }) {
           </h1>
           <p className="text-sm text-[#A07060] dark:text-[#D4A090] mt-1">your world, together</p>
         </div>
-        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-8">
+        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-6">
           {children}
         </div>
       </div>

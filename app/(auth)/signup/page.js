@@ -3,12 +3,13 @@
 import { useActionState } from 'react'
 import { signup } from '@/app/actions/auth'
 import Link from 'next/link'
+import PageTransition from '@/app/components/PageTransition'
 
 export default function SignupPage() {
   const [state, formAction, isPending] = useActionState(signup, null)
 
   return (
-    <>
+    <PageTransition>
       <h2 className="text-xl font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Create your account</h2>
       <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-6">Start your couple space in seconds</p>
 
@@ -30,7 +31,7 @@ export default function SignupPage() {
             autoComplete="name"
             required
             className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
-            placeholder="What your partner calls you"
+            placeholder="Your name or nickname"
           />
         </div>
 
@@ -80,6 +81,6 @@ export default function SignupPage() {
           Sign in
         </Link>
       </p>
-    </>
+    </PageTransition>
   )
 }

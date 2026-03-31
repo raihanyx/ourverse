@@ -3,12 +3,13 @@
 import { useActionState } from 'react'
 import { login } from '@/app/actions/auth'
 import Link from 'next/link'
+import PageTransition from '@/app/components/PageTransition'
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, null)
 
   return (
-    <>
+    <PageTransition>
       <h2 className="text-xl font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Welcome back</h2>
       <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-6">Sign in to your couple space</p>
 
@@ -64,6 +65,6 @@ export default function LoginPage() {
           Create an account
         </Link>
       </p>
-    </>
+    </PageTransition>
   )
 }

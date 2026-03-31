@@ -264,19 +264,22 @@ export default function BucketClient({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               onClick={() => setShowHelp(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+              className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1]"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
             >
-              <span style={{ fontSize: 14 }}>💡</span>
-              <span style={{ fontSize: 11, fontWeight: 500 }} className="text-[#A07060] dark:text-[#D4A090]">Tip</span>
+              <span style={{ fontSize: '14px' }}>💡</span>
+              <span className="text-sm font-medium">Tip</span>
             </button>
-            <div style={{ width: 1, height: 14 }} className="bg-[#EDE0DC] dark:bg-[#3D2820]" />
             {undoneItems.length > 0 && (
-              <button
-                onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
-              >
-                {isSelecting ? 'Cancel' : 'Edit'}
-              </button>
+              <>
+                {!isSelecting && <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />}
+                <button
+                  onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
+                  className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+                >
+                  {isSelecting ? 'Cancel' : 'Edit'}
+                </button>
+              </>
             )}
           </div>
         </div>
