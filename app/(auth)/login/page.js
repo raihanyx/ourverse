@@ -10,8 +10,8 @@ export default function LoginPage() {
 
   return (
     <PageTransition>
-      <h2 className="text-xl font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Welcome back</h2>
-      <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-6">Sign in to your couple space</p>
+      <h2 className="text-lg font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-0.5">Welcome back</h2>
+      <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-5">Sign in to your couple space</p>
 
       <form action={formAction} className="space-y-4">
         {state?.error && (
