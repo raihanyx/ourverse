@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { createPortal } from 'react-dom'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { bulkMarkDone, bulkDeleteBucketItems } from '@/app/actions/bucket'
 import AddBucketForm from './AddBucketForm'
 import MarkDoneSheet from './MarkDoneSheet'
+import BucketHelpSheet from './BucketHelpSheet'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -104,6 +106,7 @@ export default function BucketClient({
   partnerId,
   partnerName,
   coupleId,
+  memoriesCount,
 }) {
   const [items, setItems] = useState(initialItems)
   const [activeFilter, setActiveFilter] = useState('all')
@@ -116,6 +119,7 @@ export default function BucketClient({
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
+  const [showHelp, setShowHelp] = useState(false)
 
   // Realtime
   useEffect(() => {
@@ -257,27 +261,50 @@ export default function BucketClient({
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Bucket list</h1>
-          {undoneItems.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
-              onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-              className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              onClick={() => setShowHelp(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
             >
-              {isSelecting ? 'Cancel' : 'Edit'}
+              <span style={{ fontSize: 14 }}>💡</span>
+              <span style={{ fontSize: 11, fontWeight: 500 }} className="text-[#A07060] dark:text-[#D4A090]">Tip</span>
             </button>
-          )}
+            <div style={{ width: 1, height: 14 }} className="bg-[#EDE0DC] dark:bg-[#3D2820]" />
+            {undoneItems.length > 0 && (
+              <button
+                onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
+                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              >
+                {isSelecting ? 'Cancel' : 'Edit'}
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Memories link card */}
+        <Link href="/memories">
+          <div className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] flex items-center justify-between" style={{ padding: '13px 16px', marginBottom: '10px' }}>
+            <div>
+              <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">✦ Memories</p>
+              <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+                {memoriesCount === 0 ? 'Nothing done together yet' : `${memoriesCount} things you've done together`}
+              </p>
+            </div>
+            <span className="text-[14px] text-[#C2493A] dark:text-[#F0907F]">→</span>
+          </div>
+        </Link>
 
         {/* Random picker card */}
         <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
           <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-3">
             Pick something random
           </p>
-          <div className="flex gap-2 flex-wrap mb-3">
+          <div className="flex gap-[6px] overflow-x-auto pb-1 mb-3 scrollbar-none" style={{ flexWrap: 'nowrap' }}>
             {PICKER_CATEGORIES.map(cat => (
               <button
                 key={cat.key}
                 onClick={() => setRandomCategory(cat.key)}
-                className={`text-[12px] font-medium px-3 py-1 rounded-full border transition-colors
+                className={`flex-shrink-0 text-[12px] font-medium px-3 py-1 rounded-full border transition-colors
                   ${randomCategory === cat.key
                     ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
                     : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
@@ -378,7 +405,7 @@ export default function BucketClient({
       </div>
 
       {/* FAB */}
-      {!showAddForm && !showDoneSheet && !isSelecting && typeof document !== 'undefined' && createPortal(
+      {!showAddForm && !showDoneSheet && !isSelecting && !showHelp && typeof document !== 'undefined' && createPortal(
         <button
           onClick={() => setShowAddForm(true)}
           className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
@@ -465,6 +492,12 @@ export default function BucketClient({
         />,
         document.body
       )}
+
+      {/* Help sheet */}
+      <BucketHelpSheet
+        isOpen={showHelp}
+        onClose={() => setShowHelp(false)}
+      />
     </>
   )
 }

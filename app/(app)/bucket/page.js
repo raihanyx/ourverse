@@ -31,6 +31,11 @@ export default async function BucketPage() {
     .eq('couple_id', profile.couple_id)
     .order('created_at', { ascending: false })
 
+  const { count: memoriesCount } = await supabase
+    .from('memories')
+    .select('id', { count: 'exact', head: true })
+    .eq('couple_id', profile.couple_id)
+
   return (
     <PageTransition>
       <BucketClient
@@ -40,6 +45,7 @@ export default async function BucketPage() {
         partnerId={partner?.id ?? null}
         partnerName={partner?.name ?? null}
         coupleId={profile.couple_id}
+        memoriesCount={memoriesCount ?? 0}
       />
     </PageTransition>
   )

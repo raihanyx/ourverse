@@ -54,17 +54,7 @@ export default function NavLinks() {
       >
         Bucket
       </Link>
-      <Link
-        href="/memories"
-        className={`text-[13px] font-medium transition-colors border-b-2
-          ${pathname === '/memories'
-            ? 'text-[#C2493A] dark:text-[#F0907F] border-[#C2493A] dark:border-[#F0907F]'
-            : 'text-[#A07060] dark:text-[#C49080] border-transparent'
-          }`}
-      >
-        Memories
-      </Link>
-      <Link
+<Link
         href="/profile"
         className={`text-[13px] font-medium transition-colors border-b-2
           ${pathname === '/profile'

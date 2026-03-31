@@ -98,14 +98,24 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
       <div>
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</h1>
-          {memories.length > 0 && (
-            <button
-              onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-              className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
-            >
-              {isSelecting ? 'Cancel' : 'Edit'}
-            </button>
-          )}
+          <div className="flex items-center gap-4">
+            {memories.length > 0 && (
+              <button
+                onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
+                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              >
+                {isSelecting ? 'Cancel' : 'Edit'}
+              </button>
+            )}
+            {!isSelecting && (
+              <Link
+                href="/bucket"
+                className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              >
+                ← Back
+              </Link>
+            )}
+          </div>
         </div>
         <p className="mt-1 mb-3 text-[13px] text-[#A07060] dark:text-[#D4A090]">
           Things you've done together
