@@ -1,6 +1,6 @@
 export default function BucketLoading() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-loading">
 
       {/* Header row: "Bucket list" + [Tip] | [Edit] | [Add pill] */}
         <div className="flex items-center justify-between">

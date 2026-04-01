@@ -23,6 +23,10 @@ textarea {
 }
 
 /* ─── Page & tab animations ─────────────────────────── */
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @keyframes fadeSlideInRight {
   from { opacity: 0; transform: translateX(10px); }
   to   { opacity: 1; transform: translateX(0); }
@@ -59,6 +63,7 @@ textarea {
 .animate-slide-down { animation: slideDown 220ms ease-in forwards; }
 .animate-fade-in    { animation: fadeIn    200ms ease-out; }
 .animate-fade-out   { animation: fadeOut   200ms ease-in forwards; }
+.animate-loading    { animation: fadeIn    200ms ease-out 300ms both; }
 
 /* ─── Expense row paid toggle ────────────────────────── */
 .expense-row-transition {

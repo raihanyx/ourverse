@@ -1,6 +1,6 @@
 export default function ProfileLoading() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-loading">
       <div className="h-7 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
 
       <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">

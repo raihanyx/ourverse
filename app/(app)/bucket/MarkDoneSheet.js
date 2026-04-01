@@ -13,7 +13,7 @@ export default function MarkDoneSheet({ item, coupleId, onSuccess, onCancel }) {
   const today = new Date().toLocaleDateString('en-CA')
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-end">
+    <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
         className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
         onClick={onCancel}

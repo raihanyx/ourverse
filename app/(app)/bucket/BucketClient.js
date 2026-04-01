@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,6 +8,7 @@ import { bulkMarkDone, bulkDeleteBucketItems } from '@/app/actions/bucket'
 import AddBucketForm from './AddBucketForm'
 import MarkDoneSheet from './MarkDoneSheet'
 import BucketHelpSheet from './BucketHelpSheet'
+import ConfirmSheet from '@/app/components/ConfirmSheet'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -120,6 +121,20 @@ export default function BucketClient({
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
   const [showHelp, setShowHelp] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  const refetchItems = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('bucket_items')
+      .select('*')
+      .eq('couple_id', coupleId)
+      .order('created_at', { ascending: false })
+    if (data) setItems(data)
+  }, [coupleId])
+
+  // Sync on mount — corrects stale initialItems from router cache
+  useEffect(() => { refetchItems() }, [refetchItems])
 
   // Realtime
   useEffect(() => {
@@ -181,16 +196,6 @@ export default function BucketClient({
     setPickedItem(source[Math.floor(Math.random() * source.length)])
   }
 
-  async function refetchItems() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('bucket_items')
-      .select('*')
-      .eq('couple_id', coupleId)
-      .order('created_at', { ascending: false })
-    if (data) setItems(data)
-  }
-
   function handleCloseAdd() {
     setIsClosingAdd(true)
     setTimeout(() => { setShowAddForm(false); setIsClosingAdd(false) }, 220)
@@ -223,10 +228,16 @@ export default function BucketClient({
   }
 
   function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    setShowDeleteConfirm(true)
+  }
+
+  function handleConfirmDelete() {
     const ids = filteredItems
       .filter(i => selectedIds.has(i.id))
       .map(i => i.id)
     if (ids.length === 0) return
+    setShowDeleteConfirm(false)
     setItems(prev => prev.filter(i => !ids.includes(i.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
@@ -449,10 +460,10 @@ export default function BucketClient({
       {/* Bulk action bar */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
-          style={{ animation: 'fadeIn 150ms ease-out' }}
+          className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
+          style={{ animation: 'fadeIn 150ms ease-out', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between gap-3">
             {selectedIds.size === 0 ? (
               <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
             ) : (
@@ -524,6 +535,17 @@ export default function BucketClient({
         isOpen={showHelp}
         onClose={() => setShowHelp(false)}
       />
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
+        <ConfirmSheet
+          message={`Delete ${selectedIds.size} item${selectedIds.size === 1 ? '' : 's'}? This can't be undone.`}
+          confirmLabel="Delete"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />,
+        document.body
+      )}
     </>
   )
 }

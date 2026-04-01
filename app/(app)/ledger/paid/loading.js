@@ -1,6 +1,6 @@
 export default function PaidExpensesLoading() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-loading">
       {/* Heading block: back link + title row */}
       <div className="space-y-1">
         <div className="h-3 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />

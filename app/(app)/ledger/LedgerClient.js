@@ -3,11 +3,12 @@
 import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
-import { togglePaid, bulkSetPaid } from '@/app/actions/expenses'
+import { togglePaid, bulkSetPaid, bulkDeleteExpenses } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency, formatDate } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
 import LedgerHelpSheet from './LedgerHelpSheet'
+import ConfirmSheet from '@/app/components/ConfirmSheet'
 import Link from 'next/link'
 
 const CATEGORY_COLORS = {
@@ -147,6 +148,8 @@ export default function LedgerClient({
 
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isDeleting, startDeleteTransition] = useTransition()
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -158,6 +161,9 @@ export default function LedgerClient({
       .order('created_at', { ascending: false })
     if (data) setExpenses(data)
   }, [coupleId])
+
+  // Sync on mount — corrects stale initialExpenses from router cache
+  useEffect(() => { refetch() }, [refetch])
 
   // Realtime subscription — no server-side filter (more reliable across configs)
   useEffect(() => {
@@ -262,6 +268,22 @@ export default function LedgerClient({
       await refetch()
       setIsSelecting(false)
       setSelectedIds(new Set())
+    })
+  }
+
+  function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    setShowDeleteConfirm(true)
+  }
+
+  function handleConfirmDelete() {
+    const ids = [...selectedIds]
+    setShowDeleteConfirm(false)
+    setExpenses(prev => prev.filter(e => !ids.includes(e.id)))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+    startDeleteTransition(async () => {
+      await bulkDeleteExpenses(ids)
     })
   }
 
@@ -444,26 +466,28 @@ export default function LedgerClient({
       {/* Bulk action bar — portalled, appears when in select mode */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
-          style={{ animation: 'fadeIn 150ms ease-out' }}
+          className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
+          style={{ animation: 'fadeIn 150ms ease-out', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between gap-3">
             {selectedIds.size === 0 ? (
               <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
+            ) : hasSelectedPaid && hasSelectedUnpaid ? (
+              <span className="text-sm text-[#C4A89E] dark:text-[#A07868]">Select only paid or unpaid</span>
             ) : (
               <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
             )}
             <div className="flex gap-2">
-              {(hasSelectedPaid || selectedIds.size === 0) && (
+              {selectedIds.size > 0 && (
                 <button
-                  onClick={handleBulkUndo}
-                  disabled={isPending || selectedIds.size === 0}
-                  className="h-9 px-4 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:bg-[#F5EDE9] dark:hover:bg-[#3D2820] disabled:opacity-40 transition-colors"
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors"
                 >
-                  Undo paid
+                  {isDeleting ? 'Deleting…' : 'Delete'}
                 </button>
               )}
-              {(hasSelectedUnpaid || selectedIds.size === 0) && (
+              {!hasSelectedPaid && (hasSelectedUnpaid || selectedIds.size === 0) && (
                 <button
                   onClick={handleBulkMarkPaid}
                   disabled={isPending || selectedIds.size === 0}
@@ -472,9 +496,29 @@ export default function LedgerClient({
                   Mark paid
                 </button>
               )}
+              {!hasSelectedUnpaid && (hasSelectedPaid || selectedIds.size === 0) && (
+                <button
+                  onClick={handleBulkUndo}
+                  disabled={isPending || selectedIds.size === 0}
+                  className="h-9 px-4 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:bg-[#F5EDE9] dark:hover:bg-[#3D2820] disabled:opacity-40 transition-colors"
+                >
+                  Undo paid
+                </button>
+              )}
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
+        <ConfirmSheet
+          message={`Delete ${selectedIds.size} expense${selectedIds.size === 1 ? '' : 's'}? This can't be undone.`}
+          confirmLabel="Delete"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />,
         document.body
       )}
 
