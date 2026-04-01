@@ -2,8 +2,10 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { updateName } from '@/app/actions/profile'
+import { useTheme } from '@/app/ThemeProvider'
 
 export default function ProfileClient({ name, email }) {
+  const { theme, toggle } = useTheme()
   const [editing, setEditing] = useState(false)
   const [displayName, setDisplayName] = useState(name)
   const [draft, setDraft] = useState(name)
@@ -96,6 +98,32 @@ export default function ProfileClient({ name, email }) {
         <div className="mt-4">
           <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-1">Email</p>
           <p className="text-sm text-[#1C1210] dark:text-[#FAF3F1]">{email}</p>
+        </div>
+      </div>
+
+      {/* Appearance */}
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
+        <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-4">
+          Appearance
+        </h2>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-[#1C1210] dark:text-[#FAF3F1]">
+              {theme === 'dark' ? 'Dark mode' : 'Light mode'}
+            </p>
+            <p className="text-xs text-[#A07060] dark:text-[#D4A090] mt-0.5">
+              Follows your system preference by default
+            </p>
+          </div>
+          <button
+            onClick={toggle}
+            aria-label="Toggle theme"
+            className="cursor-pointer"
+          >
+            <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${theme === 'dark' ? 'bg-[#C2493A] dark:bg-[#E8675A]' : 'bg-[#EDE0DC] dark:bg-[#3D2820]'}`}>
+              <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${theme === 'dark' ? 'translate-x-5' : 'translate-x-0.5'}`} />
+            </div>
+          </button>
         </div>
       </div>
     </div>

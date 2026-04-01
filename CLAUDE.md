@@ -36,24 +36,41 @@ These are breaking changes from earlier versions — do not skip these:
 ```
 app/
   (app)/                  Protected routes (require auth + couple_id)
-    layout.js             Auth guard + header with nav (logo, Ledger, Profile, theme toggle)
+    layout.js             Auth guard + sticky top header (logo only) + renders NavLinks
+    NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Profile, theme toggle)
     dashboard/
       page.js             Server component — balance summary + couple info + together card
       BalanceCard.js      Client component — balance amounts + base currency selector
       CurrencySettings.js Client component — per-user base currency dropdown (used inside BalanceCard)
+      InviteCodeBadge.js  Client component — displays + copies invite code
       TogetherCard.js     Client component — relationship duration counter or date picker empty state
       RealtimeRefresh.js  Client component — router.refresh() on expenses/couples realtime + tab focus
       loading.js          Dashboard loading skeleton
     ledger/
       page.js             Server component — fetches expenses + rates
-      LedgerClient.js     Client component — tabs, realtime, FAB, select mode
+      LedgerClient.js     Client component — tabs, realtime, header Add button, select mode
       AddExpenseForm.js   Slide-up add expense form (with StyledSelect helper for custom arrows)
-      LedgerHelpSheet.js  Slide-up help sheet explaining ledger rules (opened via 💡 Tip button)
+      LedgerHelpSheet.js  Slide-up help sheet explaining ledger rules (opened via Tip button)
       loading.js          Ledger loading skeleton
       paid/
         page.js           Server component — fetches paid expenses
-        PaidExpensesClient.js  Client component — paid list, undo, select mode
+        PaidExpensesClient.js  Client component — paid list, undo, select mode, back link to /ledger
         loading.js        Paid expenses loading skeleton
+    bucket/
+      page.js             Server component — fetches bucket items + memories count
+      BucketClient.js     Client component — filter tabs, random picker, realtime, header Add button, select mode
+      AddBucketForm.js    Slide-up add bucket item form
+      BucketHelpSheet.js  Slide-up help sheet for bucket list
+      MarkDoneSheet.js    Slide-up sheet — mark item as done, pick a date, create a memory
+      loading.js          Bucket loading skeleton
+    memories/
+      page.js             Server component — fetches memories
+      MemoriesClient.js   Client component — memory list, select mode, bulk delete, back link to /bucket
+      loading.js          Memories loading skeleton
+    profile/
+      page.js             Server component — fetches user profile; renders ProfileClient + sign out form
+      ProfileClient.js    Client component — edit name inline
+      loading.js          Profile loading skeleton
   (auth)/                 Public auth routes
     layout.js             Centered card layout
     login/page.js
@@ -64,9 +81,14 @@ app/
   actions/                Server Actions ('use server')
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
-    expenses.js           addExpense, togglePaid
+    expenses.js           addExpense, togglePaid, bulkSetPaid
+    bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, bulkDeleteMemories
+    profile.js            updateName
+  components/
+    PageTransition.js     Fade-in wrapper used on all protected pages
+  ThemeProvider.js        Client context — dark/light theme, persisted to localStorage
   icon.tsx                Custom favicon — "O" lettermark via next/og ImageResponse
-  layout.js               Root layout (Geist fonts, metadata)
+  layout.js               Root layout (Geist fonts, metadata, ThemeProvider)
   page.js                 Root redirect → /dashboard or /login
   globals.css             Tailwind import + base styles + dark mode date picker icon fix
 lib/
@@ -115,6 +137,30 @@ proxy.js                  Session refresh + route protection
 | notes | text | nullable |
 | created_at | timestamptz | |
 
+### `public.bucket_items`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| couple_id | uuid FK | References couples.id |
+| added_by_user_id | uuid FK | References auth.users |
+| name | text | |
+| category | text | restaurant / travel / activity / movie / other |
+| notes | text | nullable |
+| is_done | boolean | Default false — true when marked as a memory |
+| created_at | timestamptz | |
+
+### `public.memories`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| couple_id | uuid FK | References couples.id |
+| bucket_item_id | uuid FK | References bucket_items.id |
+| name | text | Copied from bucket item at time of marking done |
+| category | text | Copied from bucket item |
+| date | date | Date the thing was done (user-selected) |
+| note | text | nullable |
+| created_at | timestamptz | |
+
 All tables have RLS enabled. Policies use `get_my_couple_id()` (a `SECURITY DEFINER` function) to avoid infinite recursion when querying `public.users` inside policies.
 
 ---
@@ -147,7 +193,7 @@ const [state, formAction, isPending] = useActionState(action, null)
 // state.success → trigger onSuccess callback
 ```
 
-### Realtime — Ledger (client state)
+### Realtime — Ledger / Bucket (client state)
 - Subscribe without server-side filter (unreliable on some configs) — RLS handles row visibility
 - Always de-duplicate INSERTs by id before adding to state
 - After own mutations, call `refetch()` (browser Supabase client) — don't rely solely on realtime
@@ -178,20 +224,24 @@ const [state, formAction, isPending] = useActionState(action, null)
 
 ### Custom Select Dropdowns
 - Use `appearance: none` + a custom `▾` div positioned absolutely to replace native browser arrows
-- See `StyledSelect` in `AddExpenseForm.js` and `CurrencySettings.js` for the pattern
+- See `StyledSelect` in `AddExpenseForm.js` and `AddBucketForm.js` for the pattern
 - Arrow color: `#A07060` light / `#D4A090` dark
 
 ---
 
 ## UI Conventions
 
-- **Cards**: `bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]`
-- **Primary button**: `bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30]`
-- **Secondary button**: `rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090]`
+- **Cards**: `bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none`
+- **Primary button**: `bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30] cursor-pointer`
+- **Secondary button**: `rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] cursor-pointer`
 - **Inputs**: `h-11 px-3.5 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] text-sm focus:outline-none focus:border-[#C2493A]`
 - **Error field border**: `border-red-300 focus:ring-red-300`
 - **Inline field error**: `text-xs text-red-500 mt-1`
 - **Page layout**: `max-w-lg mx-auto px-4 py-6 space-y-5`
+- **All interactive buttons** must have `cursor-pointer` — do not rely on browser defaults
+- **Slide-up overlays** use `z-30` — the bottom nav is `z-20`; using `z-20` on an overlay causes the nav to paint on top
+- **Hiding without layout shift** — use `invisible` (not conditional rendering) when toggling visibility of elements that should keep their space (e.g. back links during select mode)
+- **Bottom nav**: `fixed bottom-0 z-20 h-16` — main content uses `pb-24` to clear it
 - **Color palette**:
   - Accent / primary action: `#C2493A` light · `#E8675A` / `#F0907F` dark
   - Primary text: `#1C1210` light · `#FAF3F1` dark
@@ -237,12 +287,14 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Custom favicon (O lettermark)
 - Sign out moved to profile page
 
-### Phase 4 — Bucket List & Memories
-- Shared bucket list: restaurants, cafes, cities, activities
-- Both partners can add items
-- Mark as done (becomes a memory)
-- Memories view: browse past completed bucket list items
-- Random picker from bucket list
+### ✅ Phase 4 — Bucket List & Memories
+- Shared bucket list: restaurants, cafes, cities, activities, movies
+- Both partners can add items; realtime sync via Supabase channel
+- Mark as done with a date → creates a memory entry
+- Memories view: browse past completed bucket list items, select + bulk delete
+- Random picker from bucket list (filterable by category)
+- Select mode with bulk mark-done and bulk delete
+- Memories link card on bucket page showing count
 
 ### Phase 4.5 — Date Calendar
 - Plan upcoming dates, look back at past ones
