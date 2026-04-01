@@ -25,7 +25,7 @@ export default async function ProfilePage() {
       <form action={logout} style={{ marginTop: '24px' }}>
         <button
           type="submit"
-          className="w-full bg-transparent border border-[#EDE0DC] dark:border-[#3D2820] text-[#C2493A] dark:text-[#F0907F] text-[14px] font-medium rounded-xl py-3 text-center transition-colors hover:bg-[#FDF7F6] dark:hover:bg-[#2E201C]"
+          className="w-full bg-transparent border border-[#EDE0DC] dark:border-[#3D2820] text-[#C2493A] dark:text-[#F0907F] text-[14px] font-medium rounded-xl py-3 text-center transition-colors hover:bg-[#FDF7F6] dark:hover:bg-[#2E201C] cursor-pointer"
         >
           Sign out
         </button>
