@@ -58,7 +58,7 @@ function PaidExpenseRow({ expense, onUndo, isPending, isSelecting, isSelected, o
           <button
             onClick={() => onUndo(expense.id)}
             disabled={isPending}
-            className="text-[13px] mt-0.5 disabled:opacity-40 transition-colors font-medium text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]"
+            className="text-[13px] mt-0.5 disabled:opacity-40 transition-colors cursor-pointer font-medium text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]"
           >
             Undo
           </button>
@@ -138,26 +138,27 @@ export default function PaidExpensesClient({
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
-          Paid expenses
-        </h1>
-        <div className="flex items-center gap-3">
+      <div className="space-y-1">
+        <Link
+          href="/ledger"
+          className={`inline-flex items-center gap-1 text-xs text-[#A07060] dark:text-[#D4A090] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors ${isSelecting ? 'invisible' : ''}`}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Ledger
+        </Link>
+        <div className="flex items-center justify-between">
+          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
+            Paid expenses
+          </h1>
           {sorted.length > 0 && (
             <button
               onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
-              className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+              className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
             >
               {isSelecting ? 'Cancel' : 'Edit'}
             </button>
-          )}
-          {!isSelecting && (
-            <Link
-              href="/ledger"
-              className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
-            >
-              ← Back
-            </Link>
           )}
         </div>
       </div>
@@ -167,7 +168,7 @@ export default function PaidExpensesClient({
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors
+            className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer
                         ${activeTab === tab.key
                           ? 'bg-white dark:bg-[#2E201C] text-[#1C1210] dark:text-[#FAF3F1] shadow-sm'
                           : 'text-[#A07060] dark:text-[#A07868] hover:text-[#1C1210] dark:hover:text-[#FAF3F1]'
@@ -178,10 +179,13 @@ export default function PaidExpensesClient({
         ))}
       </div>
 
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         {sorted.length === 0 ? (
-          <div className="py-10 text-center">
-            <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">No paid expenses here</p>
+          <div className="py-10 text-center space-y-2">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-[#D4C8C4] dark:text-[#5A3830]" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">Nothing marked as paid yet</p>
           </div>
         ) : (
           sorted.map(expense => (

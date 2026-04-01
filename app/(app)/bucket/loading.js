@@ -2,36 +2,32 @@ export default function BucketLoading() {
   return (
     <div className="space-y-5">
 
-      {/* Header + memories card + picker card — space-y-3 group */}
-      <div className="space-y-3">
-
-        {/* Header row: "Bucket list" + tip button + divider + "Edit" */}
+      {/* Header row: "Bucket list" + [Tip] | [Edit] | [Add pill] */}
         <div className="flex items-center justify-between">
           <div className="h-7 w-28 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
           <div className="flex items-center" style={{ gap: 10 }}>
-            {/* 💡 Tip stub — emoji + "Tip" text */}
             <div className="h-[14px] w-[30px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-            {/* Divider */}
             <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
-            {/* Edit stub */}
             <div className="h-4 w-6 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+            <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+            <div className="h-8 w-[62px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
           </div>
         </div>
 
         {/* Memories link card */}
-        <div
-          className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] flex items-center justify-between"
-          style={{ padding: '13px 16px' }}
-        >
-          <div className="space-y-[6px]">
-            <div className="h-[14px] w-[112px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-            <div className="h-[11px] w-[168px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] flex items-center justify-between px-4 py-[13px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse flex-shrink-0" />
+            <div className="space-y-[6px]">
+              <div className="h-[14px] w-[80px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+              <div className="h-[11px] w-[148px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+            </div>
           </div>
           <div className="h-[14px] w-3 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
         </div>
 
         {/* Random picker card */}
-        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
           {/* "Pick something random" label */}
           <div className="h-[10px] w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse mb-3" />
           {/* Category pills — single scrollable row, 6 pills */}
@@ -48,8 +44,6 @@ export default function BucketLoading() {
           <div className="h-10 w-full bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
         </div>
 
-      </div>
-
       {/* Filter tabs — 7 tabs: All · Restaurants · Travel · Activities · Movies · Other · Done */}
       <div className="flex gap-2 overflow-hidden">
         {[40, 94, 62, 82, 62, 60, 54].map((w, i) => (
@@ -62,7 +56,7 @@ export default function BucketLoading() {
       </div>
 
       {/* Item list card — 4 rows */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         {[
           { nameW: '58%' },
           { nameW: '72%' },

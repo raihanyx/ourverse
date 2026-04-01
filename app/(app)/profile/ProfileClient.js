@@ -25,7 +25,7 @@ export default function ProfileClient({ name, email }) {
     <div className="space-y-5">
       <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Profile</h1>
 
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-4">
           Account
         </h2>
@@ -62,7 +62,7 @@ export default function ProfileClient({ name, email }) {
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-lg font-medium text-sm disabled:opacity-50 transition-colors"
+                  className="flex-1 h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-lg font-medium text-sm disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   {isPending ? 'Saving…' : 'Save'}
                 </button>
@@ -70,7 +70,7 @@ export default function ProfileClient({ name, email }) {
                   type="button"
                   onClick={handleCancel}
                   disabled={isPending}
-                  className="flex-1 h-9 px-4 rounded-lg border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] disabled:opacity-50 transition-colors"
+                  className="flex-1 h-9 px-4 rounded-lg border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] disabled:opacity-50 transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -81,7 +81,7 @@ export default function ProfileClient({ name, email }) {
               <p className="text-sm text-[#1C1210] dark:text-[#FAF3F1]">{displayName}</p>
               <button
                 onClick={() => setEditing(true)}
-                className="text-xs text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline"
+                className="text-xs text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline cursor-pointer"
               >
                 Edit
               </button>

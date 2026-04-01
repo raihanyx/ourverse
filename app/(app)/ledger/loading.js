@@ -5,16 +5,20 @@ export default function LedgerLoading() {
       {/* Header + tabs — space-y-3 group */}
       <div className="space-y-3">
 
-        {/* Header row: "Ledger" + tip button + divider + "Edit" */}
+        {/* Header row: "Ledger" + [Tip] | [Edit] | [Add pill] */}
         <div className="flex items-center justify-between">
           <div className="h-7 w-14 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
           <div className="flex items-center" style={{ gap: 10 }}>
-            {/* 💡 Tip stub */}
+            {/* Tip stub */}
             <div className="h-[14px] w-[30px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
             {/* Divider */}
             <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
             {/* Edit stub */}
             <div className="h-4 w-6 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+            {/* Divider */}
+            <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+            {/* Add pill stub */}
+            <div className="h-8 w-[62px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
           </div>
         </div>
 
@@ -27,7 +31,7 @@ export default function LedgerLoading() {
       </div>
 
       {/* Totals card */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         {/* "X owes you" label — text-[10px] uppercase */}
         <div className="h-[10px] w-28 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse mb-[10px]" />
         {/* Amount badge — text-[13px] py-1 px-3 rounded-full */}
@@ -37,7 +41,7 @@ export default function LedgerLoading() {
       </div>
 
       {/* Expense list card — 4 rows */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         {[
           { nameW: '60%' },
           { nameW: '48%' },

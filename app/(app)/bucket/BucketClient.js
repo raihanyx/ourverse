@@ -90,7 +90,7 @@ function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected,
         <button
           onClick={() => onMarkDone(item)}
           disabled={isPending}
-          className="text-xs text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] disabled:opacity-40 transition-colors flex-shrink-0"
+          className="text-xs text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] disabled:opacity-40 transition-colors cursor-pointer flex-shrink-0"
         >
           Mark done
         </button>
@@ -257,27 +257,52 @@ export default function BucketClient({
   return (
     <>
       <div className="space-y-5">
-        <div className="space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
           <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Bucket list</h1>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={() => setShowHelp(true)}
-              className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1]"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              <span style={{ fontSize: '14px' }}>💡</span>
-              <span className="text-sm font-medium">Tip</span>
-            </button>
-            {undoneItems.length > 0 && (
+          <div className="flex items-center gap-[10px]">
+            {isSelecting ? (
+              <button
+                onClick={handleCancelSelecting}
+                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            ) : (
               <>
-                {!isSelecting && <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />}
                 <button
-                  onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-                  className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+                  onClick={() => setShowHelp(true)}
+                  className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1] cursor-pointer"
+                  style={{ background: 'none', border: 'none', padding: 0 }}
                 >
-                  {isSelecting ? 'Cancel' : 'Edit'}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                  <span className="text-sm font-medium">Tip</span>
+                </button>
+                {undoneItems.length > 0 && (
+                  <>
+                    <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+                    <button
+                      onClick={() => { setIsSelecting(true); setSelectedIds(new Set()) }}
+                      className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </>
+                )}
+                <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="flex items-center gap-1.5 h-8 px-3 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-[13px] font-semibold hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] transition-colors cursor-pointer"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add
                 </button>
               </>
             )}
@@ -285,20 +310,29 @@ export default function BucketClient({
         </div>
 
         {/* Memories link card */}
-        <Link href="/memories">
-          <div className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] flex items-center justify-between" style={{ padding: '13px 16px', marginBottom: '10px' }}>
-            <div>
-              <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">✦ Memories</p>
-              <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
-                {memoriesCount === 0 ? 'Nothing done together yet' : `${memoriesCount} things you've done together`}
-              </p>
+        <Link href="/memories" className="block">
+          <div className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] flex items-center justify-between px-4 py-[13px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none hover:border-[#C2493A] dark:hover:border-[#F0907F] transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F]" aria-hidden="true">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</p>
+                <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+                  {memoriesCount === 0 ? 'Nothing done together yet' : `${memoriesCount} things you've done together`}
+                </p>
+              </div>
             </div>
-            <span className="text-[14px] text-[#C2493A] dark:text-[#F0907F]">→</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#C2493A] dark:text-[#F0907F] flex-shrink-0" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
           </div>
         </Link>
 
         {/* Random picker card */}
-        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
           <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-3">
             Pick something random
           </p>
@@ -307,7 +341,7 @@ export default function BucketClient({
               <button
                 key={cat.key}
                 onClick={() => setRandomCategory(cat.key)}
-                className={`flex-shrink-0 text-[12px] font-medium px-3 py-1 rounded-full border transition-colors
+                className={`flex-shrink-0 text-[12px] font-medium px-3 py-1 rounded-full border transition-colors cursor-pointer
                   ${randomCategory === cat.key
                     ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
                     : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
@@ -320,11 +354,10 @@ export default function BucketClient({
           <button
             onClick={handlePick}
             disabled={pickerPool.length === 0}
-            className="w-full h-10 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30] disabled:opacity-40 transition-colors"
+            className="w-full h-10 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30] disabled:opacity-40 transition-colors cursor-pointer"
           >
-            {pickerPool.length === 0 ? 'Nothing in this category yet' : '✦ Pick for us'}
+            {pickerPool.length === 0 ? 'Nothing in this category yet' : 'Pick for us'}
           </button>
-        </div>
         </div>
 
         {/* Filter tabs */}
@@ -333,7 +366,7 @@ export default function BucketClient({
             <button
               key={tab.key}
               onClick={() => setActiveFilter(tab.key)}
-              className={`flex-shrink-0 h-8 px-3 rounded-full text-[12px] font-medium border transition-colors
+              className={`flex-shrink-0 h-8 px-3 rounded-full text-[12px] font-medium border transition-colors cursor-pointer
                 ${activeFilter === tab.key
                   ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
                   : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
@@ -382,13 +415,19 @@ export default function BucketClient({
 
         {/* Item list */}
         {filteredItems.length === 0 ? (
-          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-12 text-center">
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-10 text-center space-y-2 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-[#D4C8C4] dark:text-[#5A3830]" aria-hidden="true">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
             <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">
-              {activeFilter === 'done' ? 'No done items yet' : 'Nothing here yet'}
+              {activeFilter === 'done' ? 'Nothing done together yet' : 'Nothing here yet'}
             </p>
+            {activeFilter !== 'done' && (
+              <p className="text-xs text-[#D4C8C4] dark:text-[#5A3830]">Tap Add to put something on the list</p>
+            )}
           </div>
         ) : (
-          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
             {filteredItems.map(item => (
               <BucketItemRow
                 key={item.id}
@@ -404,24 +443,8 @@ export default function BucketClient({
           </div>
         )}
 
-        <div className="h-20" />
+        <div className="h-4" />
       </div>
-
-      {/* FAB */}
-      {!showAddForm && !showDoneSheet && !isSelecting && !showHelp && typeof document !== 'undefined' && createPortal(
-        <button
-          onClick={() => setShowAddForm(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-full
-                     text-[28px] flex items-center justify-center z-20 transition-colors
-                     shadow-[0_4px_14px_rgba(194,73,58,0.30)] dark:shadow-[0_4px_14px_rgba(232,103,90,0.25)]
-                     hover:bg-[#A83D30] dark:hover:bg-[#E8675A]"
-          style={{ animation: 'fadeIn 300ms ease-out' }}
-          aria-label="Add bucket item"
-        >
-          +
-        </button>,
-        document.body
-      )}
 
       {/* Bulk action bar */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
@@ -458,7 +481,7 @@ export default function BucketClient({
 
       {/* Add form slide-up */}
       {showAddForm && (
-        <div className="fixed inset-0 z-20 flex flex-col justify-end">
+        <div className="fixed inset-0 z-30 flex flex-col justify-end">
           <div
             className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
             onClick={handleCloseAdd}

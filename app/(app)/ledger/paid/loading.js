@@ -1,12 +1,12 @@
 export default function PaidExpensesLoading() {
   return (
     <div className="space-y-5">
-      {/* Heading row */}
-      <div className="flex items-center justify-between">
-        <div className="h-7 w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-12 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-4 w-14 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+      {/* Heading block: back link + title row */}
+      <div className="space-y-1">
+        <div className="h-3 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="flex items-center justify-between">
+          <div className="h-7 w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
+          <div className="h-4 w-8 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
         </div>
       </div>
 
@@ -17,7 +17,7 @@ export default function PaidExpensesLoading() {
       </div>
 
       {/* Expense list */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px]">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         {[1, 2, 3, 4].map(i => (
           <div
             key={i}

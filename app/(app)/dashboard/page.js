@@ -4,6 +4,7 @@ import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
 import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
 import TogetherCard from './TogetherCard'
+import InviteCodeBadge from './InviteCodeBadge'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
@@ -89,7 +90,10 @@ export default async function DashboardPage() {
           Hey, {profile?.name}
         </h1>
         {partner && (
-          <p className="text-[#A07060] dark:text-[#D4A090] text-sm mt-0.5">
+          <p className="text-[#A07060] dark:text-[#D4A090] text-sm mt-0.5 flex items-center gap-1">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#E8675A] flex-shrink-0" aria-hidden="true">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
             Connected with {partner.name}
           </p>
         )}
@@ -113,16 +117,14 @@ export default async function DashboardPage() {
       />
 
       {/* Couple space card */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4">
+      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider">
           Your couple space
         </h2>
 
         <div>
-          <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-0.5">Invite code</p>
-          <p className="text-2xl font-bold tracking-[0.2em] font-mono text-[#C2493A] dark:text-[#F0907F]">
-            {couple?.invite_code}
-          </p>
+          <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-2">Invite code</p>
+          <InviteCodeBadge code={couple?.invite_code} />
         </div>
 
         {memberSince && (

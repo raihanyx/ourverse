@@ -37,7 +37,7 @@ export default function TogetherCard({ anniversaryDate, coupleId }) {
   }
 
   return (
-    <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px]">
+    <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
       <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-3">
         Together
       </h2>
@@ -56,12 +56,12 @@ export default function TogetherCard({ anniversaryDate, coupleId }) {
                   ].map(({ value, label }) => (
                     <div
                       key={label}
-                      className="flex-1 bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-lg p-2 text-center"
+                      className="flex-1 bg-gradient-to-b from-[#FDF7F6] to-[#FAF0ED] dark:from-[#1A1210] dark:to-[#221510] border border-[#EDE0DC] dark:border-[#3D2820] rounded-xl p-3 text-center"
                     >
-                      <p className="text-[18px] font-bold text-[#C2493A] dark:text-[#F0907F] leading-none">
+                      <p className="text-[26px] font-bold text-[#C2493A] dark:text-[#F0907F] leading-none tabular-nums">
                         {value}
                       </p>
-                      <p className="text-[9px] uppercase tracking-wide text-[#A07060] dark:text-[#D4A090] mt-1">
+                      <p className="text-[10px] uppercase tracking-wide text-[#A07060] dark:text-[#D4A090] mt-1.5 font-medium">
                         {label}
                       </p>
                     </div>
