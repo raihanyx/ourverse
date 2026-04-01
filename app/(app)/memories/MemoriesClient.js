@@ -95,35 +95,40 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
 
   return (
     <>
-      <div>
-        <div className="flex items-center justify-between">
-          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</h1>
-          <div className="flex items-center gap-4">
+      <div className="space-y-5">
+        <div className="space-y-1">
+          <Link
+            href="/bucket"
+            className={`inline-flex items-center gap-1 text-xs text-[#A07060] dark:text-[#D4A090] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors ${isSelecting ? 'invisible' : ''}`}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Bucket list
+          </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</h1>
+              <p className="text-[13px] text-[#A07060] dark:text-[#D4A090] mt-0.5">Things you've done together</p>
+            </div>
             {memories.length > 0 && (
               <button
                 onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
               >
                 {isSelecting ? 'Cancel' : 'Edit'}
               </button>
             )}
-            {!isSelecting && (
-              <Link
-                href="/bucket"
-                className="text-sm text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
-              >
-                ← Back
-              </Link>
-            )}
           </div>
         </div>
-        <p className="mt-1 mb-3 text-[13px] text-[#A07060] dark:text-[#D4A090]">
-          Things you've done together
-        </p>
 
         {memories.length === 0 ? (
-          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-14 text-center px-6">
-            <p className="text-[28px] mb-3">✦</p>
+          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-14 text-center px-6 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
+            <div className="w-12 h-12 rounded-2xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center mx-auto mb-3">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F]" aria-hidden="true">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </div>
             <p className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-2">
               No memories yet
             </p>
@@ -143,7 +148,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
               <div
                 key={memory.id}
                 onClick={isSelecting ? () => handleSelect(memory.id) : undefined}
-                className={`bg-white dark:bg-[#2E201C] rounded-[14px] border p-[14px] mb-[10px] transition-colors
+                className={`bg-white dark:bg-[#2E201C] rounded-[14px] border p-[14px] mb-[10px] transition-colors shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none
                   ${isSelecting ? 'cursor-pointer' : ''}
                   ${selectedIds.has(memory.id)
                     ? 'border-[#C2493A] dark:border-[#F0907F] bg-[#FEF6F5] dark:bg-[#2A1510]'
@@ -186,7 +191,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
           </div>
         )}
 
-        <div className="h-20" />
+        <div className="h-4" />
       </div>
 
       {/* Bulk action bar */}

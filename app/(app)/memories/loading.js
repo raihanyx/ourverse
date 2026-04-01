@@ -1,20 +1,21 @@
 export default function MemoriesLoading() {
   return (
-    <div>
+    <div className="space-y-5">
 
-      {/* Header row: "Memories" + "Edit  ← Back" */}
-      <div className="flex items-center justify-between">
-        <div className="h-7 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
-        <div className="flex items-center gap-4">
+      {/* Header block: back link + title + subtitle + Edit */}
+      <div className="space-y-1">
+        <div className="h-3 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="flex items-center justify-between">
+          <div className="space-y-1.5">
+            <div className="h-7 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
+            <div className="h-[13px] w-[168px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+          </div>
           <div className="h-4 w-6 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-4 w-[52px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
         </div>
       </div>
 
-      {/* Subtitle: "Things you've done together" — text-[13px] mt-1 mb-3 */}
-      <div className="h-[13px] w-[168px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse mt-2 mb-4" />
-
       {/* Memory cards */}
+      <div>
       {[
         { nameW: '62%', badgeW: 72, hasNote: false },
         { nameW: '48%', badgeW: 60, hasNote: true  },
@@ -22,7 +23,7 @@ export default function MemoriesLoading() {
       ].map((card, i) => (
         <div
           key={i}
-          className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] mb-[10px]"
+          className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] mb-[10px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none"
         >
           {/* Item name — text-[14px] font-semibold mb-1 */}
           <div
@@ -43,6 +44,7 @@ export default function MemoriesLoading() {
           )}
         </div>
       ))}
+      </div>
 
     </div>
   )
