@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -121,6 +121,19 @@ export default function BucketClient({
   const [isDeleting, startDeleteTransition] = useTransition()
   const [showHelp, setShowHelp] = useState(false)
 
+  const refetchItems = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('bucket_items')
+      .select('*')
+      .eq('couple_id', coupleId)
+      .order('created_at', { ascending: false })
+    if (data) setItems(data)
+  }, [coupleId])
+
+  // Sync on mount — corrects stale initialItems from router cache
+  useEffect(() => { refetchItems() }, [refetchItems])
+
   // Realtime
   useEffect(() => {
     const supabase = createClient()
@@ -179,16 +192,6 @@ export default function BucketClient({
     const others = pool.filter(i => i.id !== pickedItem?.id)
     const source = others.length > 0 ? others : pool
     setPickedItem(source[Math.floor(Math.random() * source.length)])
-  }
-
-  async function refetchItems() {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('bucket_items')
-      .select('*')
-      .eq('couple_id', coupleId)
-      .order('created_at', { ascending: false })
-    if (data) setItems(data)
   }
 
   function handleCloseAdd() {

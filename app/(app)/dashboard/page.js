@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { formatAmount, sumByCurrency } from '@/lib/currency'
+import { getAppSession } from '@/lib/data/getAppSession'
+import { sumByCurrency } from '@/lib/currency'
 import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
 import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
@@ -12,30 +13,21 @@ export const metadata = {
 }
 
 export default async function DashboardPage() {
+  const { user, profile, partner } = await getAppSession()
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('name, couple_id, base_currency, couples(invite_code, anniversary_date, created_at)')
-    .eq('id', user.id)
-    .single()
-
-  const { data: partner } = await supabase
-    .from('users')
-    .select('id, name')
-    .eq('couple_id', profile.couple_id)
-    .neq('id', user.id)
-    .single()
-
-  // Fetch unpaid expenses + total count + live rates in parallel
+  // Fetch couple info + unpaid expenses + total count + live rates in parallel
   const [
+    { data: couple },
     { data: unpaidExpenses },
     { count: totalExpenseCount },
     ratesResult,
   ] = await Promise.all([
+    supabase
+      .from('couples')
+      .select('invite_code, anniversary_date, created_at')
+      .eq('id', profile.couple_id)
+      .single(),
     supabase
       .from('expenses')
       .select('amount, currency, paid_by_user_id')
@@ -51,7 +43,6 @@ export default async function DashboardPage() {
   const expenses = unpaidExpenses ?? []
   const hasAnyExpenses = (totalExpenseCount ?? 0) > 0
   const rates = ratesResult?.rates ?? null
-  const couple = profile?.couples
   const baseCurrency = profile?.base_currency ?? 'IDR'
 
   // Two-sided balance
@@ -87,7 +78,7 @@ export default async function DashboardPage() {
 
       <div>
         <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
-          Hey, {profile?.name}
+          Hey, {profile.name}
         </h1>
         {partner && (
           <p className="text-[#A07060] dark:text-[#D4A090] text-sm mt-0.5 flex items-center gap-1">

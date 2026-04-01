@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
 
@@ -31,7 +30,6 @@ export async function addBucketItem(prevState, formData) {
 
   if (insertError) return { error: 'Could not save item. Please try again.' }
 
-  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -69,8 +67,6 @@ export async function markAsDone(prevState, formData) {
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
 
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -111,8 +107,6 @@ export async function bulkMarkDone(ids, coupleId) {
   const { error: memoryError } = await supabase.from('memories').insert(memories)
   if (memoryError) return { error: 'Could not save memories.' }
 
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -147,8 +141,6 @@ export async function bulkUndoDone(memoryIds) {
 
   if (deleteError) return { error: 'Could not delete memories.' }
 
-  revalidatePath('/memories')
-  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -162,7 +154,6 @@ export async function deleteBucketItem(id) {
   const { error } = await supabase.from('bucket_items').delete().eq('id', id)
   if (error) return { error: 'Could not delete item.' }
 
-  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -177,8 +168,6 @@ export async function bulkDeleteBucketItems(ids) {
   const { error } = await supabase.from('bucket_items').delete().in('id', ids)
   if (error) return { error: 'Could not delete items.' }
 
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -209,7 +198,5 @@ export async function bulkDeleteMemories(ids) {
     await supabase.from('bucket_items').delete().in('id', bucketItemIds)
   }
 
-  revalidatePath('/memories')
-  revalidatePath('/bucket')
   return { success: true }
 }

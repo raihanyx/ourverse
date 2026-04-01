@@ -1,6 +1,6 @@
 export default function MemoriesLoading() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-loading">
 
       {/* Header block: back link + title + subtitle + Edit */}
       <div className="space-y-1">

@@ -1,6 +1,6 @@
 export default function DashboardLoading() {
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 animate-loading">
       {/* Heading */}
       <div className="space-y-1.5">
         <div className="h-7 w-40 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />

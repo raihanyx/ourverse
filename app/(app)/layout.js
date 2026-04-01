@@ -1,23 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { getAppSession } from '@/lib/data/getAppSession'
 import Link from 'next/link'
 import NavLinks from './NavLinks'
 
 export default async function AppLayout({ children }) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('couple_id, name')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.couple_id) redirect('/onboarding')
+  const { profile } = await getAppSession()
 
   return (
     <div className="min-h-screen bg-[#FDF7F6] dark:bg-[#1A1210]">

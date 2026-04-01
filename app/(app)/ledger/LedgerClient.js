@@ -159,6 +159,9 @@ export default function LedgerClient({
     if (data) setExpenses(data)
   }, [coupleId])
 
+  // Sync on mount — corrects stale initialExpenses from router cache
+  useEffect(() => { refetch() }, [refetch])
+
   // Realtime subscription — no server-side filter (more reliable across configs)
   useEffect(() => {
     const supabase = createClient()

@@ -1,22 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { getAppSession } from '@/lib/data/getAppSession'
 import PageTransition from '@/app/components/PageTransition'
 import MemoriesClient from './MemoriesClient'
 
 export default async function MemoriesPage() {
+  const { profile } = await getAppSession()
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('couple_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.couple_id) redirect('/onboarding')
 
   const { data: memories } = await supabase
     .from('memories')

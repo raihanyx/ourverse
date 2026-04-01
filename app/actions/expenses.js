@@ -58,7 +58,6 @@ export async function addExpense(prevState, formData) {
 
   if (insertError) return { error: 'Could not save expense. Please try again.' }
 
-  revalidatePath('/ledger')
   revalidatePath('/dashboard')
   return { success: true }
 }
@@ -79,7 +78,6 @@ export async function bulkSetPaid(ids, isPaid) {
 
   if (error) return { error: 'Could not update expenses.' }
 
-  revalidatePath('/ledger')
   revalidatePath('/ledger/paid')
   revalidatePath('/dashboard')
   return { success: true }
@@ -107,7 +105,6 @@ export async function togglePaid(expenseId) {
 
   if (error) return { error: 'Could not update expense.' }
 
-  revalidatePath('/ledger')
   revalidatePath('/ledger/paid')
   revalidatePath('/dashboard')
   return { success: true }

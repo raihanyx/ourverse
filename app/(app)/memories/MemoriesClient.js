@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -29,6 +29,19 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
+
+  const refetch = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('memories')
+      .select('*')
+      .eq('couple_id', coupleId)
+      .order('date', { ascending: false })
+    if (data) setMemories(data)
+  }, [coupleId])
+
+  // Sync on mount — corrects stale initialMemories from router cache
+  useEffect(() => { refetch() }, [refetch])
 
   // Realtime — keep both users in sync
   useEffect(() => {
