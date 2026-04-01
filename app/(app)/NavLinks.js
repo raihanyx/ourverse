@@ -30,6 +30,17 @@ function StarIcon() {
   )
 }
 
+function CalendarIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+      <line x1="16" y1="2" x2="16" y2="6" />
+      <line x1="8" y1="2" x2="8" y2="6" />
+      <line x1="3" y1="10" x2="21" y2="10" />
+    </svg>
+  )
+}
+
 function UserIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -40,10 +51,11 @@ function UserIcon() {
 }
 
 const tabs = [
-  { href: '/dashboard', label: 'Home',    Icon: HomeIcon    },
-  { href: '/ledger',    label: 'Ledger',  Icon: ReceiptIcon },
-  { href: '/bucket',   label: 'Bucket',  Icon: StarIcon    },
-  { href: '/profile',  label: 'Profile', Icon: UserIcon    },
+  { href: '/dashboard',  label: 'Home',     Icon: HomeIcon     },
+  { href: '/ledger',     label: 'Ledger',   Icon: ReceiptIcon  },
+  { href: '/bucket',     label: 'Bucket',   Icon: StarIcon     },
+  { href: '/calendar',   label: 'Calendar', Icon: CalendarIcon, disabled: true },
+  { href: '/profile',    label: 'Profile',  Icon: UserIcon     },
 ]
 
 export default function NavLinks() {
@@ -55,13 +67,15 @@ export default function NavLinks() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="max-w-lg mx-auto flex items-center justify-around h-16 px-2">
-        {tabs.map(({ href, label, Icon }) => {
-          const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/'))
+        {tabs.map(({ href, label, Icon, disabled }) => {
+          const active = !disabled && (pathname === href || (href !== '/dashboard' && pathname.startsWith(href + '/')))
           return (
             <Link
               key={href}
-              href={href}
-              className="flex flex-col items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center relative px-3 py-1"
+              href={disabled ? '#' : href}
+              onClick={disabled ? e => e.preventDefault() : undefined}
+              className={`flex flex-col items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center relative px-3 py-1
+                          ${disabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : ''}`}
             >
               {active && (
                 <span className="absolute inset-0 rounded-xl bg-[#C2493A]/10 dark:bg-[#E8675A]/10" aria-hidden="true" />
