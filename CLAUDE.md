@@ -37,7 +37,7 @@ These are breaking changes from earlier versions — do not skip these:
 app/
   (app)/                  Protected routes (require auth + couple_id)
     layout.js             Auth guard + sticky top header (logo only) + renders NavLinks
-    NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Profile, theme toggle)
+    NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Calendar, Profile); Calendar has disabled:true — renders as pointer-events-none Link, not a span
     dashboard/
       page.js             Server component — balance summary + couple info + together card
       BalanceCard.js      Client component — balance amounts + base currency selector
@@ -54,7 +54,7 @@ app/
       loading.js          Ledger loading skeleton
       paid/
         page.js           Server component — fetches paid expenses
-        PaidExpensesClient.js  Client component — paid list, undo, select mode, back link to /ledger
+        PaidExpensesClient.js  Client component — paid list, undo, select mode, bulk delete, back link to /ledger
         loading.js        Paid expenses loading skeleton
     bucket/
       page.js             Server component — fetches bucket items + memories count
@@ -81,11 +81,12 @@ app/
   actions/                Server Actions ('use server')
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
-    expenses.js           addExpense, togglePaid, bulkSetPaid
+    expenses.js           addExpense, togglePaid, bulkSetPaid, bulkDeleteExpenses
     bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, bulkDeleteMemories
     profile.js            updateName
   components/
     PageTransition.js     Fade-in wrapper used on all protected pages
+    ConfirmSheet.js       Reusable slide-up confirmation dialog (message, confirmLabel, onConfirm, onCancel) — used for bulk deletes across ledger, paid expenses, bucket, memories
   ThemeProvider.js        Client context — dark/light theme, persisted to localStorage
   icon.tsx                Custom favicon — "O" lettermark via next/og ImageResponse
   layout.js               Root layout (Geist fonts, metadata, ThemeProvider)
@@ -240,8 +241,11 @@ const [state, formAction, isPending] = useActionState(action, null)
 - **Page layout**: `max-w-lg mx-auto px-4 py-6 space-y-5`
 - **All interactive buttons** must have `cursor-pointer` — do not rely on browser defaults
 - **Slide-up overlays** use `z-30` — the bottom nav is `z-20`; using `z-20` on an overlay causes the nav to paint on top
+- **Bulk action bars** (select mode): `fixed bottom-0 left-0 right-0 z-30`, outer div gets `style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}`, inner div uses `h-16` (not `py-3`) — must match nav bar height exactly or the nav bar peeks above it
 - **Hiding without layout shift** — use `invisible` (not conditional rendering) when toggling visibility of elements that should keep their space (e.g. back links during select mode)
 - **Bottom nav**: `fixed bottom-0 z-20 h-16` — main content uses `pb-24` to clear it
+- **Disabled nav tabs** — add `disabled: true` to the tab config; render as `<Link href="#">` with `pointer-events-none opacity-30`; never render a different element type (e.g. `<span>`) in the same map — causes hydration mismatch
+- **Theme init script** — use `<Script id="theme-init" strategy="beforeInteractive">` from `next/script`, not a bare `<script>` tag — React 19 does not execute bare script tags in components
 - **Color palette**:
   - Accent / primary action: `#C2493A` light · `#E8675A` / `#F0907F` dark
   - Primary text: `#1C1210` light · `#FAF3F1` dark
@@ -293,10 +297,13 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Mark as done with a date → creates a memory entry
 - Memories view: browse past completed bucket list items, select + bulk delete
 - Random picker from bucket list (filterable by category)
-- Select mode with bulk mark-done and bulk delete
+- Select mode with bulk mark-done and bulk delete across all list pages
+- Bulk delete with ConfirmSheet confirmation on all pages (ledger, paid expenses, bucket, memories)
+- Mixed-selection guard on ledger: selecting both paid and unpaid items hides action buttons and shows a warning
 - Memories link card on bucket page showing count
 
 ### Phase 4.5 — Date Calendar
+- Nav tab added (disabled, greyed out) — placeholder for upcoming feature
 - Plan upcoming dates, look back at past ones
 - Link calendar entries to bucket list items
 
