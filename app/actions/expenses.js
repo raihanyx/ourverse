@@ -83,6 +83,28 @@ export async function bulkSetPaid(ids, isPaid) {
   return { success: true }
 }
 
+export async function bulkDeleteExpenses(ids) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+
+  const { error } = await supabase
+    .from('expenses')
+    .delete()
+    .in('id', ids)
+
+  if (error) return { error: 'Could not delete expenses.' }
+
+  revalidatePath('/ledger')
+  revalidatePath('/ledger/paid')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function togglePaid(expenseId) {
   const supabase = await createClient()
   const {

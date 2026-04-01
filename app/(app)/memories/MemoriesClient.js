@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { bulkUndoDone, bulkDeleteMemories } from '@/app/actions/bucket'
 import { formatDate } from '@/lib/currency'
+import ConfirmSheet from '@/app/components/ConfirmSheet'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -29,6 +30,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -96,8 +98,14 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   }
 
   function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    setShowDeleteConfirm(true)
+  }
+
+  function handleConfirmDelete() {
     const ids = [...selectedIds]
     if (ids.length === 0) return
+    setShowDeleteConfirm(false)
     setMemories(prev => prev.filter(m => !ids.includes(m.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
@@ -210,10 +218,10 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
       {/* Bulk action bar */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
-          style={{ animation: 'fadeIn 150ms ease-out' }}
+          className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
+          style={{ animation: 'fadeIn 150ms ease-out', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between gap-3">
             {selectedIds.size === 0 ? (
               <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap memories to select</span>
             ) : (
@@ -237,6 +245,17 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
             </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {/* Delete confirmation */}
+      {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
+        <ConfirmSheet
+          message={`Delete ${selectedIds.size} memor${selectedIds.size === 1 ? 'y' : 'ies'}? This can't be undone.`}
+          confirmLabel="Delete"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />,
         document.body
       )}
     </>

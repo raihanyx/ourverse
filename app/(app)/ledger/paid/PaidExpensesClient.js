@@ -4,7 +4,8 @@ import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { bulkSetPaid, togglePaid } from '@/app/actions/expenses'
+import { bulkSetPaid, togglePaid, bulkDeleteExpenses } from '@/app/actions/expenses'
+import ConfirmSheet from '@/app/components/ConfirmSheet'
 import { formatAmount, formatDate } from '@/lib/currency'
 
 const CATEGORY_COLORS = {
@@ -76,13 +77,16 @@ export default function PaidExpensesClient({
   initialTab,
 }) {
   const router = useRouter()
+  const [localExpenses, setLocalExpenses] = useState(expenses)
   const [activeTab, setActiveTab] = useState(initialTab)
   const [isPending, startTransition] = useTransition()
+  const [isDeleting, startDeleteTransition] = useTransition()
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
-  const theyOweMe = expenses.filter(e => e.paid_by_user_id === currentUserId)
-  const iOweThem  = expenses.filter(e => e.paid_by_user_id === partnerId)
+  const theyOweMe = localExpenses.filter(e => e.paid_by_user_id === currentUserId)
+  const iOweThem  = localExpenses.filter(e => e.paid_by_user_id === partnerId)
   const activeList = activeTab === 'owe_me' ? theyOweMe : iOweThem
 
   const sorted = [...activeList].sort((a, b) =>
@@ -128,6 +132,22 @@ export default function PaidExpensesClient({
       setIsSelecting(false)
       setSelectedIds(new Set())
       router.refresh()
+    })
+  }
+
+  function handleBulkDelete() {
+    if (selectedIds.size === 0) return
+    setShowDeleteConfirm(true)
+  }
+
+  function handleConfirmDelete() {
+    const ids = [...selectedIds]
+    setShowDeleteConfirm(false)
+    setLocalExpenses(prev => prev.filter(e => !ids.includes(e.id)))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+    startDeleteTransition(async () => {
+      await bulkDeleteExpenses(ids)
     })
   }
 
@@ -205,24 +225,45 @@ export default function PaidExpensesClient({
       {/* Bulk action bar — portalled to avoid fixed positioning being broken by parent transforms */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed bottom-0 left-0 right-0 z-20 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
-          style={{ animation: 'fadeIn 150ms ease-out' }}
+          className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
+          style={{ animation: 'fadeIn 150ms ease-out', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between gap-3">
             {selectedIds.size === 0 ? (
               <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
             ) : (
               <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
             )}
-            <button
-              onClick={handleBulkUndo}
-              disabled={isPending || selectedIds.size === 0}
-              className="h-9 px-4 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] text-white text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors"
-            >
-              Undo paid
-            </button>
+            <div className="flex gap-2">
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors"
+                >
+                  {isDeleting ? 'Deleting…' : 'Delete'}
+                </button>
+              )}
+              <button
+                onClick={handleBulkUndo}
+                disabled={isPending || selectedIds.size === 0}
+                className="h-9 px-4 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] text-white text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors"
+              >
+                Undo paid
+              </button>
+            </div>
           </div>
         </div>,
+        document.body
+      )}
+
+      {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
+        <ConfirmSheet
+          message={`Delete ${selectedIds.size} expense${selectedIds.size === 1 ? '' : 's'}? This can't be undone.`}
+          confirmLabel="Delete"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />,
         document.body
       )}
 
