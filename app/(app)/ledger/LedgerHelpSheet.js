@@ -48,7 +48,7 @@ export default function LedgerHelpSheet({ isOpen, onClose, baseCurrency }) {
   const accent = 'text-[#C2493A] dark:text-[#F0907F] font-semibold'
 
   return (
-    <div className="fixed inset-0 z-20 flex flex-col justify-end">
+    <div className="fixed inset-0 z-30 flex flex-col justify-end">
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
@@ -98,7 +98,7 @@ export default function LedgerHelpSheet({ isOpen, onClose, baseCurrency }) {
         {/* Got it button */}
         <button
           onClick={handleClose}
-          className="w-full bg-[#C2493A] dark:bg-[#E8675A] text-white text-[13px] font-semibold rounded-[10px] py-[10px] mt-3 transition-colors hover:bg-[#A83D30] dark:hover:bg-[#D85A4E]"
+          className="w-full bg-[#C2493A] dark:bg-[#E8675A] text-white text-[13px] font-semibold rounded-[10px] py-[10px] mt-3 transition-colors hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] cursor-pointer"
         >
           Got it
         </button>
