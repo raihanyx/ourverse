@@ -95,7 +95,7 @@ export default function BucketHelpSheet({ isOpen, onClose }) {
             Connected to the calendar
           </p>
           <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.6]">
-            When you plan a date from the Calendar page, it automatically creates a bucket list item here. Marking it done from either place does the same thing — moves it to Memories and updates the calendar.
+            When you plan a date from the Calendar page, it automatically creates a bucket list item here. Marking it done from either place works the same way: it moves to Memories and updates the calendar.
           </p>
           <div className="bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-lg px-[10px] py-2 mt-[6px]">
             <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.7]">

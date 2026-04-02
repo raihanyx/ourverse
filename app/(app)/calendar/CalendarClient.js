@@ -425,7 +425,7 @@ export default function CalendarClient({
                     {(hasMem || hasCouple || hasPersonal) && (
                       <div className="absolute bottom-1 flex gap-[3px]">
                         {hasMem && (
-                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-[#C2493A] dark:bg-[#F0907F]'}`} />
+                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-red-500 dark:bg-red-400'}`} />
                         )}
                         {hasCouple && (
                           <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
@@ -445,7 +445,7 @@ export default function CalendarClient({
         {/* Dot legend */}
         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#F5EDE9] dark:border-[#3D2820]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#C2493A] dark:bg-[#F0907F]" />
+            <span className="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400" />
             <span className="text-[10px] text-[#A07060] dark:text-[#D4A090]">Memory</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -515,9 +515,9 @@ export default function CalendarClient({
                 flex gap-3"
             >
               {/* Left accent */}
-              <div className="w-[3px] rounded-full bg-[#C2493A] dark:bg-[#F0907F] flex-shrink-0 self-stretch" />
+              <div className="w-[3px] rounded-full bg-red-500 dark:bg-red-400 flex-shrink-0 self-stretch" />
               {/* Icon */}
-              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0 text-[#C2493A] dark:text-[#F0907F]">
+              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0 text-red-500 dark:text-red-400">
                 <HeartIcon filled />
               </div>
               <div className="flex-1 min-w-0">
@@ -525,7 +525,7 @@ export default function CalendarClient({
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <CategoryBadge category={memory.category} />
                   <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">{formatDate(memory.date)}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#FDECEA] text-red-500 dark:bg-[#3D1E18] dark:text-red-400">
                     Memory
                   </span>
                 </div>
@@ -587,10 +587,10 @@ export default function CalendarClient({
                 className={`bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none
                   flex gap-3 ${isCompleted ? 'opacity-60' : ''}`}
               >
-                <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-[#C2493A] dark:bg-[#F0907F]' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
+                <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-red-500 dark:bg-red-400' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
                 <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
                   ${isCompleted
-                    ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-[#C2493A] dark:text-[#F0907F]'
+                    ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-red-500 dark:text-red-400'
                     : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
                   }`}
                 >
@@ -609,7 +609,7 @@ export default function CalendarClient({
                     )}
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium
                       ${isCompleted
-                        ? 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]'
+                        ? 'bg-[#FDECEA] text-red-500 dark:bg-[#3D1E18] dark:text-red-400'
                         : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400'
                       }`}
                     >

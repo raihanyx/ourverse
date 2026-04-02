@@ -37,7 +37,7 @@ These are breaking changes from earlier versions — do not skip these:
 app/
   (app)/                  Protected routes (require auth + couple_id)
     layout.js             Auth guard + sticky top header (logo only) + renders NavLinks
-    NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Calendar, Profile); Calendar has disabled:true — renders as pointer-events-none Link, not a span
+    NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Calendar, Profile)
     dashboard/
       page.js             Server component — balance summary + couple info + together card
       BalanceCard.js      Client component — balance amounts + base currency selector
@@ -67,6 +67,13 @@ app/
       page.js             Server component — fetches memories
       MemoriesClient.js   Client component — memory list, select mode, bulk delete, back link to /bucket
       loading.js          Memories loading skeleton
+    calendar/
+      page.js             Server component — fetches calendar_entries + memories for current month + couple anniversary_date
+      CalendarClient.js   Client component — month grid, day detail panel, month navigation with slide animation, realtime sync
+      AddCalendarEntryForm.js  Slide-up form — title, date, category, notes, personal/couple toggle; couple entries auto-create a linked bucket_item
+      CalendarMarkDoneSheet.js Slide-up sheet — mark a calendar entry done, pick completion date, creates a memory + updates bucket_item
+      CalendarHelpSheet.js     Slide-up help sheet explaining calendar rules
+      loading.js          Calendar loading skeleton
     profile/
       page.js             Server component — fetches user profile; renders ProfileClient + sign out form
       ProfileClient.js    Client component — edit name inline
@@ -83,6 +90,7 @@ app/
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
     expenses.js           addExpense, togglePaid, bulkSetPaid, bulkDeleteExpenses
     bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, bulkDeleteMemories
+    calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry
     profile.js            updateName
   components/
     PageTransition.js     Fade-in wrapper used on all protected pages
@@ -160,6 +168,21 @@ proxy.js                  Session refresh + route protection
 | category | text | Copied from bucket item |
 | date | date | Date the thing was done (user-selected) |
 | note | text | nullable |
+| created_at | timestamptz | |
+
+### `public.calendar_entries`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| couple_id | uuid FK | References couples.id |
+| user_id | uuid FK | References auth.users (creator) |
+| bucket_item_id | uuid FK | References bucket_items.id, nullable — set for couple entries |
+| title | text | |
+| date | date | Display date; moved to completion date when marked done |
+| original_date | date | Planned date, unchanged after mark-done |
+| category | text | restaurant / travel / activity / movie / other |
+| notes | text | nullable |
+| is_personal | boolean | Default false — personal entries visible to creator only |
 | created_at | timestamptz | |
 
 All tables have RLS enabled. Policies use `get_my_couple_id()` (a `SECURITY DEFINER` function) to avoid infinite recursion when querying `public.users` inside policies.
@@ -302,10 +325,16 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Mixed-selection guard on ledger: selecting both paid and unpaid items hides action buttons and shows a warning
 - Memories link card on bucket page showing count
 
-### Phase 4.5 — Date Calendar
-- Nav tab added (disabled, greyed out) — placeholder for upcoming feature
-- Plan upcoming dates, look back at past ones
-- Link calendar entries to bucket list items
+### ✅ Phase 4.5 — Date Calendar
+- Monthly calendar grid with day-level detail panel and animated month navigation
+- Add calendar entries: title, date, category, notes, personal or couple toggle
+- Couple entries auto-create a linked bucket_item so they appear in the bucket list
+- Mark entry as done: pick completion date → creates a memory + marks linked bucket_item done
+- Delete entry: also removes the linked bucket_item if not yet done
+- Memories for the viewed month surface on the calendar alongside planned entries
+- Anniversary date highlighted on the grid if set
+- Realtime sync — partner's entries appear live via Supabase channel
+- Personal entries visible only to the creator (RLS-enforced)
 
 ### Phase 5 — Trips
 - Create a trip with dates and destination
