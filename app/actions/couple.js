@@ -96,12 +96,27 @@ export async function joinCouple(prevState, formData) {
   redirect('/dashboard')
 }
 
-export async function saveAnniversaryDate(coupleId, dateString) {
+export async function saveAnniversaryDate(_, dateString) {
   const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('couple_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+
   await supabase
     .from('couples')
     .update({ anniversary_date: dateString })
-    .eq('id', coupleId)
+    .eq('id', profile.couple_id)
+
   revalidatePath('/dashboard')
 }
 

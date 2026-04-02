@@ -33,7 +33,13 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl
 
   const isAppRoute =
-    pathname.startsWith('/dashboard') || pathname.startsWith('/ledger')
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/ledger') ||
+    pathname.startsWith('/bucket') ||
+    pathname.startsWith('/calendar') ||
+    pathname.startsWith('/memories') ||
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/onboarding')
   const isAuthOnlyRoute =
     pathname.startsWith('/login') || pathname.startsWith('/signup')
 

@@ -59,6 +59,7 @@ export default function CalendarMarkDoneSheet({ entry, onSuccess, onCancel }) {
               name="date"
               type="date"
               defaultValue={today}
+              max={today}
               className="w-full px-3 py-[10px] rounded-[10px] border text-sm
                 border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
                 text-[#1C1210] dark:text-[#FAF3F1]

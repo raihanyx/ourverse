@@ -28,37 +28,17 @@
 
 ### 🔴 Critical
 
-**B1. `saveAnniversaryDate` has zero authentication** — `couple.js:99`
-```js
-export async function saveAnniversaryDate(coupleId, dateString) {
-  const supabase = await createClient()
-  await supabase.from('couples').update({ anniversary_date: dateString }).eq('id', coupleId)
-```
-No `getUser()` call, no ownership check. Any authenticated user can pass any `coupleId` and overwrite a stranger's anniversary date. The only protection is RLS — there's no defense-in-depth at the action layer.
+~~**B1. `saveAnniversaryDate` has zero authentication** — `couple.js:99`~~
+✅ **Fixed.** `saveAnniversaryDate` now calls `getUser()` and looks up `couple_id` from the user's own profile server-side. The client-supplied `coupleId` parameter is ignored entirely.
 
-**B2. `addBucketItem` trusts `couple_id` and `added_by_user_id` from form data** — `bucket.js:18-19`
-```js
-const coupleId = formData.get('couple_id')
-const addedByUserId = formData.get('added_by_user_id')
-```
-These are hidden inputs. An attacker can POST arbitrary values — writing items into any couple's bucket list. No server-side verification that `user.id` actually belongs to `coupleId`. Same issue in `markAsDone` (`bucket.js:44-49`) where `bucketItemId`, `coupleId`, `name`, and `category` are all trusted from form data.
+~~**B2. `addBucketItem` trusts `couple_id` and `added_by_user_id` from form data** — `bucket.js:18-19`~~
+✅ **Fixed.** `addBucketItem` now ignores those hidden inputs and derives both `couple_id` (from profile lookup) and `added_by_user_id` (from `user.id`) server-side. `markAsDone` no longer trusts `couple_id`, `name`, or `category` from form data — `couple_id` is looked up from the user's profile, and `name`/`category` are fetched from the DB with an ownership filter before being written to memories. `bulkMarkDone` also had the same `coupleId`-from-caller issue and is fixed the same way.
 
-**B3. `proxy.js` `isAppRoute` is incomplete** — `proxy.js:35-37`
-```js
-const isAppRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/ledger')
-```
-`/bucket`, `/calendar`, `/memories`, `/profile`, `/onboarding` are NOT included. Unauthenticated users hitting these URLs directly are not redirected at the proxy level. They'll hit `getAppSession()` in the layout which redirects, but the proxy's session-refresh logic has already run by then — this is the wrong order. More importantly, authenticated users on these routes won't be redirected away from `/login` or `/signup` either.
+~~**B3. `proxy.js` `isAppRoute` is incomplete** — `proxy.js:35-37`~~
+✅ **Fixed.** `isAppRoute` now includes `/bucket`, `/calendar`, `/memories`, `/profile`, and `/onboarding`. All protected routes are covered at the proxy level.
 
-**B4. N+1 queries in `bulkUndoDone`** — `bucket.js:152-164`
-```js
-for (const bucketItemId of bucketItemIds) {
-  const { data: calEntry } = await supabase.from('calendar_entries').select('id, original_date').eq('bucket_item_id', bucketItemId).maybeSingle()
-  if (calEntry?.original_date) {
-    await supabase.from('calendar_entries').update({ date: calEntry.original_date }).eq('id', calEntry.id)
-  }
-}
-```
-Two sequential awaited queries per item, inside a loop. For 10 selected items: 20 serial round trips to Supabase. Should be batched with `.in()`.
+~~**B4. N+1 queries in `bulkUndoDone`** — `bucket.js:152-164`~~
+✅ **Fixed.** Replaced the serial loop with one batched `.select().in()` to fetch all relevant calendar entries, then `Promise.all()` for the updates. Down from 2N serial round trips to 1 read + N parallel writes. (Each entry has its own `original_date` so the writes can't be collapsed further into a single query.)
 
 ### 🟡 Medium
 
@@ -154,11 +134,11 @@ Every time the user switches apps and comes back, the entire dashboard server co
 
 ### 🔴 Critical
 
-**S1. `saveAnniversaryDate` — no auth guard** (same as B1)
-Trust is placed entirely in Supabase RLS. The action itself has no `getUser()` guard.
+~~**S1. `saveAnniversaryDate` — no auth guard** (same as B1)~~
+✅ **Fixed.** See B1.
 
-**S2. `addBucketItem` and `markAsDone` — server actions trust client-supplied `couple_id`** (same as B2)
-Should call `getUser()`, fetch the user's `couple_id` from the DB, and verify it matches. Never trust the client to supply their own `couple_id`.
+~~**S2. `addBucketItem` and `markAsDone` — server actions trust client-supplied `couple_id`** (same as B2)~~
+✅ **Fixed.** See B2.
 
 ### 🟡 Medium
 
@@ -173,8 +153,8 @@ This means a partner cannot delete a couple entry the other person created, even
 
 ### 🟢 Low
 
-**S5. `proxy.js` incomplete route protection** (same as B3)
-Not a critical security gap since `getAppSession` handles it, but proxy-level protection should be consistent.
+~~**S5. `proxy.js` incomplete route protection** (same as B3)~~
+✅ **Fixed.** See B3.
 
 **S6. Exchange rates API key correctly server-only** — `exchangeRates.js:4`
 `OPEN_EXCHANGE_RATES_APP_ID` has no `NEXT_PUBLIC_` prefix. Correctly server-side only. No issue.
@@ -268,13 +248,13 @@ The button is disabled when pool is empty (line 367), so this branch never runs.
 
 2. **Add `revalidatePath('/ledger')` to `addExpense`** — `app/actions/expenses.js:62`. Server cache stays correct without relying solely on client refetch.
 
-3. **Add auth guard to `saveAnniversaryDate`** — `app/actions/couple.js:99`. Add `getUser()` + ownership check before the update.
+3. ~~**Add auth guard to `saveAnniversaryDate`** — `app/actions/couple.js:99`. Add `getUser()` + ownership check before the update.~~ ✅ Done (B1)
 
 4. **Extract `CATEGORY_COLORS` to `lib/constants.js`** — remove duplication across 5 files. One source of truth.
 
 5. **Add `onSuccess` to `useEffect` deps in `AddExpenseForm`** — `AddExpenseForm.js:60`. Fixes the eslint warning and is more correct.
 
-6. **Fix `proxy.js` `isAppRoute`** — add `/bucket`, `/calendar`, `/memories`, `/profile` so the proxy's redirect logic covers all protected routes consistently.
+6. ~~**Fix `proxy.js` `isAppRoute`** — add `/bucket`, `/calendar`, `/memories`, `/profile` so the proxy's redirect logic covers all protected routes consistently.~~ ✅ Done (B3)
 
 7. **Add `revalidatePath('/bucket')` and `revalidatePath('/memories')` to `addBucketItem` and `markAsDone`** — `bucket.js:32, 77`. Prevents stale server-rendered data.
 
@@ -286,16 +266,11 @@ The button is disabled when pool is empty (line 367), so this branch never runs.
 
 ## 8. BIGGER IMPROVEMENTS
 
-**I1. Validate `couple_id` server-side in all form actions** (Security + Correctness)
-Every server action that receives `couple_id` from client form data should ignore it and instead look it up from the authenticated user's profile. Pattern:
-```js
-const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
-const coupleId = profile.couple_id
-```
-This is already done correctly in `addExpense` — apply it everywhere. This eliminates an entire class of unauthorized data manipulation.
+~~**I1. Validate `couple_id` server-side in all form actions** (Security + Correctness)~~
+✅ **Done.** `addBucketItem`, `markAsDone`, `bulkMarkDone` (bucket.js) and `saveAnniversaryDate` (couple.js) all now look up `couple_id` from the authenticated user's profile server-side. Client-supplied values are ignored. `addExpense` was already correct.
 
-**I2. Replace N+1 loop in `bulkUndoDone` with batched queries** — `bucket.js:152-164`
-Fetch all matching calendar entries in one `.in()` query, then batch-update them, instead of querying one-by-one in a loop.
+~~**I2. Replace N+1 loop in `bulkUndoDone` with batched queries** — `bucket.js:152-164`~~
+✅ **Done.** See B4.
 
 **I3. Abstract the "realtime + refetch" pattern into a custom hook**
 `LedgerClient`, `BucketClient`, `MemoriesClient` all repeat the same 30-line pattern: subscribe to postgres changes, de-duplicate INSERTs, handle UPDATE/DELETE. A `useRealtimeTable(tableName, coupleId, { onInsert, onUpdate, onDelete })` hook would make each component cleaner and ensure consistent de-duplication logic.

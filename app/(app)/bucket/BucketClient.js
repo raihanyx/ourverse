@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { bulkMarkDone, bulkDeleteBucketItems } from '@/app/actions/bucket'
+import { formatDate } from '@/lib/currency'
 import AddBucketForm from './AddBucketForm'
 import MarkDoneSheet from './MarkDoneSheet'
 import BucketHelpSheet from './BucketHelpSheet'
@@ -53,13 +54,22 @@ function CategoryBadge({ category }) {
   )
 }
 
-function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected, onSelect, isPending }) {
+const TODAY = new Date().toLocaleDateString('en-CA')
+
+function isFutureDate(date) {
+  return date && date > TODAY
+}
+
+function BucketItemRow({ item, addedByName, calendarDate, onMarkDone, isSelecting, isSelected, onSelect, isPending }) {
+  const future = isFutureDate(calendarDate)
+  const canSelect = isSelecting && !item.is_done && !future
+
   return (
     <div
-      onClick={isSelecting && !item.is_done ? () => onSelect(item.id) : undefined}
+      onClick={canSelect ? () => onSelect(item.id) : undefined}
       className={`flex items-center gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
         ${item.is_done ? 'opacity-45' : ''}
-        ${isSelecting && !item.is_done ? 'cursor-pointer' : ''}
+        ${canSelect ? 'cursor-pointer' : ''}
         ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}
       `}
     >
@@ -67,6 +77,8 @@ function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected,
         <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
           ${isSelected
             ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
+            : future
+            ? 'border-[#EDE0DC] dark:border-[#3D2820] opacity-30'
             : 'border-[#D4C8C4] dark:border-[#5A3830]'
           }`}
         />
@@ -77,6 +89,11 @@ function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected,
         </p>
         <div className="flex items-center gap-2 mt-1 flex-wrap">
           <CategoryBadge category={item.category} />
+          {calendarDate && !item.is_done && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]">
+              {formatDate(calendarDate)}
+            </span>
+          )}
           {item.is_done && (
             <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium bg-[#DCFCE7] text-[#166534] dark:bg-[#14532D] dark:text-[#86EFAC]">
               memory
@@ -89,9 +106,13 @@ function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected,
       </div>
       {!isSelecting && !item.is_done && (
         <button
-          onClick={() => onMarkDone(item)}
-          disabled={isPending}
-          className="text-xs text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] disabled:opacity-40 transition-colors cursor-pointer flex-shrink-0"
+          onClick={future ? undefined : () => onMarkDone(item)}
+          disabled={isPending || future}
+          className={`text-xs disabled:opacity-40 transition-colors flex-shrink-0
+            ${future
+              ? 'text-[#C4A89E] dark:text-[#A07868] cursor-not-allowed'
+              : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] cursor-pointer'
+            }`}
         >
           Mark done
         </button>
@@ -102,6 +123,7 @@ function BucketItemRow({ item, addedByName, onMarkDone, isSelecting, isSelected,
 
 export default function BucketClient({
   initialItems,
+  initialCalendarDates,
   currentUserId,
   currentUserName,
   partnerId,
@@ -110,6 +132,7 @@ export default function BucketClient({
   memoriesCount,
 }) {
   const [items, setItems] = useState(initialItems)
+  const [calendarDates, setCalendarDates] = useState(initialCalendarDates ?? {})
   const [activeFilter, setActiveFilter] = useState('all')
   const [randomCategory, setRandomCategory] = useState('all')
   const [pickedItem, setPickedItem] = useState(null)
@@ -122,15 +145,24 @@ export default function BucketClient({
   const [isDeleting, startDeleteTransition] = useTransition()
   const [showHelp, setShowHelp] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [bulkDoneIds, setBulkDoneIds] = useState(null)
 
   const refetchItems = useCallback(async () => {
     const supabase = createClient()
-    const { data } = await supabase
-      .from('bucket_items')
-      .select('*')
-      .eq('couple_id', coupleId)
-      .order('created_at', { ascending: false })
+    const [{ data }, { data: calEntries }] = await Promise.all([
+      supabase
+        .from('bucket_items')
+        .select('*')
+        .eq('couple_id', coupleId)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('calendar_entries')
+        .select('bucket_item_id, date')
+        .eq('couple_id', coupleId)
+        .not('bucket_item_id', 'is', null),
+    ])
     if (data) setItems(data)
+    if (calEntries) setCalendarDates(Object.fromEntries(calEntries.map(e => [e.bucket_item_id, e.date])))
   }, [coupleId])
 
   // Sync on mount — corrects stale initialItems from router cache
@@ -159,6 +191,26 @@ export default function BucketClient({
           }
         }
       )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'calendar_entries' },
+        (payload) => {
+          const row = payload.new ?? payload.old
+          if (row?.couple_id !== coupleId) return
+
+          if (payload.eventType === 'INSERT' && payload.new.bucket_item_id) {
+            setCalendarDates(prev => ({ ...prev, [payload.new.bucket_item_id]: payload.new.date }))
+          } else if (payload.eventType === 'UPDATE' && payload.new.bucket_item_id) {
+            setCalendarDates(prev => ({ ...prev, [payload.new.bucket_item_id]: payload.new.date }))
+          } else if (payload.eventType === 'DELETE' && payload.old.bucket_item_id) {
+            setCalendarDates(prev => {
+              const next = { ...prev }
+              delete next[payload.old.bucket_item_id]
+              return next
+            })
+          }
+        }
+      )
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
@@ -177,7 +229,7 @@ export default function BucketClient({
     : items.filter(i => !i.is_done && i.category === activeFilter)
 
   function getPickerPool() {
-    const undone = items.filter(i => !i.is_done)
+    const undone = items.filter(i => !i.is_done && !calendarDates[i.id])
     if (randomCategory === 'all') return undone
     return undone.filter(i => i.category === randomCategory)
   }
@@ -249,21 +301,27 @@ export default function BucketClient({
 
   function handleBulkMarkDone() {
     const ids = filteredItems
-      .filter(i => selectedIds.has(i.id) && !i.is_done)
+      .filter(i => selectedIds.has(i.id) && !i.is_done && !isFutureDate(calendarDates[i.id]))
       .map(i => i.id)
     if (ids.length === 0) return
-    // Optimistically mark items as done so they disappear immediately
+    setBulkDoneIds(ids)
+  }
+
+  function handleConfirmBulkDone(date) {
+    const ids = bulkDoneIds
+    setBulkDoneIds(null)
     setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: true } : i))
     setIsSelecting(false)
     setSelectedIds(new Set())
     setPickedItem(null)
     startTransition(async () => {
-      await bulkMarkDone(ids, coupleId)
+      await bulkMarkDone(ids, date)
     })
   }
 
   const undoneItems = items.filter(i => !i.is_done)
   const pickerPool = getPickerPool()
+  const eligibleSelectedCount = filteredItems.filter(i => selectedIds.has(i.id) && !i.is_done && !isFutureDate(calendarDates[i.id])).length
 
   return (
     <>
@@ -402,8 +460,9 @@ export default function BucketClient({
             </p>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowDoneSheet(pickedItem)}
-                className="flex-1 h-9 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] transition-colors"
+                onClick={isFutureDate(calendarDates[pickedItem.id]) ? undefined : () => setShowDoneSheet(pickedItem)}
+                disabled={isFutureDate(calendarDates[pickedItem.id])}
+                className="flex-1 h-9 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Mark as done
               </button>
@@ -444,6 +503,7 @@ export default function BucketClient({
                 key={item.id}
                 item={item}
                 addedByName={getUserName(item.added_by_user_id)}
+                calendarDate={calendarDates[item.id] ?? null}
                 onMarkDone={setShowDoneSheet}
                 isSelecting={isSelecting}
                 isSelected={selectedIds.has(item.id)}
@@ -479,7 +539,7 @@ export default function BucketClient({
               </button>
               <button
                 onClick={handleBulkMarkDone}
-                disabled={isPending || selectedIds.size === 0}
+                disabled={isPending || eligibleSelectedCount === 0}
                 className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
               >
                 {isPending ? 'Saving…' : 'Mark done'}
@@ -546,6 +606,78 @@ export default function BucketClient({
         />,
         document.body
       )}
+
+      {/* Bulk mark done date picker */}
+      {bulkDoneIds && typeof document !== 'undefined' && createPortal(
+        <BulkMarkDoneSheet
+          count={bulkDoneIds.length}
+          onConfirm={handleConfirmBulkDone}
+          onCancel={() => setBulkDoneIds(null)}
+        />,
+        document.body
+      )}
     </>
+  )
+}
+
+function BulkMarkDoneSheet({ count, onConfirm, onCancel }) {
+  const today = new Date().toLocaleDateString('en-CA')
+  const [date, setDate] = useState(today)
+
+  return (
+    <div className="fixed inset-0 z-30 flex flex-col justify-end">
+      <div
+        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        onClick={onCancel}
+      />
+      <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 animate-slide-up">
+        <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Mark {count} item{count === 1 ? '' : 's'} as done</h2>
+          <button
+            onClick={onCancel}
+            className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
+              When did you do {count === 1 ? 'it' : 'these'}?
+            </label>
+            <input
+              type="date"
+              value={date}
+              max={today}
+              onChange={e => setDate(e.target.value)}
+              className="w-full px-3 py-[10px] rounded-[10px] border text-sm
+                         border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
+                         text-[#1C1210] dark:text-[#FAF3F1]
+                         focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => onConfirm(date)}
+              className="flex-1 py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-xl font-semibold text-sm transition-colors cursor-pointer"
+            >
+              Save memories
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
