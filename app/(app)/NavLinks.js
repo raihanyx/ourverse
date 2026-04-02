@@ -54,7 +54,7 @@ const tabs = [
   { href: '/dashboard',  label: 'Home',     Icon: HomeIcon     },
   { href: '/ledger',     label: 'Ledger',   Icon: ReceiptIcon  },
   { href: '/bucket',     label: 'Bucket',   Icon: StarIcon     },
-  { href: '/calendar',   label: 'Calendar', Icon: CalendarIcon, disabled: true },
+  { href: '/calendar',   label: 'Calendar', Icon: CalendarIcon },
   { href: '/profile',    label: 'Profile',  Icon: UserIcon     },
 ]
 

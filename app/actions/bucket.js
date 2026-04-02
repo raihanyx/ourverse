@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
 
@@ -66,6 +67,12 @@ export async function markAsDone(prevState, formData) {
   })
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
+
+  // Move any linked calendar entry to the actual completion date
+  await supabase
+    .from('calendar_entries')
+    .update({ date })
+    .eq('bucket_item_id', bucketItemId)
 
   return { success: true }
 }
@@ -141,6 +148,22 @@ export async function bulkUndoDone(memoryIds) {
 
   if (deleteError) return { error: 'Could not delete memories.' }
 
+  // Restore each linked calendar entry back to its original planned date
+  for (const bucketItemId of bucketItemIds) {
+    const { data: calEntry } = await supabase
+      .from('calendar_entries')
+      .select('id, original_date')
+      .eq('bucket_item_id', bucketItemId)
+      .maybeSingle()
+    if (calEntry?.original_date) {
+      await supabase
+        .from('calendar_entries')
+        .update({ date: calEntry.original_date })
+        .eq('id', calEntry.id)
+    }
+  }
+
+  revalidatePath('/calendar')
   return { success: true }
 }
 

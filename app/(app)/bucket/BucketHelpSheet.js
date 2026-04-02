@@ -84,8 +84,25 @@ export default function BucketHelpSheet({ isOpen, onClose }) {
 
         {/* Section 3 */}
         <Section title="Done · it becomes a memory">
-          When you do something, mark it as done. You can add the date and a note about how it went. It moves to your Memories page as a keepsake.
+          When you do something, mark it as done. You can add the date and a note about how it went. It moves to your Memories page as a keepsake, and also appears on the calendar on the date you did it.
         </Section>
+
+        <Divider />
+
+        {/* Section 4 */}
+        <div>
+          <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">
+            Connected to the calendar
+          </p>
+          <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.6]">
+            When you plan a date from the Calendar page, it automatically creates a bucket list item here. Marking it done from either place does the same thing — moves it to Memories and updates the calendar.
+          </p>
+          <div className="bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-lg px-[10px] py-2 mt-[6px]">
+            <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.7]">
+              Items added from the calendar show up here just like any other bucket list item — you can mark them done, delete them, or pick them with the random picker.
+            </p>
+          </div>
+        </div>
 
         {/* Got it button */}
         <button
