@@ -2,7 +2,7 @@
 
 # Ourverse
 
-A couples app for managing shared expenses, bucket lists, and date planning. Built for long-distance, multi-currency couples (IDR, THB, AUD, MMK). Core concept: a two-sided expense ledger — not 50/50 splitting, but an honest running record of who paid what and who owes who over time.
+A couples app for managing shared expenses, bucket lists, and date planning. Built for long-distance, multi-currency couples (IDR, THB, AUD, MMK). Core concept: a two-sided expense ledger — an honest running record of who paid what and what each person owes the other, supporting any split arrangement (equal, unequal, or one-sided).
 
 ---
 
