@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { addExpense } from '@/app/actions/expenses'
+import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
 function FieldError({ message }) {
   if (!message) return null
@@ -66,7 +67,6 @@ export default function AddExpenseForm({
 
   return (
     <form action={formAction} className="space-y-4">
-      <input type="hidden" name="partner_id" value={partnerId ?? ''} />
 
       {/* General error */}
       {state?.error && (
@@ -110,10 +110,9 @@ export default function AddExpenseForm({
             Currency
           </label>
           <StyledSelect name="currency" defaultValue="IDR" onChange={e => setSelectedCurrency(e.target.value)}>
-            <option value="IDR">IDR</option>
-            <option value="THB">THB</option>
-            <option value="AUD">AUD</option>
-            <option value="MMK">MMK</option>
+            {SUPPORTED_CURRENCIES.map(c => (
+              <option key={c} value={c}>{c}</option>
+            ))}
           </StyledSelect>
         </div>
       </div>

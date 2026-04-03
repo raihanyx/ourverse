@@ -60,8 +60,8 @@ return { success: true }
 
 ### 🟢 Low
 
-**B10. Currency options hardcoded in `AddExpenseForm`** — `AddExpenseForm.js:114-119`
-Options are hardcoded `IDR/THB/AUD/MMK` instead of mapping over `SUPPORTED_CURRENCIES` from `lib/currency.js`. Adding a currency to the constant won't update this dropdown.
+~~**B10. Currency options hardcoded in `AddExpenseForm`** — `AddExpenseForm.js:114-119`~~
+✅ **Fixed.** Currency `<select>` now maps over `SUPPORTED_CURRENCIES` from `lib/currency.js`. Adding a currency to the constant will automatically appear in the dropdown.
 
 ~~**B11. After deleting a calendar entry, `selectedDate` panel shows empty state** — `CalendarClient.js:287-293`~~
 ✅ **Fixed.** `handleDelete` now reads `dateMap[selectedDate]` before the state update. If the deleted entry was the only item on that day (no other entries, no memories), `setSelectedDate(null)` is called and the panel closes.
@@ -72,38 +72,43 @@ Options are hardcoded `IDR/THB/AUD/MMK` instead of mapping over `SUPPORTED_CURRE
 
 ### 🟡 Medium
 
-**P1. Double-fetch on every page load (mount refetch pattern)**
+**P1. Double-fetch on every page load (mount refetch pattern) — intentional, leave as-is**
 Every major client component (`LedgerClient:166`, `BucketClient:137`, `MemoriesClient:46`) calls `refetch()` on mount:
 ```js
 useEffect(() => { refetch() }, [refetch])
 ```
-This means every page navigation fires: one server-side DB query (for SSR) + one client-side DB query (refetch). That's 2x DB queries per page. The comment says "corrects stale initialData from router cache" — that's the right reason, but `staleTimes: { dynamic: 30 }` in `next.config.mjs` means the cache is at most 30 seconds stale. For most users, an extra 30-second delay is acceptable.
+This fires 2 DB queries per navigation: one server-side (SSR) + one client-side (refetch). The refetch exists because `staleTimes: { dynamic: 30 }` in `next.config.mjs` lets Next.js serve a cached server render on back-navigation — meaning `initialExpenses` could be up to 30 seconds stale without it.
 
-**P2. Realtime subscriptions recreated on every month change** — `CalendarClient.js:249`
+Two alternatives were evaluated and rejected:
+- **Disable router cache (`staleTimes: { dynamic: 0 }`) + remove refetch** — eliminates the double-fetch but makes every navigation hit the server, losing the instant back-navigation feel.
+- **Remove refetch only** — keeps back-navigation fast but risks showing stale data for up to 30 seconds, which is unacceptable for a finance-tracking app.
+
+The current pattern is the correct tradeoff: instant page appearance from cache + always-fresh data after mount + realtime keeps it live from there. The extra DB query is negligible for a 2-user app.
+
+**P2. Realtime subscriptions recreated on every month change — intentional, leave as-is** — `CalendarClient.js:245`
 ```js
 }, [coupleId, viewYear, viewMonth])
 ```
-Every time the month changes, the existing realtime channels are torn down and new ones created. This is 2 subscription handshakes per month navigation. Should subscribe once and filter incoming events by date client-side instead.
+Every month navigation tears down and rebuilds 2 Supabase realtime channels. `viewYear`/`viewMonth` are in the dependency array because the INSERT event handlers use them to filter events to the current month — without them, the handlers would be stale closures always filtering against the initial month.
 
-**P3. `getAppSession` calls `getUser` + 2 DB queries per protected page**
+The fix would be moving those values into refs so the subscription only depends on `coupleId`. The improvement is real but negligible: the ~100-500ms reconnect window is already self-healing because month navigation also calls `refetchMonthData()`, which fetches all entries and memories for the new month fresh from the DB. Any event missed during reconnect is covered by the refetch. For a 2-person app, the added ref complexity doesn't justify the gain.
+
+**P3. `getAppSession` queries — not an issue**
 ```js
 // lib/data/getAppSession.js
-const { data: { user } } = await supabase.auth.getUser()  // Supabase auth round-trip
+const { data: { user } } = await supabase.auth.getUser()  // auth round-trip
 const { data: profile } = await supabase.from('users')...  // DB query
 const { data: partner } = await supabase.from('users')...  // DB query
 ```
-React `cache()` deduplicates this within a single render, but `DashboardPage` also creates its own `supabase` client and calls `createClient()` again. Three Supabase clients per page load is fine but worth noting.
+Wrapped in `React.cache()` — executes exactly once per request regardless of how many server components call it. `DashboardPage` calling `createClient()` again is cheap (no network call, just constructing an object with auth cookies). The "3 Supabase clients" observation is accurate but harmless. No action needed.
 
 ### 🟢 Low
 
-**P4. `PaidExpensesClient` uses `router.refresh()` instead of local state** — `PaidExpensesClient.js:99-102`
-When undoing a paid expense, it calls `router.refresh()` which re-fetches the entire server component tree. `LedgerClient` optimistically updates local state. These are inconsistent patterns for the same operation in sibling components.
+~~**P4. `PaidExpensesClient` uses `router.refresh()` instead of local state** — `PaidExpensesClient.js:99-102`~~
+✅ **Fixed.** `handleUndo` and `handleBulkUndo` now optimistically remove items from `localExpenses` immediately, matching the pattern in `LedgerClient`. The `router.refresh()` calls and the `useRouter` import are removed — `togglePaid`/`bulkSetPaid` already call `revalidatePath` server-side, so the server cache is correct without a client-driven refresh.
 
-**P5. `RealtimeRefresh` triggers `router.refresh()` on every visibilitychange** — `RealtimeRefresh.js:37-43`
-```js
-document.addEventListener('visibilitychange', handleVisibility)
-```
-Every time the user switches apps and comes back, the entire dashboard server component is re-fetched. Could add a debounce or minimum-time-since-last-refresh check.
+~~**P5. `RealtimeRefresh` triggers `router.refresh()` on every visibilitychange** — `RealtimeRefresh.js:37-43`~~
+✅ **Fixed.** Added a 30-second time gate via `useRef`. Rapid tab switches no longer hammer the server — the fallback refresh only fires if at least 30 seconds have passed since the last visibility-triggered refresh. Realtime handles live updates in the interim.
 
 ---
 
@@ -116,6 +121,12 @@ Every time the user switches apps and comes back, the entire dashboard server co
 
 ~~**S2. `addBucketItem` and `markAsDone` — server actions trust client-supplied `couple_id`** (same as B2)~~
 ✅ **Fixed.** See B2.
+
+~~**S7. `addExpense` trusts `partner_id` from form data** — `expenses.js:24,37`~~
+✅ **Fixed.** The hidden `partner_id` input is removed from `AddExpenseForm`. `addExpense` now looks up the real partner via `supabase.from('users').eq('couple_id', ...).neq('id', user.id)` — the client can never inject an arbitrary user ID as payer.
+
+~~**S8. `bulkSetPaid`, `bulkDeleteExpenses`, `togglePaid` had no explicit couple ownership filter** — `expenses.js:74,86,108`~~
+✅ **Fixed.** All three actions now look up `couple_id` from the authenticated user's profile and add `.eq('couple_id', profile.couple_id)` to every DB operation. A user cannot affect expenses outside their couple even if they know the expense IDs.
 
 ### 🟡 Medium
 
@@ -234,7 +245,7 @@ The button is disabled when pool is empty (line 367), so this branch never runs.
 
 8. ~~**Clear `selectedDate` after calendar entry delete if day becomes empty** — `CalendarClient.js:287`. `setSelectedDate(null)` after delete when the day becomes empty.~~ ✅ Done (B11)
 
-9. **Map `SUPPORTED_CURRENCIES` in `AddExpenseForm` currency select** — `AddExpenseForm.js:114`. Prevents future drift when currencies are added.
+9. ~~**Map `SUPPORTED_CURRENCIES` in `AddExpenseForm` currency select** — `AddExpenseForm.js:114`. Prevents future drift when currencies are added.~~ ✅ Done (B10)
 
 ---
 

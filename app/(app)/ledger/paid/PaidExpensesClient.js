@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from 'react'
 import { createPortal } from 'react-dom'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { bulkSetPaid, togglePaid, bulkDeleteExpenses } from '@/app/actions/expenses'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
@@ -76,7 +75,6 @@ export default function PaidExpensesClient({
   partnerName,
   initialTab,
 }) {
-  const router = useRouter()
   const [localExpenses, setLocalExpenses] = useState(expenses)
   const [activeTab, setActiveTab] = useState(initialTab)
   const [isPending, startTransition] = useTransition()
@@ -95,9 +93,9 @@ export default function PaidExpensesClient({
   )
 
   function handleUndo(expenseId) {
+    setLocalExpenses(prev => prev.filter(e => e.id !== expenseId))
     startTransition(async () => {
       await togglePaid(expenseId)
-      router.refresh()
     })
   }
 
@@ -127,11 +125,11 @@ export default function PaidExpensesClient({
   function handleBulkUndo() {
     const ids = sorted.filter(e => selectedIds.has(e.id)).map(e => e.id)
     if (ids.length === 0) return
+    setLocalExpenses(prev => prev.filter(e => !ids.includes(e.id)))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
     startTransition(async () => {
       await bulkSetPaid(ids, false)
-      setIsSelecting(false)
-      setSelectedIds(new Set())
-      router.refresh()
     })
   }
 
