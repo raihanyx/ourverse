@@ -54,15 +54,9 @@ function CategoryBadge({ category }) {
   )
 }
 
-const TODAY = new Date().toLocaleDateString('en-CA')
-
-function isFutureDate(date) {
-  return date && date > TODAY
-}
 
 function BucketItemRow({ item, addedByName, calendarDate, onMarkDone, isSelecting, isSelected, onSelect, isPending }) {
-  const future = isFutureDate(calendarDate)
-  const canSelect = isSelecting && !item.is_done && !future
+  const canSelect = isSelecting && !item.is_done
 
   return (
     <div
@@ -77,8 +71,6 @@ function BucketItemRow({ item, addedByName, calendarDate, onMarkDone, isSelectin
         <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
           ${isSelected
             ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
-            : future
-            ? 'border-[#EDE0DC] dark:border-[#3D2820] opacity-30'
             : 'border-[#D4C8C4] dark:border-[#5A3830]'
           }`}
         />
@@ -106,13 +98,9 @@ function BucketItemRow({ item, addedByName, calendarDate, onMarkDone, isSelectin
       </div>
       {!isSelecting && !item.is_done && (
         <button
-          onClick={future ? undefined : () => onMarkDone(item)}
-          disabled={isPending || future}
-          className={`text-xs disabled:opacity-40 transition-colors flex-shrink-0
-            ${future
-              ? 'text-[#C4A89E] dark:text-[#A07868] cursor-not-allowed'
-              : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A] cursor-pointer'
-            }`}
+          onClick={() => onMarkDone(item)}
+          disabled={isPending}
+          className="flex-shrink-0 h-7 px-3 rounded-full border border-[#C2493A] dark:border-[#E8675A] text-[11px] font-medium text-[#C2493A] dark:text-[#E8675A] hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] disabled:opacity-40 transition-colors cursor-pointer"
         >
           Mark done
         </button>
@@ -301,7 +289,7 @@ export default function BucketClient({
 
   function handleBulkMarkDone() {
     const ids = filteredItems
-      .filter(i => selectedIds.has(i.id) && !i.is_done && !isFutureDate(calendarDates[i.id]))
+      .filter(i => selectedIds.has(i.id) && !i.is_done)
       .map(i => i.id)
     if (ids.length === 0) return
     setBulkDoneIds(ids)
@@ -321,60 +309,69 @@ export default function BucketClient({
 
   const undoneItems = items.filter(i => !i.is_done)
   const pickerPool = getPickerPool()
-  const eligibleSelectedCount = filteredItems.filter(i => selectedIds.has(i.id) && !i.is_done && !isFutureDate(calendarDates[i.id])).length
+  const eligibleSelectedCount = filteredItems.filter(i => selectedIds.has(i.id) && !i.is_done).length
 
   return (
     <>
       <div className="space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Bucket list</h1>
-          <div className="flex items-center gap-[10px]">
-            {isSelecting ? (
-              <button
-                onClick={handleCancelSelecting}
-                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-            ) : (
-              <>
+        {/* Page header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Bucket list</h1>
+              <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+                {undoneItems.length > 0
+                  ? `${undoneItems.length} thing${undoneItems.length === 1 ? '' : 's'} to explore`
+                  : 'Start adding things to do'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+              {isSelecting ? (
                 <button
-                  onClick={() => setShowHelp(true)}
-                  className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1] cursor-pointer"
-                  style={{ background: 'none', border: 'none', padding: 0 }}
+                  onClick={handleCancelSelecting}
+                  className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  <span className="text-sm font-medium">Tip</span>
+                  Cancel
                 </button>
-                {undoneItems.length > 0 && (
-                  <>
-                    <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
+              ) : (
+                <>
+                  <button
+                    onClick={() => setShowHelp(true)}
+                    className="w-8 h-8 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] flex items-center justify-center text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
+                    aria-label="Bucket list tips"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </button>
+                  {undoneItems.length > 0 && (
                     <button
                       onClick={() => { setIsSelecting(true); setSelectedIds(new Set()) }}
-                      className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
+                      className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
                     >
                       Edit
                     </button>
-                  </>
-                )}
-                <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="flex items-center gap-1.5 h-8 px-3 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-[13px] font-semibold hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] transition-colors cursor-pointer"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  Add
-                </button>
-              </>
-            )}
+                  )}
+                  <button
+                    onClick={() => setShowAddForm(true)}
+                    className="flex items-center gap-1.5 h-8 px-3 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-[13px] font-semibold hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] transition-colors cursor-pointer"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add
+                  </button>
+                </>
+              )}
           </div>
         </div>
 
@@ -460,9 +457,8 @@ export default function BucketClient({
             </p>
             <div className="flex gap-2">
               <button
-                onClick={isFutureDate(calendarDates[pickedItem.id]) ? undefined : () => setShowDoneSheet(pickedItem)}
-                disabled={isFutureDate(calendarDates[pickedItem.id])}
-                className="flex-1 h-9 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setShowDoneSheet(pickedItem)}
+                className="flex-1 h-9 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] transition-colors cursor-pointer"
               >
                 Mark as done
               </button>
@@ -584,6 +580,7 @@ export default function BucketClient({
         <MarkDoneSheet
           item={showDoneSheet}
           coupleId={coupleId}
+          calendarDate={calendarDates[showDoneSheet.id] ?? null}
           onSuccess={handleMarkDoneSuccess}
           onCancel={() => setShowDoneSheet(null)}
         />,

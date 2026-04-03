@@ -119,45 +119,56 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   return (
     <>
       <div className="space-y-5">
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <Link
-              href="/bucket"
-              className={`inline-flex items-center gap-1 text-xs text-[#A07060] dark:text-[#D4A090] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors ${isSelecting ? 'invisible' : ''}`}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="15 18 9 12 15 6" />
+        {/* Top nav row */}
+        <div className={`flex items-center justify-between ${isSelecting ? 'invisible' : ''}`}>
+          <Link
+            href="/bucket"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[#EDE0DC] dark:border-[#3D2820] bg-white dark:bg-[#2E201C] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 shadow-[0_1px_4px_rgba(194,73,58,0.06)] cursor-pointer"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            Bucket list
+          </Link>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[#EDE0DC] dark:border-[#3D2820] bg-white dark:bg-[#2E201C] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 shadow-[0_1px_4px_rgba(194,73,58,0.06)] cursor-pointer"
+            aria-label="Memories tips"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Tip
+          </button>
+        </div>
+
+        {/* Page header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F]" aria-hidden="true">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
-              Bucket list
-            </Link>
-            <button
-              onClick={() => setShowHelp(true)}
-              className={`flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer ${isSelecting ? 'invisible' : ''}`}
-              style={{ background: 'none', border: 'none', padding: 0 }}
-              aria-label="Memories tips"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <span className="text-sm font-medium">Tip</span>
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</h1>
-              <p className="text-[13px] text-[#A07060] dark:text-[#D4A090] mt-0.5">Things you've done together</p>
             </div>
-            {memories.length > 0 && (
-              <button
-                onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
-              >
-                {isSelecting ? 'Cancel' : 'Edit'}
-              </button>
-            )}
+            <div>
+              <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Memories</h1>
+              <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+                {memories.length > 0
+                  ? `${memories.length} thing${memories.length === 1 ? '' : 's'} done together`
+                  : 'Things you\'ve done together'}
+              </p>
+            </div>
           </div>
+          {memories.length > 0 && (
+            <button
+              onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
+              className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer flex-shrink-0"
+            >
+              {isSelecting ? 'Cancel' : 'Edit'}
+            </button>
+          )}
         </div>
 
         {memories.length === 0 ? (

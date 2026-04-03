@@ -122,15 +122,28 @@ export async function deleteCalendarEntry(id) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
 
-  // Fetch entry to get bucket_item_id, enforce ownership
+  const { data: profile } = await supabase
+    .from('users')
+    .select('couple_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+
+  // Fetch entry scoped to couple — either partner can delete shared entries
   const { data: entry } = await supabase
     .from('calendar_entries')
-    .select('bucket_item_id, is_personal')
+    .select('bucket_item_id, is_personal, user_id')
     .eq('id', id)
-    .eq('user_id', user.id)
+    .eq('couple_id', profile.couple_id)
     .single()
 
   if (!entry) return { error: 'Entry not found or you do not have permission to delete it.' }
+
+  // Personal entries can only be deleted by their creator
+  if (entry.is_personal && entry.user_id !== user.id) {
+    return { error: 'You can only delete your own personal entries.' }
+  }
 
   const { error } = await supabase.from('calendar_entries').delete().eq('id', id)
   if (error) return { error: 'Could not delete entry. Please try again.' }

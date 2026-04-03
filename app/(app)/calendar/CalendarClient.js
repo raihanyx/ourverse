@@ -541,7 +541,8 @@ export default function CalendarClient({
           {/* Calendar entry cards */}
           {selectedEntries.map(entry => {
             const isCompleted = !entry.is_personal && entry.bucket_item_id && completedBucketIds.has(entry.bucket_item_id)
-            const canDelete   = entry.user_id === currentUserId
+            // Personal entries: only creator can delete. Couple entries: either partner can.
+            const canDelete   = entry.is_personal ? entry.user_id === currentUserId : true
 
             if (entry.is_personal) {
               // Personal entry
@@ -586,59 +587,65 @@ export default function CalendarClient({
             return (
               <div
                 key={entry.id}
-                className={`bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none
-                  flex gap-3 ${isCompleted ? 'opacity-60' : ''}`}
+                className={`bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none ${isCompleted ? 'opacity-60' : ''}`}
               >
-                <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-red-500 dark:bg-red-400' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
-                  ${isCompleted
-                    ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-red-500 dark:text-red-400'
-                    : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
-                  }`}
-                >
-                  {isCompleted ? <CheckIcon /> : <CalendarDotIcon />}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${isCompleted ? 'line-through text-[#A07060] dark:text-[#D4A090]' : 'text-[#1C1210] dark:text-[#FAF3F1]'}`}>
-                    {entry.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <CategoryBadge category={entry.category} />
-                    {partnerName && (
-                      <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
-                        With {partnerName}
-                      </span>
-                    )}
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium
-                      ${isCompleted
-                        ? 'bg-[#FDECEA] text-red-500 dark:bg-[#3D1E18] dark:text-red-400'
-                        : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400'
-                      }`}
-                    >
-                      {isCompleted ? 'Completed' : 'Planned'}
-                    </span>
+                {/* Card body */}
+                <div className="flex gap-3 p-4">
+                  <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-red-500 dark:bg-red-400' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
+                    ${isCompleted
+                      ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-red-500 dark:text-red-400'
+                      : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
+                    }`}
+                  >
+                    {isCompleted ? <CheckIcon /> : <CalendarDotIcon />}
                   </div>
-                  {entry.notes && (
-                    <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-1.5 leading-snug">{entry.notes}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${isCompleted ? 'line-through text-[#A07060] dark:text-[#D4A090]' : 'text-[#1C1210] dark:text-[#FAF3F1]'}`}>
+                      {entry.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <CategoryBadge category={entry.category} />
+                      {partnerName && (
+                        <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
+                          With {partnerName}
+                        </span>
+                      )}
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium
+                        ${isCompleted
+                          ? 'bg-[#FDECEA] text-red-500 dark:bg-[#3D1E18] dark:text-red-400'
+                          : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400'
+                        }`}
+                      >
+                        {isCompleted ? 'Completed' : 'Planned'}
+                      </span>
+                    </div>
+                    {entry.notes && (
+                      <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-1.5 leading-snug">{entry.notes}</p>
+                    )}
+                  </div>
+                  {/* Delete icon — top-right, shown when not completed and authorized */}
+                  {!isCompleted && canDelete && (
+                    <button
+                      onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: !!entry.bucket_item_id })}
+                      className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-1 -mt-1 -mr-1"
+                      aria-label="Delete entry"
+                    >
+                      <TrashIcon />
+                    </button>
                   )}
                 </div>
+
+                {/* Mark done button */}
                 {!isCompleted && (
-                  <div className="flex flex-col gap-1 flex-shrink-0">
+                  <div className="px-4 pb-4">
+                    <div className="h-px bg-[#F5EDE9] dark:bg-[#3D2820] mb-3" />
                     <button
                       onClick={() => setMarkDoneTarget(entry)}
-                      className="text-[11px] font-medium text-[#C2493A] dark:text-[#E8675A] hover:text-[#A83D30] dark:hover:text-[#F0907F] transition-colors cursor-pointer whitespace-nowrap"
+                      className="w-full h-9 rounded-xl border border-[#C2493A] dark:border-[#E8675A] text-[#C2493A] dark:text-[#E8675A] text-sm font-medium hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors cursor-pointer"
                     >
                       Mark done
                     </button>
-                    {canDelete && (
-                      <button
-                        onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: !!entry.bucket_item_id })}
-                        className="flex justify-end text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer"
-                        aria-label="Delete entry"
-                      >
-                        <TrashIcon />
-                      </button>
-                    )}
                   </div>
                 )}
               </div>

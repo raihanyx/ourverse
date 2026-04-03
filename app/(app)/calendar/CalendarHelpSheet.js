@@ -152,7 +152,7 @@ export default function CalendarHelpSheet({ isOpen, onClose }) {
 
         {/* Undo */}
         <Section title="Changed your mind? Undo from Memories">
-          Undo a memory from the Memories page and it returns to the bucket list as undone. If it was originally added from the calendar, the entry also goes back to its original planned date. Items added directly from the bucket list (without a calendar date) return to the bucket list only.
+          Undo a memory from the Memories page to restore it to the bucket list. Calendar entries return to their original planned date; bucket-only items go back to the bucket list.
         </Section>
 
         <button
