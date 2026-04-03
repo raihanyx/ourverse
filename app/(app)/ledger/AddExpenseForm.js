@@ -59,7 +59,7 @@ export default function AddExpenseForm({
 
   useEffect(() => {
     if (state?.success) onSuccess()
-  }, [state])
+  }, [state, onSuccess])
 
   const today = new Date().toLocaleDateString('en-CA')
   const e = state?.errors ?? {}

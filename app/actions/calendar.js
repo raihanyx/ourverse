@@ -81,16 +81,20 @@ export async function markCalendarEntryDone(prevState, formData) {
 
   if (!date) return { error: 'Please select a date.' }
 
-  const { error: updateError } = await supabase
-    .from('bucket_items')
-    .update({ is_done: true })
-    .eq('id', bucketItemId)
+  const resolvedBucketItemId = bucketItemId || null
 
-  if (updateError) return { error: 'Could not update item. Please try again.' }
+  if (resolvedBucketItemId) {
+    const { error: updateError } = await supabase
+      .from('bucket_items')
+      .update({ is_done: true })
+      .eq('id', resolvedBucketItemId)
+
+    if (updateError) return { error: 'Could not update item. Please try again.' }
+  }
 
   const { error: memoryError } = await supabase.from('memories').insert({
     couple_id:      coupleId,
-    bucket_item_id: bucketItemId,
+    bucket_item_id: resolvedBucketItemId,
     name,
     category,
     date,

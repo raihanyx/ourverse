@@ -37,6 +37,7 @@ export async function addBucketItem(prevState, formData) {
 
   if (insertError) return { error: 'Could not save item. Please try again.' }
 
+  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -89,6 +90,9 @@ export async function markAsDone(prevState, formData) {
   })
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
+
+  revalidatePath('/bucket')
+  revalidatePath('/memories')
 
   // Move any linked calendar entry to the actual completion date
   await supabase
@@ -146,6 +150,14 @@ export async function bulkMarkDone(ids, date) {
   const { error: memoryError } = await supabase.from('memories').insert(memories)
   if (memoryError) return { error: 'Could not save memories.' }
 
+  // Move any linked calendar entries to the actual completion date
+  await supabase
+    .from('calendar_entries')
+    .update({ date: today })
+    .in('bucket_item_id', ids)
+    .eq('couple_id', profile.couple_id)
+
+  revalidatePath('/calendar')
   return { success: true }
 }
 
@@ -253,8 +265,11 @@ export async function bulkDeleteMemories(ids) {
 
   const bucketItemIds = memories.map(m => m.bucket_item_id).filter(Boolean)
   if (bucketItemIds.length > 0) {
+    await supabase.from('calendar_entries').delete().in('bucket_item_id', bucketItemIds)
     await supabase.from('bucket_items').delete().in('id', bucketItemIds)
   }
 
+  revalidatePath('/calendar')
+  revalidatePath('/bucket')
   return { success: true }
 }

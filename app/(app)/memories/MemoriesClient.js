@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { bulkUndoDone, bulkDeleteMemories } from '@/app/actions/bucket'
 import { formatDate } from '@/lib/currency'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
+import MemoriesHelpSheet from './MemoriesHelpSheet'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -31,6 +32,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -118,15 +120,30 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
     <>
       <div className="space-y-5">
         <div className="space-y-1">
-          <Link
-            href="/bucket"
-            className={`inline-flex items-center gap-1 text-xs text-[#A07060] dark:text-[#D4A090] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors ${isSelecting ? 'invisible' : ''}`}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Bucket list
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/bucket"
+              className={`inline-flex items-center gap-1 text-xs text-[#A07060] dark:text-[#D4A090] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors ${isSelecting ? 'invisible' : ''}`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Bucket list
+            </Link>
+            <button
+              onClick={() => setShowHelp(true)}
+              className={`flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer ${isSelecting ? 'invisible' : ''}`}
+              style={{ background: 'none', border: 'none', padding: 0 }}
+              aria-label="Memories tips"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span className="text-sm font-medium">Tip</span>
+            </button>
+          </div>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</h1>
@@ -258,6 +275,9 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
         />,
         document.body
       )}
+
+      {/* Help sheet */}
+      <MemoriesHelpSheet isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </>
   )
 }

@@ -175,25 +175,21 @@ export default function CalendarClient({
   function prevMonth() {
     setSlideDir('right')
     setSelectedDate(null)
-    setViewYear(y => {
-      const newY = viewMonth === 0 ? y - 1 : y
-      const newM = viewMonth === 0 ? 11 : viewMonth - 1
-      setViewMonth(newM)
-      refetchMonth(newY, newM)
-      return newY
-    })
+    const newY = viewMonth === 0 ? viewYear - 1 : viewYear
+    const newM = viewMonth === 0 ? 11 : viewMonth - 1
+    setViewYear(newY)
+    setViewMonth(newM)
+    refetchMonth(newY, newM)
   }
 
   function nextMonth() {
     setSlideDir('left')
     setSelectedDate(null)
-    setViewYear(y => {
-      const newY = viewMonth === 11 ? y + 1 : y
-      const newM = viewMonth === 11 ? 0 : viewMonth + 1
-      setViewMonth(newM)
-      refetchMonth(newY, newM)
-      return newY
-    })
+    const newY = viewMonth === 11 ? viewYear + 1 : viewYear
+    const newM = viewMonth === 11 ? 0 : viewMonth + 1
+    setViewYear(newY)
+    setViewMonth(newM)
+    refetchMonth(newY, newM)
   }
 
   // ── Realtime subscriptions ──────────────────────────────
@@ -289,6 +285,12 @@ export default function CalendarClient({
     setIsDeleting(true)
     await deleteCalendarEntry(deleteTarget.id)
     setEntries(prev => prev.filter(e => e.id !== deleteTarget.id))
+    // Close the detail panel if this was the only item on the selected date
+    const dayData = selectedDate ? dateMap[selectedDate] : null
+    const wasOnlyItem =
+      (dayData?.entries?.length ?? 0) === 1 &&
+      (dayData?.memories?.length ?? 0) === 0
+    if (wasOnlyItem) setSelectedDate(null)
     setIsDeleting(false)
     setDeleteTarget(null)
   }

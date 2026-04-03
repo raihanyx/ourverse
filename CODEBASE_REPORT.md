@@ -49,45 +49,22 @@ return { success: true }
 ```
 `/ledger` is missing. The ledger page's server component cache is never invalidated when a new expense is added. The client handles it via `refetch()` on mount, but a direct navigation or hard refresh will show stale data until ISR expires.
 
-**B6. Missing `revalidatePath` in `addBucketItem` and `markAsDone`** — `bucket.js:32-34` and `bucket.js:77`
-Neither calls any `revalidatePath`. The server-rendered bucket page will serve stale data after mutations. Only the memories count on the bucket page (fetched server-side) will be wrong since there's no cache invalidation path.
+~~**B6. Missing `revalidatePath` in `addBucketItem` and `markAsDone`** — `bucket.js:32-34` and `bucket.js:77`~~
+✅ **Fixed.** `addBucketItem` now calls `revalidatePath('/bucket')`. `markAsDone` now calls `revalidatePath('/bucket')` and `revalidatePath('/memories')`.
 
-**B7. `bulkDeleteMemories` silently deletes the linked bucket_items** — `bucket.js:219-222`
-```js
-const bucketItemIds = memories.map(m => m.bucket_item_id).filter(Boolean)
-if (bucketItemIds.length > 0) {
-  await supabase.from('bucket_items').delete().in('id', bucketItemIds)
-}
-```
-The user clicks "Delete" on the Memories page, expecting to delete the memory record. Instead, the underlying bucket list item is also permanently deleted. `bulkUndoDone` (the intended "undo" flow) correctly restores them — so these two actions are inconsistently paired. A user who just wants to clean up memories will also lose their bucket list history.
+~~**B8. Stale `viewMonth` read inside `setViewYear` callback** — `CalendarClient.js:179, 191`~~
+✅ **Fixed.** `prevMonth` and `nextMonth` now compute `newY`/`newM` directly from the closure values without using a functional updater. `viewYear` and `viewMonth` are both read from the closure at call time, which is correct and safe.
 
-**B8. Stale `viewMonth` read inside `setViewYear` callback** — `CalendarClient.js:179, 191`
-```js
-setViewYear(y => {
-  const newY = viewMonth === 0 ? y - 1 : y   // viewMonth is a stale closure value
-  const newM = viewMonth === 0 ? 11 : viewMonth - 1
-  setViewMonth(newM)
-  refetchMonth(newY, newM)
-  return newY
-})
-```
-`viewMonth` is read from the outer closure inside a state updater callback. In React 18+ with concurrent mode, the updater could theoretically run with a different `viewMonth` than what was in the closure. This is fragile and could cause wrong-month data fetches during rapid navigation.
-
-**B9. `useEffect` missing `onSuccess` in dependency array** — `AddExpenseForm.js:60`
-```js
-useEffect(() => {
-  if (state?.success) onSuccess()
-}, [state])  // onSuccess missing
-```
-ESLint exhaustive-deps rule violation. In practice, `onSuccess` is stable, but if it changes identity it would silently break.
+~~**B9. `useEffect` missing `onSuccess` in dependency array** — `AddExpenseForm.js:60`~~
+✅ **Fixed.** `onSuccess` added to the `useEffect` dependency array.
 
 ### 🟢 Low
 
 **B10. Currency options hardcoded in `AddExpenseForm`** — `AddExpenseForm.js:114-119`
 Options are hardcoded `IDR/THB/AUD/MMK` instead of mapping over `SUPPORTED_CURRENCIES` from `lib/currency.js`. Adding a currency to the constant won't update this dropdown.
 
-**B11. After deleting a calendar entry, `selectedDate` panel shows empty state** — `CalendarClient.js:287-293`
-`handleDelete` removes the entry from state but doesn't clear `selectedDate`. If that was the only item on that day, the detail panel stays open showing "Nothing here yet" — which is jarring. Should `setSelectedDate(null)` after delete if the day becomes empty.
+~~**B11. After deleting a calendar entry, `selectedDate` panel shows empty state** — `CalendarClient.js:287-293`~~
+✅ **Fixed.** `handleDelete` now reads `dateMap[selectedDate]` before the state update. If the deleted entry was the only item on that day (no other entries, no memories), `setSelectedDate(null)` is called and the panel closes.
 
 ---
 
@@ -214,9 +191,6 @@ startTransition(async () => {
 ```
 If the server action returns `{ error }`, it's silently ignored. The optimistic update has already happened, so the UI shows items as done even if the DB update failed. No toast, no error state, no rollback.
 
-**U3. Deleting a memory from the Memories page also deletes the bucket item** (same as B7)
-This is confusing UX — the user sees "Delete" expecting to remove a memory, not knowing the bucket list item disappears too.
-
 **U4. Partner cannot delete shared calendar entries** (same as S4)
 If your partner creates a couple date entry and it becomes stale/cancelled, you can't delete it. Only the creator can.
 
@@ -252,13 +226,13 @@ The button is disabled when pool is empty (line 367), so this branch never runs.
 
 4. **Extract `CATEGORY_COLORS` to `lib/constants.js`** — remove duplication across 5 files. One source of truth.
 
-5. **Add `onSuccess` to `useEffect` deps in `AddExpenseForm`** — `AddExpenseForm.js:60`. Fixes the eslint warning and is more correct.
+5. ~~**Add `onSuccess` to `useEffect` deps in `AddExpenseForm`** — `AddExpenseForm.js:60`. Fixes the eslint warning and is more correct.~~ ✅ Done (B9)
 
 6. ~~**Fix `proxy.js` `isAppRoute`** — add `/bucket`, `/calendar`, `/memories`, `/profile` so the proxy's redirect logic covers all protected routes consistently.~~ ✅ Done (B3)
 
-7. **Add `revalidatePath('/bucket')` and `revalidatePath('/memories')` to `addBucketItem` and `markAsDone`** — `bucket.js:32, 77`. Prevents stale server-rendered data.
+7. ~~**Add `revalidatePath('/bucket')` and `revalidatePath('/memories')` to `addBucketItem` and `markAsDone`** — `bucket.js:32, 77`. Prevents stale server-rendered data.~~ ✅ Done (B6)
 
-8. **Clear `selectedDate` after calendar entry delete if day becomes empty** — `CalendarClient.js:287`. `setSelectedDate(null)` after delete when the day becomes empty.
+8. ~~**Clear `selectedDate` after calendar entry delete if day becomes empty** — `CalendarClient.js:287`. `setSelectedDate(null)` after delete when the day becomes empty.~~ ✅ Done (B11)
 
 9. **Map `SUPPORTED_CURRENCIES` in `AddExpenseForm` currency select** — `AddExpenseForm.js:114`. Prevents future drift when currencies are added.
 
@@ -274,11 +248,6 @@ The button is disabled when pool is empty (line 367), so this branch never runs.
 
 **I3. Abstract the "realtime + refetch" pattern into a custom hook**
 `LedgerClient`, `BucketClient`, `MemoriesClient` all repeat the same 30-line pattern: subscribe to postgres changes, de-duplicate INSERTs, handle UPDATE/DELETE. A `useRealtimeTable(tableName, coupleId, { onInsert, onUpdate, onDelete })` hook would make each component cleaner and ensure consistent de-duplication logic.
-
-**I4. Reconsider the `bulkDeleteMemories` → delete bucket items behavior**
-Currently deleting a memory is destructive to the bucket list. Options:
-- **Separate the actions**: "Remove from memories" (keeps bucket item at `is_done: true`) vs "Delete completely" (removes memory + bucket item)
-- Or make `bulkDeleteMemories` only delete memory rows, leaving bucket items in `is_done: true` state (orphaned but browsable under the "Done" filter)
 
 **I5. Stabilize month navigation state in `CalendarClient`**
 Refactor `prevMonth`/`nextMonth` to derive next state fully inside a single `useReducer` dispatch, eliminating the stale-closure risk and making month changes atomic:

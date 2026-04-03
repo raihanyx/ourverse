@@ -46,7 +46,7 @@ export default function CalendarMarkDoneSheet({ entry, onSuccess, onCancel }) {
 
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="calendar_entry_id" value={entry.id} />
-          <input type="hidden" name="bucket_item_id"    value={entry.bucket_item_id} />
+          <input type="hidden" name="bucket_item_id"    value={entry.bucket_item_id ?? ''} />
           <input type="hidden" name="name"              value={entry.title} />
           <input type="hidden" name="category"          value={entry.category} />
           <input type="hidden" name="couple_id"         value={entry.couple_id} />

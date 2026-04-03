@@ -15,7 +15,7 @@ function Section({ title, children }) {
   )
 }
 
-export default function BucketHelpSheet({ isOpen, onClose }) {
+export default function MemoriesHelpSheet({ isOpen, onClose }) {
   const [isClosing, setIsClosing] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -54,28 +54,25 @@ export default function BucketHelpSheet({ isOpen, onClose }) {
 
         {/* Title */}
         <p className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-[14px]">
-          How the bucket list works
+          How memories work
         </p>
 
         {/* Section 1 */}
-        <Section title="Add things you want to do together">
-          Add restaurants you want to try, trips you want to take, movies to watch, or anything else. Both of you can add to the same list.
+        <Section title="What shows up here">
+          Every bucket list item or calendar date you mark as done becomes a memory. Both of you share the same list — it's your joint history of things you've done together.
         </Section>
 
         <Divider />
 
         {/* Section 2 */}
         <div>
-          <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">
-            Can't decide? Let us pick
-          </p>
+          <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Undo done</p>
           <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.6]">
-            Use the random picker to let the app choose for you. Filter by category if you're only in the mood for a restaurant or a movie.
+            Tap <span className={accent}>Edit</span>, select memories, then <span className={accent}>Undo done</span>. The item goes back to your bucket list as undone, ready to be marked done again later.
           </p>
           <div className="bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-lg px-[10px] py-2 mt-[6px]">
             <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.7]">
-              Stuck on where to eat?<br />
-              Select <span className={accent}>Restaurants</span> then tap <span className={accent}>Pick for us</span>.
+              If the item was originally planned from the <span className={accent}>Calendar</span>, it also goes back to its original planned date on the calendar. Items added only from the bucket list return to the bucket list only.
             </p>
           </div>
         </div>
@@ -83,33 +80,17 @@ export default function BucketHelpSheet({ isOpen, onClose }) {
         <Divider />
 
         {/* Section 3 */}
-        <Section title="Done · it becomes a memory">
-          When you do something, mark it as done. You can add the date and a note about how it went. It moves to your Memories page as a keepsake, and also appears on the calendar on the date you did it.
-        </Section>
-
-        <Divider />
-
-        {/* Section 4 */}
         <div>
-          <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">
-            Connected to the calendar
-          </p>
+          <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Delete</p>
           <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.6]">
-            When you plan a date from the Calendar page, it automatically creates a bucket list item here. Marking it done from either place works the same way: it moves to Memories and updates the calendar.
+            Tap <span className={accent}>Edit</span>, select memories, then <span className={accent}>Delete</span>. This permanently removes the memory, the bucket list item, and the calendar entry if there was one. It cannot be undone.
           </p>
           <div className="bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-lg px-[10px] py-2 mt-[6px]">
             <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.7]">
-              Items added from the calendar show up here just like any other bucket list item — you can mark them done, delete them, or pick them with the random picker.
+              Use <span className={accent}>Undo done</span> if you want to move something back to the bucket list. Use <span className={accent}>Delete</span> only if you want to remove it entirely.
             </p>
           </div>
         </div>
-
-        <Divider />
-
-        {/* Section 5 */}
-        <Section title="Changed your mind? Undo from Memories">
-          Tap Edit on the Memories page, select items, then Undo done. The item comes back to your bucket list as undone. If it was originally added from the Calendar, it also goes back to its original planned date on the calendar.
-        </Section>
 
         {/* Got it button */}
         <button
