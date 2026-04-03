@@ -19,6 +19,14 @@ const CATEGORY_COLORS = {
   other:         'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
 }
 
+const CATEGORY_LABELS = {
+  food:          'Food',
+  transport:     'Transport',
+  accommodation: 'Accommodation',
+  shopping:      'Shopping',
+  other:         'Other',
+}
+
 function TotalsBadges({ expenses, baseCurrency, rates }) {
   const unpaid = expenses.filter(e => !e.is_paid)
   const totals = sumByCurrency(unpaid)
@@ -62,15 +70,16 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
 }
 
 function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onSelect }) {
+  const isMuted = expense.is_paid && (!isSelecting || !isSelected)
+
   return (
     <div
       onClick={isSelecting ? () => onSelect(expense.id) : undefined}
       className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
-                  expense-row-transition
-                  ${isSelecting ? 'cursor-pointer' : ''}
-                  ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}
-                  ${!isSelecting && expense.is_paid ? 'opacity-40 dark:opacity-50' : ''}
-                  ${isSelecting && expense.is_paid && !isSelected ? 'opacity-40 dark:opacity-50' : ''}`}
+        expense-row-transition
+        ${isSelecting ? 'cursor-pointer' : ''}
+        ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}
+        ${isMuted ? 'opacity-40 dark:opacity-50' : ''}`}
     >
       {isSelecting && (
         <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
@@ -81,46 +90,47 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
         />
       )}
       <div className="flex-1 min-w-0">
-        <p
-          className={`text-sm font-medium truncate
-                      ${expense.is_paid
-                        ? 'line-through text-[#A07060] dark:text-[#D4A090]'
-                        : 'text-[#1C1210] dark:text-[#FAF3F1]'
-                      }`}
-        >
-          {expense.name}
-        </p>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{formatDate(expense.date)}</span>
-          <span
-            className={`text-xs px-1.5 py-0.5 rounded-md font-medium
-                        ${CATEGORY_COLORS[expense.category] ?? 'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]'}`}
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <p className={`text-sm font-medium truncate
+            ${expense.is_paid
+              ? 'line-through text-[#A07060] dark:text-[#D4A090]'
+              : 'text-[#1C1210] dark:text-[#FAF3F1]'
+            }`}
           >
-            {expense.category}
-          </span>
-          {expense.notes && (
-            <span className="text-xs text-[#C4A89E] dark:text-[#A07868] truncate max-w-[120px]">
-              {expense.notes}
+            {expense.name}
+          </p>
+          <p className="text-[15px] font-bold text-[#1C1210] dark:text-[#FAF3F1] flex-shrink-0">
+            {formatAmount(expense.amount, expense.currency)}
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">{formatDate(expense.date)}</span>
+            <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${CATEGORY_COLORS[expense.category] ?? CATEGORY_COLORS.other}`}>
+              {CATEGORY_LABELS[expense.category] ?? expense.category}
             </span>
+          </div>
+          {!isSelecting && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggle(expense.id) }}
+              disabled={isPending}
+              className={`flex-shrink-0 h-7 px-3 rounded-full border text-[11px] font-medium disabled:opacity-40 transition-colors cursor-pointer
+                ${expense.is_paid
+                  ? 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F]'
+                  : 'border-[#C2493A] dark:border-[#E8675A] text-[#C2493A] dark:text-[#E8675A] hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18]'
+                }`}
+            >
+              {expense.is_paid ? 'Undo' : 'Mark paid'}
+            </button>
           )}
         </div>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className={`text-sm font-semibold text-[#1C1210] ${expense.is_paid ? 'dark:text-[#D4A090]' : 'dark:text-[#FAF3F1]'}`}>
-          {formatAmount(expense.amount, expense.currency)}
-        </p>
-        {!isSelecting && (
-          <button
-            onClick={() => onToggle(expense.id)}
-            disabled={isPending}
-            className={`text-xs mt-0.5 disabled:opacity-40 transition-colors cursor-pointer
-                        ${expense.is_paid
-                          ? 'text-[#C4A89E] dark:text-[#A07868] hover:text-[#A07060] dark:hover:text-[#D4A090]'
-                          : 'text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]'
-                        }`}
+        {expense.notes && (
+          <p
+            className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
+            style={{ borderLeft: '2px solid #EDE0DC' }}
           >
-            {expense.is_paid ? 'Undo' : 'Mark paid'}
-          </button>
+            {expense.notes}
+          </p>
         )}
       </div>
     </div>
@@ -315,6 +325,8 @@ export default function LedgerClient({
   const hasSelectedUnpaid = visibleExpenses.some(e => selectedIds.has(e.id) && !e.is_paid)
   const hasSelectedPaid   = visibleExpenses.some(e => selectedIds.has(e.id) && e.is_paid)
 
+  const unpaidCount = expenses.filter(e => !e.is_paid).length
+
   const tabs = [
     { key: 'owe_me', label: 'They owe me', list: theyOweMe },
     { key: 'i_owe', label: 'I owe them', list: iOweThem },
@@ -323,14 +335,29 @@ export default function LedgerClient({
   return (
     <>
       <div className="space-y-5">
-        <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Ledger</h1>
-          <div className="flex items-center gap-[10px]">
+
+        {/* Page header */}
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2z" />
+                <line x1="9" y1="9" x2="15" y2="9" />
+                <line x1="9" y1="13" x2="15" y2="13" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Ledger</h1>
+              <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+                {unpaidCount > 0 ? `${unpaidCount} outstanding` : 'All settled up'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
             {isSelecting ? (
               <button
                 onClick={handleCancelSelecting}
-                className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
+                className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
               >
                 Cancel
               </button>
@@ -338,28 +365,23 @@ export default function LedgerClient({
               <>
                 <button
                   onClick={() => setShowHelp(true)}
-                  className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] transition-colors hover:text-[#1C1210] dark:hover:text-[#FAF3F1] cursor-pointer"
-                  style={{ background: 'none', border: 'none', padding: 0 }}
+                  className="w-8 h-8 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] flex items-center justify-center text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
+                  aria-label="Ledger tips"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
-                  <span className="text-sm font-medium">Tip</span>
                 </button>
                 {(unpaidSorted.length > 0 || paidPreview.length > 0) && (
-                  <>
-                    <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
-                    <button
-                      onClick={handleStartSelecting}
-                      className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors"
-                    >
-                      Edit
-                    </button>
-                  </>
+                  <button
+                    onClick={handleStartSelecting}
+                    className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
+                  >
+                    Edit
+                  </button>
                 )}
-                <div className="w-px h-[14px] bg-[#EDE0DC] dark:bg-[#3D2820]" />
                 <button
                   onClick={() => setShowForm(true)}
                   className="flex items-center gap-1.5 h-8 px-3 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-[13px] font-semibold hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] transition-colors cursor-pointer"
@@ -375,6 +397,7 @@ export default function LedgerClient({
           </div>
         </div>
 
+        <div className="space-y-3">
         {/* Tabs */}
         <div className="flex bg-[#F0E8E4] dark:bg-[#120D0B] rounded-xl p-1">
           {tabs.map(tab => (

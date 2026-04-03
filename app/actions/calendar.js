@@ -72,31 +72,43 @@ export async function markCalendarEntryDone(prevState, formData) {
   if (!user) return { error: 'Not authenticated.' }
 
   const calendarEntryId = formData.get('calendar_entry_id')
-  const bucketItemId    = formData.get('bucket_item_id')
-  const name            = formData.get('name')
-  const category        = formData.get('category')
-  const coupleId        = formData.get('couple_id')
   const date            = formData.get('date')
   const note            = formData.get('note')?.trim() || null
 
   if (!date) return { error: 'Please select a date.' }
 
-  const resolvedBucketItemId = bucketItemId || null
+  const { data: profile } = await supabase
+    .from('users')
+    .select('couple_id')
+    .eq('id', user.id)
+    .single()
 
-  if (resolvedBucketItemId) {
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+
+  // Fetch entry server-side — verifies ownership, derives all fields from DB
+  const { data: entry } = await supabase
+    .from('calendar_entries')
+    .select('bucket_item_id, title, category, couple_id')
+    .eq('id', calendarEntryId)
+    .eq('couple_id', profile.couple_id)
+    .single()
+
+  if (!entry) return { error: 'Entry not found or you do not have permission.' }
+
+  if (entry.bucket_item_id) {
     const { error: updateError } = await supabase
       .from('bucket_items')
       .update({ is_done: true })
-      .eq('id', resolvedBucketItemId)
+      .eq('id', entry.bucket_item_id)
 
     if (updateError) return { error: 'Could not update item. Please try again.' }
   }
 
   const { error: memoryError } = await supabase.from('memories').insert({
-    couple_id:      coupleId,
-    bucket_item_id: resolvedBucketItemId,
-    name,
-    category,
+    couple_id:      entry.couple_id,
+    bucket_item_id: entry.bucket_item_id,
+    name:           entry.title,
+    category:       entry.category,
     date,
     note,
   })

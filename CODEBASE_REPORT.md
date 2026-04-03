@@ -130,14 +130,11 @@ Wrapped in `React.cache()` — executes exactly once per request regardless of h
 
 ### 🟡 Medium
 
-**S3. `markCalendarEntryDone` trusts `bucket_item_id` from form data without ownership check** — `calendar.js:75`
-The action updates `bucket_items.is_done` and creates a `memories` row using a `bucket_item_id` supplied by the client. If RLS permits, a malicious user could mark another couple's bucket item as done.
+~~**S3. `markCalendarEntryDone` trusts `bucket_item_id`, `couple_id`, `name`, `category` from form data** — `calendar.js:75-99`~~
+✅ **Fixed.** `markCalendarEntryDone` now looks up the calendar entry by `calendar_entry_id` + `couple_id` (from the authenticated user's profile) server-side. `bucket_item_id`, `title`, and `category` are all derived from that DB record — the client no longer supplies any of these values. Same pattern as the existing fixes in `bucket.js`.
 
-**S4. Only entry creators can delete calendar entries** — `calendar.js:126-129`
-```js
-.eq('user_id', user.id)  // ownership filter
-```
-This means a partner cannot delete a couple entry the other person created, even though it's a shared event. This could frustrate users and seems like an unintentional restriction.
+~~**S4. Only entry creators can delete calendar entries** — `calendar.js:126-129`~~
+✅ **Fixed.** `deleteCalendarEntry` now scopes the entry lookup to `couple_id` (from the authenticated user's profile), not `user_id`. Either partner can delete any couple entry. Personal entries still enforce creator-only deletion via an explicit `entry.is_personal && entry.user_id !== user.id` check.
 
 ### 🟢 Low
 
@@ -202,8 +199,8 @@ startTransition(async () => {
 ```
 If the server action returns `{ error }`, it's silently ignored. The optimistic update has already happened, so the UI shows items as done even if the DB update failed. No toast, no error state, no rollback.
 
-**U4. Partner cannot delete shared calendar entries** (same as S4)
-If your partner creates a couple date entry and it becomes stale/cancelled, you can't delete it. Only the creator can.
+~~**U4. Partner cannot delete shared calendar entries** (same as S4)~~
+✅ **Fixed.** See S4.
 
 **U5. `memoriesCount` on the Bucket page is server-fetched but stale**
 `bucket/page.js` fetches `memoriesCount` once server-side. After marking items as done (which creates new memories), the count shown in the Memories link card doesn't update without a full page refresh — the realtime subscription doesn't update this count.

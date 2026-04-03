@@ -15,54 +15,71 @@ const CATEGORY_COLORS = {
   other:         'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
 }
 
-function PaidExpenseRow({ expense, onUndo, isPending, isSelecting, isSelected, onSelect }) {
+const CATEGORY_LABELS = {
+  food:          'Food',
+  transport:     'Transport',
+  accommodation: 'Accommodation',
+  shopping:      'Shopping',
+  other:         'Other',
+}
+
+function PaidExpenseCard({ expense, onUndo, isPending, isSelecting, isSelected, onSelect }) {
   return (
     <div
       onClick={isSelecting ? () => onSelect(expense.id) : undefined}
-      className={`flex items-start gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0 expense-row-transition
-                  ${isSelecting ? 'cursor-pointer' : ''}
-                  ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}`}
+      className={`bg-white dark:bg-[#2E201C] rounded-[14px] border p-[14px] mb-[10px] transition-colors shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none
+        ${isSelecting ? 'cursor-pointer' : ''}
+        ${isSelected
+          ? 'border-[#C2493A] dark:border-[#F0907F] bg-[#FEF6F5] dark:bg-[#2A1510]'
+          : 'border-[#EDE0DC] dark:border-[#3D2820]'
+        }`}
     >
-      {isSelecting && (
-        <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
-          ${isSelected
-            ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
-            : 'border-[#D4C8C4] dark:border-[#5A3830]'
-          }`}
-        />
-      )}
-      <div className="flex-1 min-w-0 opacity-40 dark:opacity-50">
-        <p className="text-sm font-medium truncate text-[#A07060] dark:text-[#D4A090]">
-          {expense.name}
-        </p>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <span className="text-xs text-[#A07060] dark:text-[#D4A090]">{formatDate(expense.date)}</span>
-          <span
-            className={`text-xs px-1.5 py-0.5 rounded-md font-medium
-                        ${CATEGORY_COLORS[expense.category] ?? 'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]'}`}
-          >
-            {expense.category}
-          </span>
+      <div className="flex items-start gap-3">
+        {isSelecting && (
+          <div className={`mt-0.5 w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
+            ${isSelected
+              ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
+              : 'border-[#D4C8C4] dark:border-[#5A3830]'
+            }`}
+          />
+        )}
+        <div className="flex-1 min-w-0 opacity-60">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate">
+              {expense.name}
+            </p>
+            <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] flex-shrink-0">
+              {formatAmount(expense.amount, expense.currency)}
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
+                {formatDate(expense.date)}
+              </span>
+              <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${CATEGORY_COLORS[expense.category] ?? CATEGORY_COLORS.other}`}>
+                {CATEGORY_LABELS[expense.category] ?? expense.category}
+              </span>
+            </div>
+            {!isSelecting && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onUndo(expense.id) }}
+                disabled={isPending}
+                className="flex-shrink-0 h-7 px-3 rounded-full border border-[#EDE0DC] dark:border-[#3D2820] text-[11px] font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] disabled:opacity-40 transition-colors cursor-pointer"
+              >
+                Undo
+              </button>
+            )}
+          </div>
           {expense.notes && (
-            <span className="text-xs text-[#C4A89E] dark:text-[#A07868] truncate max-w-[120px]">
+            <p
+              className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
+              style={{ borderLeft: '2px solid #EDE0DC' }}
+            >
               {expense.notes}
-            </span>
+            </p>
           )}
         </div>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className="text-sm font-semibold opacity-40 dark:opacity-50 text-[#1C1210] dark:text-[#D4A090]">
-          {formatAmount(expense.amount, expense.currency)}
-        </p>
-        {!isSelecting && (
-          <button
-            onClick={() => onUndo(expense.id)}
-            disabled={isPending}
-            className="text-[13px] mt-0.5 disabled:opacity-40 transition-colors cursor-pointer font-medium text-[#C2493A] dark:text-[#F0907F] hover:text-[#A83D30] dark:hover:text-[#E8675A]"
-          >
-            Undo
-          </button>
-        )}
       </div>
     </div>
   )
@@ -156,58 +173,86 @@ export default function PaidExpensesClient({
 
   return (
     <div className="space-y-5">
-      <div className="space-y-1">
+
+      {/* Top nav row */}
+      <div className={`flex items-center ${isSelecting ? 'invisible' : ''}`}>
         <Link
           href="/ledger"
-          className={`inline-flex items-center gap-1 text-xs text-[#A07060] dark:text-[#D4A090] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors ${isSelecting ? 'invisible' : ''}`}
+          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-[#EDE0DC] dark:border-[#3D2820] bg-white dark:bg-[#2E201C] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 shadow-[0_1px_4px_rgba(194,73,58,0.06)] cursor-pointer"
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="15 18 9 12 15 6" />
           </svg>
           Ledger
         </Link>
-        <div className="flex items-center justify-between">
-          <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
-            Paid expenses
-          </h1>
-          {sorted.length > 0 && (
-            <button
-              onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
-              className="text-sm font-medium text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
-            >
-              {isSelecting ? 'Cancel' : 'Edit'}
-            </button>
-          )}
-        </div>
       </div>
 
+      {/* Page header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2-3-2z" />
+              <polyline points="9 11 11 13 15 9" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">
+              Paid expenses
+            </h1>
+            <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+              {localExpenses.length > 0
+                ? `${localExpenses.length} expense${localExpenses.length === 1 ? '' : 's'} settled`
+                : 'No paid expenses yet'}
+            </p>
+          </div>
+        </div>
+        {sorted.length > 0 && (
+          <button
+            onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
+            className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer flex-shrink-0"
+          >
+            {isSelecting ? 'Cancel' : 'Edit'}
+          </button>
+        )}
+      </div>
+
+      {/* Tab switcher */}
       <div className="flex bg-[#F0E8E4] dark:bg-[#120D0B] rounded-xl p-1">
         {tabs.map(tab => (
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
             className={`flex-1 h-9 rounded-lg text-sm font-medium transition-colors cursor-pointer
-                        ${activeTab === tab.key
-                          ? 'bg-white dark:bg-[#2E201C] text-[#1C1210] dark:text-[#FAF3F1] shadow-sm'
-                          : 'text-[#A07060] dark:text-[#A07868] hover:text-[#1C1210] dark:hover:text-[#FAF3F1]'
-                        }`}
+              ${activeTab === tab.key
+                ? 'bg-white dark:bg-[#2E201C] text-[#1C1210] dark:text-[#FAF3F1] shadow-sm'
+                : 'text-[#A07060] dark:text-[#A07868] hover:text-[#1C1210] dark:hover:text-[#FAF3F1]'
+              }`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        {sorted.length === 0 ? (
-          <div className="py-10 text-center space-y-2">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-[#D4C8C4] dark:text-[#5A3830]" aria-hidden="true">
+      {/* Expense list */}
+      {sorted.length === 0 ? (
+        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-14 text-center px-6 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
+          <div className="w-12 h-12 rounded-2xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center mx-auto mb-3">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">Nothing marked as paid yet</p>
           </div>
-        ) : (
-          sorted.map(expense => (
-            <PaidExpenseRow
+          <p className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">
+            Nothing paid yet
+          </p>
+          <p className="text-[13px] text-[#A07060] dark:text-[#D4A090] leading-relaxed">
+            Mark expenses as paid in the ledger to see them here
+          </p>
+        </div>
+      ) : (
+        <div>
+          {sorted.map(expense => (
+            <PaidExpenseCard
               key={expense.id}
               expense={expense}
               onUndo={handleUndo}
@@ -216,11 +261,13 @@ export default function PaidExpensesClient({
               isSelected={selectedIds.has(expense.id)}
               onSelect={handleSelect}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Bulk action bar — portalled to avoid fixed positioning being broken by parent transforms */}
+      <div className="h-4" />
+
+      {/* Bulk action bar */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
           className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
@@ -237,7 +284,7 @@ export default function PaidExpensesClient({
                 <button
                   onClick={handleBulkDelete}
                   disabled={isDeleting}
-                  className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors"
+                  className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors cursor-pointer"
                 >
                   {isDeleting ? 'Deleting…' : 'Delete'}
                 </button>
@@ -245,9 +292,9 @@ export default function PaidExpensesClient({
               <button
                 onClick={handleBulkUndo}
                 disabled={isPending || selectedIds.size === 0}
-                className="h-9 px-4 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] text-white text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors"
+                className="h-9 px-4 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] text-white text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors cursor-pointer"
               >
-                Undo paid
+                {isPending ? 'Undoing…' : 'Undo paid'}
               </button>
             </div>
           </div>
@@ -264,8 +311,6 @@ export default function PaidExpensesClient({
         />,
         document.body
       )}
-
-      <div className="h-6" />
     </div>
   )
 }

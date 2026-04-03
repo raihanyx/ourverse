@@ -310,12 +310,28 @@ export default function CalendarClient({
     <div className="space-y-5">
 
       {/* Page header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-[#1C1210] dark:text-[#FAF3F1]">Calendar</h1>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Calendar</h1>
+            <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
+              {entries.length > 0
+                ? `${entries.length} thing${entries.length === 1 ? '' : 's'} this month`
+                : 'Plan your dates together'}
+            </p>
+          </div>
+        </div>
         <button
           onClick={() => setShowHelp(true)}
-          className="flex items-center gap-1 text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] transition-colors cursor-pointer"
-          style={{ background: 'none', border: 'none', padding: 0 }}
+          className="w-8 h-8 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] flex items-center justify-center text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer flex-shrink-0"
           aria-label="Calendar tips"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -323,7 +339,6 @@ export default function CalendarClient({
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          <span className="text-sm font-medium">Tip</span>
         </button>
       </div>
 
@@ -427,13 +442,13 @@ export default function CalendarClient({
                     {(hasMem || hasCouple || hasPersonal) && (
                       <div className="absolute bottom-1 flex gap-[3px]">
                         {hasMem && (
-                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-red-500 dark:bg-red-400'}`} />
+                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-[#C2493A] dark:bg-[#F0907F]'}`} />
                         )}
                         {hasCouple && (
-                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
+                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-[#1E40AF] dark:bg-[#7AB0D8]'}`} />
                         )}
                         {hasPersonal && (
-                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/60' : 'bg-emerald-500 dark:bg-emerald-400'}`} />
+                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/60' : 'bg-[#3B6D11] dark:bg-[#97C459]'}`} />
                         )}
                       </div>
                     )}
@@ -447,20 +462,22 @@ export default function CalendarClient({
         {/* Dot legend */}
         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#F5EDE9] dark:border-[#3D2820]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400" />
+            <span className="w-2 h-2 rounded-full bg-[#C2493A] dark:bg-[#F0907F]" />
             <span className="text-[10px] text-[#A07060] dark:text-[#D4A090]">Memory</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-indigo-400" />
+            <span className="w-2 h-2 rounded-full bg-[#1E40AF] dark:bg-[#7AB0D8]" />
             <span className="text-[10px] text-[#A07060] dark:text-[#D4A090]">Together</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+            <span className="w-2 h-2 rounded-full bg-[#3B6D11] dark:bg-[#97C459]" />
             <span className="text-[10px] text-[#A07060] dark:text-[#D4A090]">Personal</span>
           </div>
           {anniversaryDate && (
-            <div className="flex items-center gap-1">
-              <span className="text-[11px] text-amber-500">♥</span>
+            <div className="flex items-center gap-1.5">
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F]" aria-hidden="true">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
               <span className="text-[10px] text-[#A07060] dark:text-[#D4A090]">Anniversary</span>
             </div>
           )}
@@ -493,9 +510,11 @@ export default function CalendarClient({
           {/* Anniversary banner */}
           {anniversaryDay === Number(selectedDate.split('-')[2]) &&
            Number(selectedDate.split('-')[1]) - 1 === viewMonth && (
-            <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 dark:bg-[#2A1E08] border border-amber-200 dark:border-[#4A3010] rounded-2xl">
-              <span className="text-base">♥</span>
-              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Your anniversary</p>
+            <div className="flex items-center gap-3 px-4 py-3 bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#F5C4BE] dark:border-[#5A2A20] rounded-2xl">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F] flex-shrink-0" aria-hidden="true">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+              <p className="text-sm font-medium text-[#C2493A] dark:text-[#F0907F]">Your anniversary</p>
             </div>
           )}
 
@@ -513,26 +532,28 @@ export default function CalendarClient({
           {selectedMemories.map(memory => (
             <div
               key={memory.id}
-              className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none
-                flex gap-3"
+              className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none flex gap-3"
             >
-              {/* Left accent */}
-              <div className="w-[3px] rounded-full bg-red-500 dark:bg-red-400 flex-shrink-0 self-stretch" />
-              {/* Icon */}
-              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0 text-red-500 dark:text-red-400">
+              <div className="w-[3px] rounded-full bg-[#C2493A] dark:bg-[#F0907F] flex-shrink-0 self-stretch" />
+              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0 text-[#C2493A] dark:text-[#F0907F]">
                 <HeartIcon filled />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate">{memory.name}</p>
-                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate mb-1.5">{memory.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
                   <CategoryBadge category={memory.category} />
                   <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">{formatDate(memory.date)}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#FDECEA] text-red-500 dark:bg-[#3D1E18] dark:text-red-400">
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]">
                     Memory
                   </span>
                 </div>
                 {memory.note && (
-                  <p className="text-[12px] italic text-[#A07060] dark:text-[#D4A090] mt-1.5 leading-snug">{memory.note}</p>
+                  <p
+                    className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
+                    style={{ borderLeft: '2px solid #EDE0DC' }}
+                  >
+                    {memory.note}
+                  </p>
                 )}
               </div>
             </div>
@@ -549,31 +570,35 @@ export default function CalendarClient({
               return (
                 <div
                   key={entry.id}
-                  className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none
-                    flex gap-3"
+                  className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none flex gap-3"
                 >
-                  <div className="w-[3px] rounded-full bg-emerald-500 dark:bg-emerald-400 flex-shrink-0 self-stretch" />
-                  <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950 flex items-center justify-center flex-shrink-0 text-emerald-600 dark:text-emerald-400">
+                  <div className="w-[3px] rounded-full bg-[#3B6D11] dark:bg-[#97C459] flex-shrink-0 self-stretch" />
+                  <div className="w-8 h-8 rounded-xl bg-[#EAF3DE] dark:bg-[#173404] flex items-center justify-center flex-shrink-0 text-[#3B6D11] dark:text-[#97C459]">
                     <PersonIcon />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate">{entry.title}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate mb-1.5">{entry.title}</p>
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
                         {entry.user_id === currentUserId ? 'You' : (partnerName ?? 'Partner')}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]">
                         Personal
                       </span>
                     </div>
                     {entry.notes && (
-                      <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-1.5 leading-snug">{entry.notes}</p>
+                      <p
+                        className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
+                        style={{ borderLeft: '2px solid #EDE0DC' }}
+                      >
+                        {entry.notes}
+                      </p>
                     )}
                   </div>
                   {canDelete && (
                     <button
                       onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: false })}
-                      className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-1"
+                      className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-1 -mt-0.5 -mr-0.5"
                       aria-label="Delete entry"
                     >
                       <TrashIcon />
@@ -587,24 +612,34 @@ export default function CalendarClient({
             return (
               <div
                 key={entry.id}
-                className={`bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none ${isCompleted ? 'opacity-60' : ''}`}
+                className={`bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none flex gap-3 ${isCompleted ? 'opacity-60' : ''}`}
               >
-                {/* Card body */}
-                <div className="flex gap-3 p-4">
-                  <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-red-500 dark:bg-red-400' : 'bg-indigo-500 dark:bg-indigo-400'}`} />
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
-                    ${isCompleted
-                      ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-red-500 dark:text-red-400'
-                      : 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
-                    }`}
-                  >
-                    {isCompleted ? <CheckIcon /> : <CalendarDotIcon />}
-                  </div>
-                  <div className="flex-1 min-w-0">
+                <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-[#C2493A] dark:bg-[#F0907F]' : 'bg-[#1E40AF] dark:bg-[#7AB0D8]'}`} />
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
+                  ${isCompleted
+                    ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-[#C2493A] dark:text-[#F0907F]'
+                    : 'bg-[#DBEAFE] dark:bg-[#1E2A3A] text-[#1E40AF] dark:text-[#7AB0D8]'
+                  }`}
+                >
+                  {isCompleted ? <CheckIcon /> : <CalendarDotIcon />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
                     <p className={`text-sm font-semibold truncate ${isCompleted ? 'line-through text-[#A07060] dark:text-[#D4A090]' : 'text-[#1C1210] dark:text-[#FAF3F1]'}`}>
                       {entry.title}
                     </p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {!isCompleted && canDelete && (
+                      <button
+                        onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: !!entry.bucket_item_id })}
+                        className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-0.5 -mt-0.5 -mr-0.5"
+                        aria-label="Delete entry"
+                      >
+                        <TrashIcon />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <CategoryBadge category={entry.category} />
                       {partnerName && (
                         <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
@@ -613,41 +648,31 @@ export default function CalendarClient({
                       )}
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium
                         ${isCompleted
-                          ? 'bg-[#FDECEA] text-red-500 dark:bg-[#3D1E18] dark:text-red-400'
-                          : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400'
+                          ? 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]'
+                          : 'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]'
                         }`}
                       >
                         {isCompleted ? 'Completed' : 'Planned'}
                       </span>
                     </div>
-                    {entry.notes && (
-                      <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-1.5 leading-snug">{entry.notes}</p>
+                    {!isCompleted && (
+                      <button
+                        onClick={() => setMarkDoneTarget(entry)}
+                        className="flex-shrink-0 h-7 px-3 rounded-full border border-[#C2493A] dark:border-[#E8675A] text-[11px] font-medium text-[#C2493A] dark:text-[#E8675A] hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors cursor-pointer"
+                      >
+                        Mark done
+                      </button>
                     )}
                   </div>
-                  {/* Delete icon — top-right, shown when not completed and authorized */}
-                  {!isCompleted && canDelete && (
-                    <button
-                      onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: !!entry.bucket_item_id })}
-                      className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-1 -mt-1 -mr-1"
-                      aria-label="Delete entry"
+                  {entry.notes && (
+                    <p
+                      className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
+                      style={{ borderLeft: '2px solid #EDE0DC' }}
                     >
-                      <TrashIcon />
-                    </button>
+                      {entry.notes}
+                    </p>
                   )}
                 </div>
-
-                {/* Mark done button */}
-                {!isCompleted && (
-                  <div className="px-4 pb-4">
-                    <div className="h-px bg-[#F5EDE9] dark:bg-[#3D2820] mb-3" />
-                    <button
-                      onClick={() => setMarkDoneTarget(entry)}
-                      className="w-full h-9 rounded-xl border border-[#C2493A] dark:border-[#E8675A] text-[#C2493A] dark:text-[#E8675A] text-sm font-medium hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors cursor-pointer"
-                    >
-                      Mark done
-                    </button>
-                  </div>
-                )}
               </div>
             )
           })}
