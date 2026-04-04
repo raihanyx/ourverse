@@ -1,12 +1,13 @@
 export default function DashboardLoading() {
   return (
     <div className="space-y-5 animate-loading">
-      {/* Heading */}
-      <div className="space-y-1.5">
-        <div className="h-7 w-40 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse" />
-        <div className="flex items-center gap-1">
-          <div className="h-3 w-3 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-full animate-pulse" />
-          <div className="h-4 w-32 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+
+      {/* Page header: icon badge + name + subtitle */}
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl bg-[#EDE0DC] dark:bg-[#3D2820] animate-pulse flex-shrink-0" />
+        <div className="space-y-1.5">
+          <div className="h-[18px] w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+          <div className="h-3 w-40 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
         </div>
       </div>
 
@@ -32,7 +33,7 @@ export default function DashboardLoading() {
 
       {/* Together card */}
       <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-3 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        <div className="h-3 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="h-[10px] w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
         <div className="flex gap-2">
           {[0, 1, 2].map(i => (
             <div key={i} className="flex-1 h-[72px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
@@ -43,7 +44,7 @@ export default function DashboardLoading() {
 
       {/* Couple space card */}
       <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        <div className="h-3 w-28 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="h-[10px] w-28 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
         <div className="space-y-2">
           <div className="h-3 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
           <div className="flex items-center gap-3">
@@ -53,6 +54,7 @@ export default function DashboardLoading() {
         </div>
         <div className="h-3 w-44 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
       </div>
+
     </div>
   )
 }

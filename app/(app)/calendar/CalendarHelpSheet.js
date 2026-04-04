@@ -77,14 +77,14 @@ export default function CalendarHelpSheet({ isOpen, onClose }) {
             />
             <div className="h-px bg-[#F5EDE9] dark:bg-[#3D2820]" />
             <DotLegendRow
-              dotClass="bg-indigo-500 dark:bg-indigo-400"
+              dotClass="bg-[#1E40AF] dark:bg-[#7AB0D8]"
               mt="4.2px"
-              label="Purple"
+              label="Blue"
               description="Something you're planning together. Also creates a matching bucket list item to track and mark done."
             />
             <div className="h-px bg-[#F5EDE9] dark:bg-[#3D2820]" />
             <DotLegendRow
-              dotClass="bg-emerald-500 dark:bg-emerald-400"
+              dotClass="bg-[#3B6D11] dark:bg-[#97C459]"
               mt="4.1px"
               label="Green"
               description="A personal plan (flight, appointment, etc.). Doesn't create a bucket list item, but your partner can still see it."
@@ -145,7 +145,7 @@ export default function CalendarHelpSheet({ isOpen, onClose }) {
 
         {/* Memories */}
         <Section title="Memories appear automatically">
-          Marking a bucket list item as done adds it to your calendar on the date it was completed. Nothing extra needed.
+          Marking a bucket list item or calendar entry as done adds it to your calendar on the completion date. On <span className={accent}>past dates</span>, tap <span className={accent}>Log memory</span> to record something you did directly — no bucket item needed first.
         </Section>
 
         <Divider />

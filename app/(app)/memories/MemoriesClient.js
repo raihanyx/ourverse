@@ -8,6 +8,7 @@ import { bulkUndoDone, bulkDeleteMemories } from '@/app/actions/bucket'
 import { formatDate } from '@/lib/currency'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
 import MemoriesHelpSheet from './MemoriesHelpSheet'
+import AddMemoryForm from './AddMemoryForm'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -33,6 +34,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   const [isDeleting, startDeleteTransition] = useTransition()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(false)
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -161,14 +163,37 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
               </p>
             </div>
           </div>
-          {memories.length > 0 && (
-            <button
-              onClick={isSelecting ? handleCancelSelecting : () => { setIsSelecting(true); setSelectedIds(new Set()) }}
-              className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer flex-shrink-0"
-            >
-              {isSelecting ? 'Cancel' : 'Edit'}
-            </button>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isSelecting ? (
+              <button
+                onClick={handleCancelSelecting}
+                className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
+              >
+                Cancel
+              </button>
+            ) : (
+              <>
+                {memories.length > 0 && (
+                  <button
+                    onClick={() => { setIsSelecting(true); setSelectedIds(new Set()) }}
+                    className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
+                  >
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="flex items-center gap-1.5 h-8 px-3 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-[13px] font-semibold hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] transition-colors cursor-pointer"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Add
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {memories.length === 0 ? (
@@ -283,6 +308,15 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
           confirmLabel="Delete"
           onConfirm={handleConfirmDelete}
           onCancel={() => setShowDeleteConfirm(false)}
+        />,
+        document.body
+      )}
+
+      {/* Add memory form */}
+      {showAddForm && typeof document !== 'undefined' && createPortal(
+        <AddMemoryForm
+          onSuccess={() => { setShowAddForm(false); refetch() }}
+          onCancel={() => setShowAddForm(false)}
         />,
         document.body
       )}

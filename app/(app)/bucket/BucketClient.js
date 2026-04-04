@@ -319,7 +319,12 @@ export default function BucketClient({
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                <line x1="11" y1="5" x2="22" y2="5" />
+                <line x1="11" y1="12" x2="22" y2="12" />
+                <line x1="11" y1="19" x2="22" y2="19" />
+                <polyline points="3 5 5 7 8 3" />
+                <polyline points="3 12 5 14 8 10" />
+                <polyline points="3 19 5 21 8 17" />
               </svg>
             </div>
             <div>

@@ -25,7 +25,18 @@ export default function ProfileClient({ name, email }) {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-[22px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Profile</h1>
+      <div className="flex items-center gap-3">
+        <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+        <div>
+          <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Profile</h1>
+          <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">Manage your account</p>
+        </div>
+      </div>
 
       <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
         <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-4">
@@ -83,7 +94,7 @@ export default function ProfileClient({ name, email }) {
               <p className="text-sm text-[#1C1210] dark:text-[#FAF3F1]">{displayName}</p>
               <button
                 onClick={() => setEditing(true)}
-                className="text-xs text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline cursor-pointer"
+                className="h-7 px-3 rounded-lg border border-[#EDE0DC] dark:border-[#3D2820] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors cursor-pointer"
               >
                 Edit
               </button>

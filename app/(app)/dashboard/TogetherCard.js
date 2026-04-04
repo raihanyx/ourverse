@@ -76,42 +76,32 @@ export default function TogetherCard({ anniversaryDate, coupleId }) {
         </>
       ) : (
         <div className="text-center">
-          <p className="dark:[filter:invert(1)]" style={{ fontSize: '28px', marginBottom: '8px' }}>🗓</p>
-          <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]" style={{ marginBottom: '4px' }}>
+          <div className="flex justify-center mb-2">
+            <div className="w-10 h-10 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">
             When did you get together?
           </p>
-          <p className="text-[11px] text-[#A07060] dark:text-[#D4A090]" style={{ marginBottom: '14px', lineHeight: '1.5' }}>
+          <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mb-3.5 leading-[1.5]">
             Add your start date to see how long you&apos;ve been together
           </p>
           <input
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
-            className="block text-[13px] text-[#1C1210] dark:text-[#FAF3F1] bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors text-center"
-            style={{
-              width: '100%',
-              maxWidth: '200px',
-              margin: '0 auto 12px auto',
-              padding: '8px 12px',
-              borderRadius: '10px',
-              fontSize: '13px',
-            }}
+            className="block w-full max-w-[200px] mx-auto mb-3 px-3 py-2 text-[13px] text-center text-[#1C1210] dark:text-[#FAF3F1] bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-[10px] focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors"
           />
           <button
             onClick={handleSave}
             disabled={!date || isPending}
-            className="text-white bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors"
-            style={{
-              display: 'block',
-              margin: '0 auto',
-              width: 'auto',
-              padding: '8px 20px',
-              fontSize: '13px',
-              fontWeight: '600',
-              borderRadius: '10px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
+            className="mx-auto block px-5 py-2 text-[13px] font-semibold text-white bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] disabled:opacity-40 transition-colors rounded-[10px] cursor-pointer"
           >
             {isPending ? 'Saving…' : 'Save date'}
           </button>

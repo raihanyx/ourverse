@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { deleteCalendarEntry } from '@/app/actions/calendar'
 import { formatDate } from '@/lib/currency'
 import AddCalendarEntryForm from './AddCalendarEntryForm'
+import AddMemoryForm from './AddMemoryForm'
 import CalendarMarkDoneSheet from './CalendarMarkDoneSheet'
 import CalendarHelpSheet from './CalendarHelpSheet'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
@@ -155,6 +156,7 @@ export default function CalendarClient({
   const [markDoneTarget, setMarkDoneTarget] = useState(null) // entry object
   const [deleteTarget, setDeleteTarget]   = useState(null) // { id, title }
   const [isDeleting, setIsDeleting]       = useState(false)
+  const [showAddMemoryForm, setShowAddMemoryForm] = useState(false)
   const [slideDir, setSlideDir]           = useState(null) // 'left' | 'right'
 
   // ── Refetch when month changes ──────────────────────────
@@ -442,7 +444,7 @@ export default function CalendarClient({
                     {(hasMem || hasCouple || hasPersonal) && (
                       <div className="absolute bottom-1 flex gap-[3px]">
                         {hasMem && (
-                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-[#C2493A] dark:bg-[#F0907F]'}`} />
+                          <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-red-500 dark:bg-red-400'}`} />
                         )}
                         {hasCouple && (
                           <span className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white/80' : 'bg-[#1E40AF] dark:bg-[#7AB0D8]'}`} />
@@ -462,7 +464,7 @@ export default function CalendarClient({
         {/* Dot legend */}
         <div className="flex items-center gap-4 mt-4 pt-3 border-t border-[#F5EDE9] dark:border-[#3D2820]">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-[#C2493A] dark:bg-[#F0907F]" />
+            <span className="w-2 h-2 rounded-full bg-red-500 dark:bg-red-400" />
             <span className="text-[10px] text-[#A07060] dark:text-[#D4A090]">Memory</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -496,13 +498,21 @@ export default function CalendarClient({
                 <span className="text-[11px] text-[#C2493A] dark:text-[#E8675A] font-medium">Today</span>
               )}
             </div>
-            {selectedDate >= todayStr && (
+            {selectedDate >= todayStr ? (
               <button
                 onClick={() => setShowAddForm(true)}
                 className="flex items-center gap-1.5 px-3.5 py-2 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-xl text-[13px] font-medium transition-colors cursor-pointer"
               >
                 <PlusIcon />
                 Add
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowAddMemoryForm(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-[13px] font-medium transition-colors cursor-pointer"
+              >
+                <PlusIcon />
+                Log memory
               </button>
             )}
           </div>
@@ -534,24 +544,19 @@ export default function CalendarClient({
               key={memory.id}
               className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none flex gap-3"
             >
-              <div className="w-[3px] rounded-full bg-[#C2493A] dark:bg-[#F0907F] flex-shrink-0 self-stretch" />
-              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0 text-[#C2493A] dark:text-[#F0907F]">
+              <div className="w-[3px] rounded-full bg-red-500 dark:bg-red-400 flex-shrink-0 self-stretch" />
+              <div className="w-8 h-8 rounded-xl bg-red-50 dark:bg-red-950/40 flex items-center justify-center flex-shrink-0 mt-0.5 text-red-500 dark:text-red-400">
                 <HeartIcon filled />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate mb-1.5">{memory.name}</p>
-                <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate mb-2">{memory.name}</p>
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <CategoryBadge category={memory.category} />
                   <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">{formatDate(memory.date)}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]">
-                    Memory
-                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400">Memory</span>
                 </div>
                 {memory.note && (
-                  <p
-                    className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
-                    style={{ borderLeft: '2px solid #EDE0DC' }}
-                  >
+                  <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.6] mt-1.5 pl-2.5 border-l-2 border-[#EDE0DC] dark:border-[#3D2820]">
                     {memory.note}
                   </p>
                 )}
@@ -573,37 +578,34 @@ export default function CalendarClient({
                   className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none flex gap-3"
                 >
                   <div className="w-[3px] rounded-full bg-[#3B6D11] dark:bg-[#97C459] flex-shrink-0 self-stretch" />
-                  <div className="w-8 h-8 rounded-xl bg-[#EAF3DE] dark:bg-[#173404] flex items-center justify-center flex-shrink-0 text-[#3B6D11] dark:text-[#97C459]">
+                  <div className="w-8 h-8 rounded-xl bg-[#EAF3DE] dark:bg-[#173404] flex items-center justify-center flex-shrink-0 mt-0.5 text-[#3B6D11] dark:text-[#97C459]">
                     <PersonIcon />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate mb-1.5">{entry.title}</p>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-sm font-semibold text-[#1C1210] dark:text-[#FAF3F1] truncate">{entry.title}</p>
+                      {canDelete && (
+                        <button
+                          onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: false })}
+                          className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-0.5 -mt-0.5 -mr-0.5"
+                          aria-label="Delete entry"
+                        >
+                          <TrashIcon />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
                         {entry.user_id === currentUserId ? 'You' : (partnerName ?? 'Partner')}
                       </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]">
-                        Personal
-                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]">Personal</span>
                     </div>
                     {entry.notes && (
-                      <p
-                        className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
-                        style={{ borderLeft: '2px solid #EDE0DC' }}
-                      >
+                      <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.6] mt-1.5 pl-2.5 border-l-2 border-[#EDE0DC] dark:border-[#3D2820]">
                         {entry.notes}
                       </p>
                     )}
                   </div>
-                  {canDelete && (
-                    <button
-                      onClick={() => setDeleteTarget({ id: entry.id, title: entry.title, hasBucketItem: false })}
-                      className="flex-shrink-0 text-[#C4A89E] dark:text-[#A07868] hover:text-[#C2493A] dark:hover:text-[#F0907F] transition-colors cursor-pointer p-1 -mt-0.5 -mr-0.5"
-                      aria-label="Delete entry"
-                    >
-                      <TrashIcon />
-                    </button>
-                  )}
                 </div>
               )
             }
@@ -614,17 +616,17 @@ export default function CalendarClient({
                 key={entry.id}
                 className={`bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[14px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none flex gap-3 ${isCompleted ? 'opacity-60' : ''}`}
               >
-                <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-[#C2493A] dark:bg-[#F0907F]' : 'bg-[#1E40AF] dark:bg-[#7AB0D8]'}`} />
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0
+                <div className={`w-[3px] rounded-full flex-shrink-0 self-stretch ${isCompleted ? 'bg-red-500 dark:bg-red-400' : 'bg-[#1E40AF] dark:bg-[#7AB0D8]'}`} />
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5
                   ${isCompleted
-                    ? 'bg-[#FDECEA] dark:bg-[#3D1E18] text-[#C2493A] dark:text-[#F0907F]'
+                    ? 'bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400'
                     : 'bg-[#DBEAFE] dark:bg-[#1E2A3A] text-[#1E40AF] dark:text-[#7AB0D8]'
                   }`}
                 >
                   {isCompleted ? <CheckIcon /> : <CalendarDotIcon />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <p className={`text-sm font-semibold truncate ${isCompleted ? 'line-through text-[#A07060] dark:text-[#D4A090]' : 'text-[#1C1210] dark:text-[#FAF3F1]'}`}>
                       {entry.title}
                     </p>
@@ -639,7 +641,7 @@ export default function CalendarClient({
                     )}
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <CategoryBadge category={entry.category} />
                       {partnerName && (
                         <span className="text-[11px] text-[#A07060] dark:text-[#D4A090]">
@@ -648,14 +650,14 @@ export default function CalendarClient({
                       )}
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium
                         ${isCompleted
-                          ? 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]'
+                          ? 'bg-red-50 text-red-500 dark:bg-red-950/40 dark:text-red-400'
                           : 'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]'
                         }`}
                       >
                         {isCompleted ? 'Completed' : 'Planned'}
                       </span>
                     </div>
-                    {!isCompleted && (
+                    {!isCompleted && !entry.notes && (
                       <button
                         onClick={() => setMarkDoneTarget(entry)}
                         className="flex-shrink-0 h-7 px-3 rounded-full border border-[#C2493A] dark:border-[#E8675A] text-[11px] font-medium text-[#C2493A] dark:text-[#E8675A] hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors cursor-pointer"
@@ -664,11 +666,21 @@ export default function CalendarClient({
                       </button>
                     )}
                   </div>
-                  {entry.notes && (
-                    <p
-                      className="text-[12px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.55] pl-[10px] mt-2"
-                      style={{ borderLeft: '2px solid #EDE0DC' }}
-                    >
+                  {!isCompleted && entry.notes && (
+                    <div className="flex items-end justify-between gap-3 mt-2">
+                      <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.6] pl-2.5 border-l-2 border-[#EDE0DC] dark:border-[#3D2820] flex-1 min-w-0">
+                        {entry.notes}
+                      </p>
+                      <button
+                        onClick={() => setMarkDoneTarget(entry)}
+                        className="flex-shrink-0 h-7 px-3 rounded-full border border-[#C2493A] dark:border-[#E8675A] text-[11px] font-medium text-[#C2493A] dark:text-[#E8675A] hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors cursor-pointer"
+                      >
+                        Mark done
+                      </button>
+                    </div>
+                  )}
+                  {isCompleted && entry.notes && (
+                    <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] italic leading-[1.6] mt-2 pl-2.5 border-l-2 border-[#EDE0DC] dark:border-[#3D2820]">
                       {entry.notes}
                     </p>
                   )}
@@ -681,6 +693,18 @@ export default function CalendarClient({
 
       {/* Help sheet */}
       <CalendarHelpSheet isOpen={showHelp} onClose={() => setShowHelp(false)} />
+
+      {/* Add memory form sheet — past dates only */}
+      {showAddMemoryForm && selectedDate && (
+        <AddMemoryForm
+          date={selectedDate}
+          onSuccess={() => {
+            setShowAddMemoryForm(false)
+            refetchMonth(viewYear, viewMonth)
+          }}
+          onCancel={() => setShowAddMemoryForm(false)}
+        />
+      )}
 
       {/* Add entry form sheet */}
       {showAddForm && selectedDate && (

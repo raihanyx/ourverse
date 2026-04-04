@@ -241,6 +241,61 @@ export async function bulkDeleteBucketItems(ids) {
   return { success: true }
 }
 
+export async function addDirectMemory(prevState, formData) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  const { data: profile } = await supabase
+    .from('users')
+    .select('couple_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+
+  const name     = formData.get('name')?.trim()
+  const category = formData.get('category')
+  const date     = formData.get('date')
+  const note     = formData.get('note')?.trim() || null
+
+  if (!name) return { errors: { name: 'Please enter a name.' } }
+  if (!VALID_CATEGORIES.includes(category)) return { error: 'Please select a valid category.' }
+  if (!date) return { error: 'Please provide a date.' }
+
+  const { data: bucketItem, error: bucketError } = await supabase
+    .from('bucket_items')
+    .insert({
+      couple_id:        profile.couple_id,
+      added_by_user_id: user.id,
+      name,
+      category,
+      is_done:          true,
+    })
+    .select('id')
+    .single()
+
+  if (bucketError) return { error: 'Could not save memory. Please try again.' }
+
+  const { error: memoryError } = await supabase.from('memories').insert({
+    couple_id:      profile.couple_id,
+    bucket_item_id: bucketItem.id,
+    name,
+    category,
+    date,
+    note,
+  })
+
+  if (memoryError) return { error: 'Could not save memory. Please try again.' }
+
+  revalidatePath('/calendar')
+  revalidatePath('/memories')
+  revalidatePath('/bucket')
+  return { success: true }
+}
+
 export async function bulkDeleteMemories(ids) {
   const supabase = await createClient()
   const {
