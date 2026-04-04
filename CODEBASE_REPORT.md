@@ -150,22 +150,22 @@ Wrapped in `React.cache()` — executes exactly once per request regardless of h
 
 ### 🟡 Medium
 
-**Q1. `CATEGORY_COLORS` object duplicated 5 times**
-Defined separately in: `LedgerClient.js:14`, `PaidExpensesClient.js:11`, `CalendarClient.js:20`, `BucketClient.js:13`, `MemoriesClient.js:11`. The expense categories use slightly different color sets than the bucket/calendar ones (food/transport vs restaurant/travel), which is correct, but the identical-key objects are still duplicated. Should be in `lib/constants.js`.
+**~~Q1. `CATEGORY_COLORS` object duplicated 5 times~~** ✅ Fixed
+Extracted to `lib/constants.js` as `EXPENSE_CATEGORY_COLORS`/`EXPENSE_CATEGORY_LABELS` (ledger set) and `BUCKET_CATEGORY_COLORS`/`BUCKET_CATEGORY_LABELS` (bucket/calendar set). All 5 client files now import from there.
 
-**Q2. `StyledSelect` component duplicated**
-Defined inline in `AddExpenseForm.js:26-41`. Almost certainly duplicated in `AddBucketForm.js`. Should be a shared component in `app/components/`.
+**~~Q2. `StyledSelect` component duplicated~~** ✅ Fixed
+Extracted to `app/components/StyledSelect.js`. `AddExpenseForm.js` and `AddBucketForm.js` now import it.
 
-**Q3. `typeof document !== 'undefined'` portal guard duplicated 4 times**
+**Q3. `typeof document !== 'undefined'` portal guard duplicated 4 times** ✅ not bug
 `LedgerClient.js:467`, `BucketClient.js:461`, `PaidExpensesClient.js:226`, `MemoriesClient.js:219`. Could be a `<ClientPortal>` component wrapper.
 
-**Q4. Inconsistent post-mutation patterns**
+**Q4. Inconsistent post-mutation patterns** ✅not bug
 - `LedgerClient` uses optimistic update + `refetch()`
-- `PaidExpensesClient` uses `router.refresh()`
+- `PaidExpensesClient` uses optimistic update only (no refetch — no realtime subscription either, by design)
 - `BucketClient` uses optimistic update + `refetch()`
-- `MemoriesClient` uses optimistic update (no refetch for undo, only for delete)
+- `MemoriesClient` uses `refetch()` for some operations
 
-Same operation (undo a paid item) behaves differently on the Ledger vs Paid Expenses pages.
+`PaidExpensesClient` intentionally skips `refetch()` because it has no realtime subscription. Not causing bugs; low priority.
 
 ### 🟢 Low
 
@@ -187,17 +187,16 @@ Uses `new Date().toLocaleDateString('en-CA')`. The same pattern appears as a loc
 
 ### 🟡 Medium
 
-**U1. Cannot add calendar entries to past dates**
-`CalendarClient.js:480`: The Add button only renders when `selectedDate >= todayStr`. You can't log "we went here last Tuesday" retroactively from the calendar view. This contradicts the bucket list's `markAsDone` flow which explicitly asks "what date did you do this?" and allows any past date.
+~~**U1. Cannot add calendar entries to past dates**~~ ✅ Fixed
+Past dates now render a "Log memory" button (`setShowAddMemoryForm(true)`) instead of the "Add" button. You can retroactively log a memory for any past date. Planning entries for past dates intentionally remains unsupported.
 
-**U2. No error feedback on bulk operations**
-`BucketClient.js:260-262` and similar in other components:
-```js
-startTransition(async () => {
-  await bulkMarkDone(ids, coupleId)
-})
-```
-If the server action returns `{ error }`, it's silently ignored. The optimistic update has already happened, so the UI shows items as done even if the DB update failed. No toast, no error state, no rollback.
+~~**U2. No error feedback on bulk operations**~~ ✅ Fixed
+All bulk operations now check `result?.error` and handle failure:
+- **Delete ops** (`LedgerClient`, `PaidExpensesClient`, `BucketClient`, `MemoriesClient`): capture removed items before the optimistic update, restore them on error.
+- **Mark done** (`BucketClient` bulk mark done): restore `is_done: false` on error.
+- **Undo done** (`MemoriesClient`): restore removed memories on error.
+- **Mark paid / bulk undo** (`LedgerClient`): `refetch()` self-corrects state; keep selecting mode open on error so the user can retry.
+- All failures show an inline error banner (`bulkError` state) above the list in each component.
 
 ~~**U4. Partner cannot delete shared calendar entries** (same as S4)~~
 ✅ **Fixed.** See S4.
@@ -207,20 +206,14 @@ If the server action returns `{ error }`, it's silently ignored. The optimistic 
 
 ### 🟢 Low
 
-**U6. Anniversary shows no year context**
-The calendar shows a heart ♥ on the anniversary day, but there's no tooltip or label indicating how many years. A couple celebrating year 3 vs year 10 deserves to see that.
+~~**U6. Anniversary shows no year context**~~ ✅ Fixed
+Anniversary banner now shows "Year X" below "Your anniversary" when `viewYear - anniversaryYear > 0`. First-year anniversaries (year 0) show no count.
 
-**U7. Random picker fires `setPickedItem(null)` even on empty pool**
-`BucketClient.js:186-189`:
-```js
-function handlePick() {
-  const pool = getPickerPool()
-  if (pool.length === 0) { setPickedItem(null); return }
-```
-The button is disabled when pool is empty (line 367), so this branch never runs. Dead code.
+~~**U7. Random picker fires `setPickedItem(null)` even on empty pool**~~ ✅ Fixed
+Removed the unreachable `if (pool.length === 0)` guard from both `handlePick` and `handlePickAgain`. The picker button is `disabled` when the pool is empty so `handlePick` can never be called with an empty pool, and `handlePickAgain` only renders when a `pickedItem` already exists (pool had ≥1 item).
 
-**U8. `ConfirmSheet` confirm button lacks `cursor-pointer`**
-`ConfirmSheet.js:22-26`: The cancel and confirm buttons are missing `cursor-pointer` class, violating the UI convention stated in CLAUDE.md.
+~~**U8. `ConfirmSheet` confirm button lacks `cursor-pointer`**~~ ✅ Fixed
+Added `cursor-pointer` to both the Cancel and Delete buttons in `ConfirmSheet.js`.
 
 ---
 
@@ -254,14 +247,11 @@ The button is disabled when pool is empty (line 367), so this branch never runs.
 ~~**I2. Replace N+1 loop in `bulkUndoDone` with batched queries** — `bucket.js:152-164`~~
 ✅ **Done.** See B4.
 
-**I3. Abstract the "realtime + refetch" pattern into a custom hook**
-`LedgerClient`, `BucketClient`, `MemoriesClient` all repeat the same 30-line pattern: subscribe to postgres changes, de-duplicate INSERTs, handle UPDATE/DELETE. A `useRealtimeTable(tableName, coupleId, { onInsert, onUpdate, onDelete })` hook would make each component cleaner and ensure consistent de-duplication logic.
+**I3. Abstract the "realtime + refetch" pattern into a custom hook** — not worth it
+`LedgerClient`, `MemoriesClient`, and the `bucket_items` half of `BucketClient` share an identical 25-line subscription block. However, `BucketClient` already breaks the pattern (its `calendar_entries` handler uses different state and different logic in the same channel), and `CalendarClient` is entirely custom (month-filtered INSERTs, two channels). A hook would help 2 full uses + 1 partial, not enough to justify the abstraction.
 
-**I5. Stabilize month navigation state in `CalendarClient`**
-Refactor `prevMonth`/`nextMonth` to derive next state fully inside a single `useReducer` dispatch, eliminating the stale-closure risk and making month changes atomic:
-```js
-dispatch({ type: 'PREV_MONTH' }) // reducer computes newYear + newMonth atomically
-```
+**I5. Stabilize month navigation state in `CalendarClient`** — not worth it
+`prevMonth`/`nextMonth` read `viewYear`/`viewMonth` from the closure. Two taps before a re-render would compute the same destination and skip a month. The race condition is real, but practically impossible on a mobile-first UI — the first tap triggers an immediate re-render. The `useReducer` fix would require migrating 4 state variables into a reducer, disproportionate complexity for a problem no user will hit.
 
 **I6. Consider moving exchange rate calculation to the server for the Ledger page**
 Currently `LedgerClient` receives raw `rates` as a prop and does `computeUnifiedTotal` client-side. Since rates are already available server-side when the ledger page renders, the unified total could be computed once on the server and passed as a prop — reducing client bundle usage of `lib/exchangeRates.js`.

@@ -6,22 +6,7 @@ import Link from 'next/link'
 import { bulkSetPaid, togglePaid, bulkDeleteExpenses } from '@/app/actions/expenses'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
 import { formatAmount, formatDate } from '@/lib/currency'
-
-const CATEGORY_COLORS = {
-  food:          'bg-[#FEF3C7] text-[#92400E] dark:bg-[#3A2A12] dark:text-[#F0A840]',
-  transport:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
-  accommodation: 'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
-  shopping:      'bg-[#FCE7F3] text-[#9D174D] dark:bg-[#3A1A2A] dark:text-[#F472B6]',
-  other:         'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
-}
-
-const CATEGORY_LABELS = {
-  food:          'Food',
-  transport:     'Transport',
-  accommodation: 'Accommodation',
-  shopping:      'Shopping',
-  other:         'Other',
-}
+import { EXPENSE_CATEGORY_COLORS as CATEGORY_COLORS, EXPENSE_CATEGORY_LABELS as CATEGORY_LABELS } from '@/lib/constants'
 
 function PaidExpenseCard({ expense, onUndo, isPending, isSelecting, isSelected, onSelect }) {
   return (
@@ -99,6 +84,7 @@ export default function PaidExpensesClient({
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [bulkError, setBulkError] = useState(null)
 
   const theyOweMe = localExpenses.filter(e => e.paid_by_user_id === currentUserId)
   const iOweThem  = localExpenses.filter(e => e.paid_by_user_id === partnerId)
@@ -110,9 +96,15 @@ export default function PaidExpensesClient({
   )
 
   function handleUndo(expenseId) {
+    setBulkError(null)
+    const removed = localExpenses.find(e => e.id === expenseId)
     setLocalExpenses(prev => prev.filter(e => e.id !== expenseId))
     startTransition(async () => {
-      await togglePaid(expenseId)
+      const result = await togglePaid(expenseId)
+      if (result?.error) {
+        if (removed) setLocalExpenses(prev => [removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -142,11 +134,17 @@ export default function PaidExpensesClient({
   function handleBulkUndo() {
     const ids = sorted.filter(e => selectedIds.has(e.id)).map(e => e.id)
     if (ids.length === 0) return
+    setBulkError(null)
+    const removed = localExpenses.filter(e => ids.includes(e.id))
     setLocalExpenses(prev => prev.filter(e => !ids.includes(e.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
     startTransition(async () => {
-      await bulkSetPaid(ids, false)
+      const result = await bulkSetPaid(ids, false)
+      if (result?.error) {
+        setLocalExpenses(prev => [...removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -157,12 +155,18 @@ export default function PaidExpensesClient({
 
   function handleConfirmDelete() {
     const ids = [...selectedIds]
+    setBulkError(null)
+    const removed = localExpenses.filter(e => ids.includes(e.id))
     setShowDeleteConfirm(false)
     setLocalExpenses(prev => prev.filter(e => !ids.includes(e.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
     startDeleteTransition(async () => {
-      await bulkDeleteExpenses(ids)
+      const result = await bulkDeleteExpenses(ids)
+      if (result?.error) {
+        setLocalExpenses(prev => [...removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -216,6 +220,12 @@ export default function PaidExpensesClient({
           </button>
         )}
       </div>
+
+      {bulkError && (
+        <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+          {bulkError}
+        </div>
+      )}
 
       {/* Tab switcher */}
       <div className="flex bg-[#F0E8E4] dark:bg-[#120D0B] rounded-xl p-1">

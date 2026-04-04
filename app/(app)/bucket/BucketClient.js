@@ -10,22 +10,7 @@ import AddBucketForm from './AddBucketForm'
 import MarkDoneSheet from './MarkDoneSheet'
 import BucketHelpSheet from './BucketHelpSheet'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
-
-const CATEGORY_COLORS = {
-  restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
-  travel:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
-  activity:   'bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]',
-  movie:      'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
-  other:      'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
-}
-
-const CATEGORY_LABELS = {
-  restaurant: 'Restaurant',
-  travel:     'Travel',
-  activity:   'Activity',
-  movie:      'Movie',
-  other:      'Other',
-}
+import { BUCKET_CATEGORY_COLORS as CATEGORY_COLORS, BUCKET_CATEGORY_LABELS as CATEGORY_LABELS } from '@/lib/constants'
 
 const FILTER_TABS = [
   { key: 'all',        label: 'All' },
@@ -134,6 +119,7 @@ export default function BucketClient({
   const [showHelp, setShowHelp] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [bulkDoneIds, setBulkDoneIds] = useState(null)
+  const [bulkError, setBulkError] = useState(null)
 
   const refetchItems = useCallback(async () => {
     const supabase = createClient()
@@ -224,13 +210,11 @@ export default function BucketClient({
 
   function handlePick() {
     const pool = getPickerPool()
-    if (pool.length === 0) { setPickedItem(null); return }
     setPickedItem(pool[Math.floor(Math.random() * pool.length)])
   }
 
   function handlePickAgain() {
     const pool = getPickerPool()
-    if (pool.length === 0) { setPickedItem(null); return }
     const others = pool.filter(i => i.id !== pickedItem?.id)
     const source = others.length > 0 ? others : pool
     setPickedItem(source[Math.floor(Math.random() * source.length)])
@@ -277,13 +261,19 @@ export default function BucketClient({
       .filter(i => selectedIds.has(i.id))
       .map(i => i.id)
     if (ids.length === 0) return
+    setBulkError(null)
+    const removed = items.filter(i => ids.includes(i.id))
     setShowDeleteConfirm(false)
     setItems(prev => prev.filter(i => !ids.includes(i.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
     setPickedItem(null)
     startDeleteTransition(async () => {
-      await bulkDeleteBucketItems(ids)
+      const result = await bulkDeleteBucketItems(ids)
+      if (result?.error) {
+        setItems(prev => [...removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -297,13 +287,18 @@ export default function BucketClient({
 
   function handleConfirmBulkDone(date) {
     const ids = bulkDoneIds
+    setBulkError(null)
     setBulkDoneIds(null)
     setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: true } : i))
     setIsSelecting(false)
     setSelectedIds(new Set())
     setPickedItem(null)
     startTransition(async () => {
-      await bulkMarkDone(ids, date)
+      const result = await bulkMarkDone(ids, date)
+      if (result?.error) {
+        setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: false } : i))
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -379,6 +374,12 @@ export default function BucketClient({
               )}
           </div>
         </div>
+
+        {bulkError && (
+          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+            {bulkError}
+          </div>
+        )}
 
         {/* Memories link card */}
         <Link href="/memories" className="block">

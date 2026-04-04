@@ -14,13 +14,13 @@ export default function ConfirmSheet({ message, confirmLabel = 'Delete', onConfi
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 h-11 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] font-medium hover:bg-[#FDF7F6] dark:hover:bg-[#3D2820] transition-colors"
+            className="flex-1 h-11 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] font-medium hover:bg-[#FDF7F6] dark:hover:bg-[#3D2820] transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 h-11 rounded-xl bg-red-500 dark:bg-red-600 text-white text-sm font-medium hover:bg-red-600 dark:hover:bg-red-700 transition-colors"
+            className="flex-1 h-11 rounded-xl bg-red-500 dark:bg-red-600 text-white text-sm font-medium hover:bg-red-600 dark:hover:bg-red-700 transition-colors cursor-pointer"
           >
             {confirmLabel}
           </button>

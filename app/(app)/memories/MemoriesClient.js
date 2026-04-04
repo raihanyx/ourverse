@@ -9,22 +9,7 @@ import { formatDate } from '@/lib/currency'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
 import MemoriesHelpSheet from './MemoriesHelpSheet'
 import AddMemoryForm from './AddMemoryForm'
-
-const CATEGORY_COLORS = {
-  restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
-  travel:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
-  activity:   'bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]',
-  movie:      'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
-  other:      'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
-}
-
-const CATEGORY_LABELS = {
-  restaurant: 'Restaurant',
-  travel:     'Travel',
-  activity:   'Activity',
-  movie:      'Movie',
-  other:      'Other',
-}
+import { BUCKET_CATEGORY_COLORS as CATEGORY_COLORS, BUCKET_CATEGORY_LABELS as CATEGORY_LABELS } from '@/lib/constants'
 
 export default function MemoriesClient({ initialMemories, coupleId }) {
   const [memories, setMemories] = useState(initialMemories)
@@ -35,6 +20,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [bulkError, setBulkError] = useState(null)
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -93,11 +79,17 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   function handleUndoDone() {
     const ids = [...selectedIds]
     if (ids.length === 0) return
+    setBulkError(null)
+    const removed = memories.filter(m => ids.includes(m.id))
     setMemories(prev => prev.filter(m => !ids.includes(m.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
     startTransition(async () => {
-      await bulkUndoDone(ids)
+      const result = await bulkUndoDone(ids)
+      if (result?.error) {
+        setMemories(prev => [...removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -109,12 +101,18 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   function handleConfirmDelete() {
     const ids = [...selectedIds]
     if (ids.length === 0) return
+    setBulkError(null)
+    const removed = memories.filter(m => ids.includes(m.id))
     setShowDeleteConfirm(false)
     setMemories(prev => prev.filter(m => !ids.includes(m.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
     startDeleteTransition(async () => {
-      await bulkDeleteMemories(ids)
+      const result = await bulkDeleteMemories(ids)
+      if (result?.error) {
+        setMemories(prev => [...removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -195,6 +193,12 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
             )}
           </div>
         </div>
+
+        {bulkError && (
+          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+            {bulkError}
+          </div>
+        )}
 
         {memories.length === 0 ? (
           <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-14 text-center px-6 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">

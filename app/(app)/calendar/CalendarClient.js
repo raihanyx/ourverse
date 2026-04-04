@@ -9,6 +9,7 @@ import AddMemoryForm from './AddMemoryForm'
 import CalendarMarkDoneSheet from './CalendarMarkDoneSheet'
 import CalendarHelpSheet from './CalendarHelpSheet'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
+import { BUCKET_CATEGORY_COLORS as CATEGORY_COLORS, BUCKET_CATEGORY_LABELS as CATEGORY_LABELS } from '@/lib/constants'
 
 // ─── Constants ───────────────────────────────────────────
 
@@ -17,22 +18,6 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
 const DAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-
-const CATEGORY_COLORS = {
-  restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
-  travel:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
-  activity:   'bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]',
-  movie:      'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
-  other:      'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
-}
-
-const CATEGORY_LABELS = {
-  restaurant: 'Restaurant',
-  travel:     'Travel',
-  activity:   'Activity',
-  movie:      'Movie',
-  other:      'Other',
-}
 
 // ─── Small helpers ────────────────────────────────────────
 
@@ -524,7 +509,15 @@ export default function CalendarClient({
               <svg width="16" height="16" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F] flex-shrink-0" aria-hidden="true">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
-              <p className="text-sm font-medium text-[#C2493A] dark:text-[#F0907F]">Your anniversary</p>
+              <div>
+                <p className="text-sm font-medium text-[#C2493A] dark:text-[#F0907F]">Your anniversary</p>
+                {(() => {
+                  const years = viewYear - Number(anniversaryDate.split('-')[0])
+                  return years > 0 ? (
+                    <p className="text-xs text-[#C2493A] dark:text-[#F0907F] opacity-70 mt-0.5">Year {years}</p>
+                  ) : null
+                })()}
+              </div>
             </div>
           )}
 

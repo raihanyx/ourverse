@@ -10,22 +10,7 @@ import AddExpenseForm from './AddExpenseForm'
 import LedgerHelpSheet from './LedgerHelpSheet'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
 import Link from 'next/link'
-
-const CATEGORY_COLORS = {
-  food:          'bg-[#FEF3C7] text-[#92400E] dark:bg-[#3A2A12] dark:text-[#F0A840]',
-  transport:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
-  accommodation: 'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
-  shopping:      'bg-[#FCE7F3] text-[#9D174D] dark:bg-[#3A1A2A] dark:text-[#F472B6]',
-  other:         'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
-}
-
-const CATEGORY_LABELS = {
-  food:          'Food',
-  transport:     'Transport',
-  accommodation: 'Accommodation',
-  shopping:      'Shopping',
-  other:         'Other',
-}
+import { EXPENSE_CATEGORY_COLORS as CATEGORY_COLORS, EXPENSE_CATEGORY_LABELS as CATEGORY_LABELS } from '@/lib/constants'
 
 function TotalsBadges({ expenses, baseCurrency, rates }) {
   const unpaid = expenses.filter(e => !e.is_paid)
@@ -160,6 +145,7 @@ export default function LedgerClient({
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isDeleting, startDeleteTransition] = useTransition()
+  const [bulkError, setBulkError] = useState(null)
 
   const refetch = useCallback(async () => {
     const supabase = createClient()
@@ -231,8 +217,12 @@ export default function LedgerClient({
   }
 
   function handleToggle(expenseId) {
+    setBulkError(null)
     startTransition(async () => {
-      await togglePaid(expenseId)
+      const result = await togglePaid(expenseId)
+      if (result?.error) {
+        setBulkError('Something went wrong. Please try again.')
+      }
       await refetch()
     })
   }
@@ -260,11 +250,16 @@ export default function LedgerClient({
       .filter(e => selectedIds.has(e.id) && !e.is_paid)
       .map(e => e.id)
     if (ids.length === 0) return
+    setBulkError(null)
     startTransition(async () => {
-      await bulkSetPaid(ids, true)
+      const result = await bulkSetPaid(ids, true)
       await refetch()
-      setIsSelecting(false)
-      setSelectedIds(new Set())
+      if (result?.error) {
+        setBulkError('Something went wrong. Please try again.')
+      } else {
+        setIsSelecting(false)
+        setSelectedIds(new Set())
+      }
     })
   }
 
@@ -273,11 +268,16 @@ export default function LedgerClient({
       .filter(e => selectedIds.has(e.id) && e.is_paid)
       .map(e => e.id)
     if (ids.length === 0) return
+    setBulkError(null)
     startTransition(async () => {
-      await bulkSetPaid(ids, false)
+      const result = await bulkSetPaid(ids, false)
       await refetch()
-      setIsSelecting(false)
-      setSelectedIds(new Set())
+      if (result?.error) {
+        setBulkError('Something went wrong. Please try again.')
+      } else {
+        setIsSelecting(false)
+        setSelectedIds(new Set())
+      }
     })
   }
 
@@ -288,12 +288,18 @@ export default function LedgerClient({
 
   function handleConfirmDelete() {
     const ids = [...selectedIds]
+    setBulkError(null)
+    const removed = expenses.filter(e => ids.includes(e.id))
     setShowDeleteConfirm(false)
     setExpenses(prev => prev.filter(e => !ids.includes(e.id)))
     setIsSelecting(false)
     setSelectedIds(new Set())
     startDeleteTransition(async () => {
-      await bulkDeleteExpenses(ids)
+      const result = await bulkDeleteExpenses(ids)
+      if (result?.error) {
+        setExpenses(prev => [...removed, ...prev])
+        setBulkError('Something went wrong. Please try again.')
+      }
     })
   }
 
@@ -396,6 +402,12 @@ export default function LedgerClient({
             )}
           </div>
         </div>
+
+        {bulkError && (
+          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+            {bulkError}
+          </div>
+        )}
 
         <div className="space-y-3">
         {/* Tabs */}
