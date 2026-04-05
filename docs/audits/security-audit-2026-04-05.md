@@ -12,8 +12,8 @@
 | Severity | Count |
 |---|---|
 | 🔴 CRITICAL | 0 (3 fixed) |
-| 🟠 HIGH | 3 (3 fixed) |
-| 🟡 MEDIUM | 3 (4 fixed) |
+| 🟠 HIGH | 2 (3 fixed, 1 false positive) |
+| 🟡 MEDIUM | 0 (5 fixed, 2 downgraded, 1 reclassified) |
 | 🟢 LOW | 8 |
 | ➕ Post-audit | 1 (1 fixed) |
 | **Total** | **25** |
@@ -391,25 +391,27 @@ A review of all source files found no hardcoded API keys, passwords, tokens, or 
 
 ## Section 5 — Authentication & Route Protection
 
-### Finding 5.1 — 🟠 HIGH: `proxy.js` does not check for `couple_id` — users without a couple can access app pages
+### Finding 5.1 — ✅ FALSE POSITIVE (reviewed 2026-04-05): `proxy.js` does not check for `couple_id`
 
 **File:** `proxy.js`, lines 35–42
 
-The proxy only checks if the user is authenticated (`!user`). It does not check whether the user has a `couple_id`. The `getAppSession()` helper in `lib/data/getAppSession.js` does redirect to `/onboarding` if `couple_id` is null, but this is a server component check, not a middleware-level check.
+This finding was raised without reading `app/(app)/layout.js`. On review, `layout.js` calls `getAppSession()` at line 6, which redirects to `/onboarding` if `couple_id` is null. In Next.js App Router, a layout always runs for every route inside its route group — it cannot be bypassed. All routes inside `(app)/` (ledger, bucket, calendar, memories, profile, dashboard) are already protected centrally by the layout.
 
-**Why it matters:** A user who signs up, gets authenticated, but has not yet joined a couple can attempt to navigate directly to `/ledger`, `/bucket`, `/calendar`, `/memories`, or `/profile`. The server component will redirect to `/onboarding` via `getAppSession()`, but individual pages that do their own auth checks (e.g., `ledger/paid/page.js`) might have different behaviours or edge cases.
+The concern that individual pages "might have different behaviours" does not apply because no page inside `(app)/` can render without first passing through `AppLayout`. `ledger/paid/page.js` is inside `(app)/ledger/paid/` and is therefore covered.
 
-**Assessment:** In practice this is not a real data leak because every protected page ultimately calls either `getAppSession()` (which redirects) or performs its own `couple_id` check with redirect. However, the protection is not centralized — it relies on every page correctly calling `getAppSession()`.
+Server actions do not go through layouts, but all server actions were independently fixed in this session to enforce `couple_id` scoping.
 
-**Fix:** For belt-and-suspenders, consider centralizing the couple check in the `(app)/layout.js` rather than relying on each page.
+**No action required.**
 
 ---
 
-### Finding 5.2 — 🟡 MEDIUM: `proxy.js` does not protect the `/api` route namespace
+### Finding 5.2 — 🟢 LOW (downgraded, no action): `proxy.js` does not protect the `/api` route namespace
 
 **File:** `proxy.js`, lines 35–42
 
-The `isAppRoute` check enumerates known routes but does not include an `/api/` prefix. If any API routes were added in the future, they would not be protected by the middleware. Currently there are no `/api/` routes, so this is a forward-looking risk.
+There are currently no `/api/` routes in the codebase, making this a purely hypothetical risk. Adding `/api` to `isAppRoute` would also be an incomplete fix — the middleware only checks `!user`, not `couple_id`, so any future route handler would still need its own auth logic regardless. Adding blanket middleware protection could also break legitimate public or webhook endpoints under `/api/` that should not require auth.
+
+**Decision:** No code change. Any future route handler under `/api/` must follow the established pattern: call `getUser()` server-side and verify `couple_id` where needed.
 
 ---
 
@@ -431,7 +433,7 @@ If a Supabase session expires while the user is actively using the app, client c
 
 ## Section 6 — Data Exposure
 
-### Finding 6.1 — 🟡 MEDIUM: `select('*')` used in several places where specific columns would suffice
+### Finding 6.1 — 🟢 LOW (downgraded, deferred): `select('*')` used in several places where specific columns would suffice
 
 **Files and lines:**
 
@@ -445,11 +447,11 @@ If a Supabase session expires while the user is actively using the app, client c
 
 **Why it matters:** Using `select('*')` returns all columns including any future columns that might be added. It also ensures that fields not needed for display (e.g., internal IDs, timestamps) are transmitted over the wire unnecessarily. More critically, if any column is added to a table in the future that should remain private, `select('*')` would expose it.
 
-**Recommendation:** Enumerate only the columns needed for the UI. This is a best-practice improvement rather than an active vulnerability.
+**Decision:** Deferred. Every table has a small, well-defined schema and all columns are already used by the UI — there are no hidden sensitive columns being leaked today. The future-column risk is real in principle but low probability in a tightly owned private app. Revisit when the schema stabilises after Phase 5/6.
 
 ---
 
-### Finding 6.2 — 🟡 MEDIUM: User email is passed to client component in `ProfilePage`
+### Finding 6.2 — ℹ️ OBSERVATION (not a finding): User email is passed to client component in `ProfilePage`
 
 **File:** `app/(app)/profile/page.js`, line 16
 
@@ -461,7 +463,7 @@ The user's email is passed as a prop to a client component, meaning it becomes v
 - The email is rendered in the DOM (visible in source)
 - It may be captured in browser extensions, analytics, or error tracking tools
 
-**Assessment:** This is low risk for a profile page where the user intentionally views their own email. No finding raised for display of the user's own email.
+**Assessment:** Not a finding. The profile page exists specifically to show the user their own information. Hiding the email from the RSC payload would mean not rendering it, which defeats the purpose of the page. Any authenticated app that displays personal data has this property. No action required.
 
 ---
 
@@ -518,7 +520,7 @@ node_modules/brace-expansion
 1 moderate severity vulnerability
 ```
 
-### Finding 7.1 — 🟡 MEDIUM: `brace-expansion` ReDoS vulnerability
+### Finding 7.1 — ✅ FIXED (2026-04-05): `brace-expansion` ReDoS vulnerability
 
 **Severity:** Moderate (npm)
 **Advisory:** GHSA-f886-m6hf-6m8v
@@ -527,12 +529,7 @@ node_modules/brace-expansion
 
 **Impact Assessment:** This package is a dev dependency / build-time tool. It would not be present in production Vercel deployments unless used at build time. However, it could affect CI/CD pipelines, local development, or `next build`.
 
-**Fix:**
-```bash
-npm audit fix
-```
-
-This will update the affected package to a patched version.
+**Fix:** `npm audit fix` — 1 package updated, 0 vulnerabilities remaining.
 
 ---
 
