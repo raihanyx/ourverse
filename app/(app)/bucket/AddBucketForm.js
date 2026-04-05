@@ -3,11 +3,7 @@
 import { useActionState, useEffect } from 'react'
 import { addBucketItem } from '@/app/actions/bucket'
 import StyledSelect from '@/app/components/StyledSelect'
-
-function FieldError({ message }) {
-  if (!message) return null
-  return <p className="text-xs text-[#C2493A] dark:text-[#F0907F] mt-1">{message}</p>
-}
+import FieldError from '@/app/components/FieldError'
 
 function inputClass(hasError) {
   return `w-full px-3 py-[10px] rounded-[10px] border text-sm

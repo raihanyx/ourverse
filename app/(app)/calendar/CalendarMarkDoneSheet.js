@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect } from 'react'
 import { markCalendarEntryDone } from '@/app/actions/calendar'
-import { formatDate } from '@/lib/currency'
+import { formatDate, todayISO } from '@/lib/currency'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -27,7 +27,7 @@ export default function CalendarMarkDoneSheet({ entry, onSuccess, onCancel }) {
     if (state?.success) onSuccess()
   }, [state])
 
-  const today = new Date().toLocaleDateString('en-CA')
+  const today = todayISO()
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">

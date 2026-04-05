@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { deleteCalendarEntry } from '@/app/actions/calendar'
-import { formatDate } from '@/lib/currency'
+import { formatDate, todayISO } from '@/lib/currency'
 import AddCalendarEntryForm from './AddCalendarEntryForm'
 import AddMemoryForm from './AddMemoryForm'
 import CalendarMarkDoneSheet from './CalendarMarkDoneSheet'
@@ -21,9 +21,6 @@ const DAY_HEADERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 // ─── Small helpers ────────────────────────────────────────
 
-function today() {
-  return new Date().toLocaleDateString('en-CA') // 'YYYY-MM-DD'
-}
 
 function toDateStr(year, month, day) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -264,7 +261,7 @@ export default function CalendarClient({
   const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay() // 0=Sun
   const leadingBlanks  = (firstDayOfWeek + 6) % 7                  // Mon=0
   const daysInMonth    = new Date(viewYear, viewMonth + 1, 0).getDate()
-  const todayStr       = today()
+  const todayStr       = todayISO()
 
   // ── Delete handler ──────────────────────────────────────
   async function handleDelete() {

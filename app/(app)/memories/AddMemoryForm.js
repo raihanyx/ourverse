@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { addDirectMemory } from '@/app/actions/bucket'
+import { todayISO } from '@/lib/currency'
 
 const CATEGORIES = [
   { value: 'restaurant', label: 'Restaurant' },
@@ -12,7 +13,7 @@ const CATEGORIES = [
 ]
 
 export default function AddMemoryForm({ onSuccess, onCancel }) {
-  const today = new Date().toLocaleDateString('en-CA')
+  const today = todayISO()
   const [state, formAction, isPending] = useActionState(addDirectMemory, null)
 
   useEffect(() => {

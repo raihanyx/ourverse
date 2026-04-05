@@ -67,6 +67,7 @@ export async function addExpense(prevState, formData) {
 
   if (insertError) return { error: 'Could not save expense. Please try again.' }
 
+  revalidatePath('/ledger')
   revalidatePath('/dashboard')
   return { success: true }
 }

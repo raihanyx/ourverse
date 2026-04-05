@@ -42,12 +42,8 @@
 
 ### 🟡 Medium
 
-**B5. `addExpense` doesn't `revalidatePath('/ledger')`** — `expenses.js:61-62`
-```js
-revalidatePath('/dashboard')
-return { success: true }
-```
-`/ledger` is missing. The ledger page's server component cache is never invalidated when a new expense is added. The client handles it via `refetch()` on mount, but a direct navigation or hard refresh will show stale data until ISR expires.
+~~**B5. `addExpense` doesn't `revalidatePath('/ledger')`** — `expenses.js:61-62`~~
+✅ **Fixed.** `addExpense` now calls `revalidatePath('/ledger')` in addition to `revalidatePath('/dashboard')`.
 
 ~~**B6. Missing `revalidatePath` in `addBucketItem` and `markAsDone`** — `bucket.js:32-34` and `bucket.js:77`~~
 ✅ **Fixed.** `addBucketItem` now calls `revalidatePath('/bucket')`. `markAsDone` now calls `revalidatePath('/bucket')` and `revalidatePath('/memories')`.
@@ -169,17 +165,14 @@ Extracted to `app/components/StyledSelect.js`. `AddExpenseForm.js` and `AddBucke
 
 ### 🟢 Low
 
-**Q5. `PageTransition` uses raw `style` instead of Tailwind**
-```js
-<div style={{ animation: 'pageEnter 280ms ease-out' }}>
-```
-The animation class `pageEnter` must be defined in `globals.css`. Fine, but inconsistent with the Tailwind-first pattern.
+~~**Q5. `PageTransition` uses raw `style` instead of Tailwind**~~ ✅ Fixed
+`PageTransition` now uses `className="animate-[pageEnter_280ms_ease-out]"`.
 
-**Q6. `FieldError` component likely duplicated across forms**
-Defined in `AddExpenseForm.js:6-9`. Should be shared.
+~~**Q6. `FieldError` component likely duplicated across forms**~~ ✅ Fixed
+Extracted to `app/components/FieldError.js`. `AddExpenseForm.js` and `AddBucketForm.js` now import it.
 
-**Q7. `today()` function defined locally in `CalendarClient.js:38-40`**
-Uses `new Date().toLocaleDateString('en-CA')`. The same pattern appears as a local `const today` in `AddExpenseForm.js:64`. A shared `todayISO()` utility would ensure consistency.
+~~**Q7. `today()` function defined locally in `CalendarClient.js:38-40`**~~ ✅ Fixed
+`todayISO()` added to `lib/currency.js`. All 6 files (`BucketClient`, `MarkDoneSheet`, `CalendarClient`, `CalendarMarkDoneSheet`, `AddExpenseForm`, `AddMemoryForm`) now import and use it. `MarkDoneSheet`'s duplicate module-level `TODAY` constant is also removed.
 
 ---
 
@@ -201,8 +194,8 @@ All bulk operations now check `result?.error` and handle failure:
 ~~**U4. Partner cannot delete shared calendar entries** (same as S4)~~
 ✅ **Fixed.** See S4.
 
-**U5. `memoriesCount` on the Bucket page is server-fetched but stale**
-`bucket/page.js` fetches `memoriesCount` once server-side. After marking items as done (which creates new memories), the count shown in the Memories link card doesn't update without a full page refresh — the realtime subscription doesn't update this count.
+~~**U5. `memoriesCount` on the Bucket page is server-fetched but stale**~~
+✅ **Fixed.** `BucketClient` now tracks `localMemoriesCount` as local state (seeded from the `memoriesCount` prop). `handleMarkDoneSuccess` increments it by 1; `handleConfirmBulkDone` increments it optimistically by `ids.length` and rolls back on error.
 
 ### 🟢 Low
 
@@ -219,13 +212,13 @@ Added `cursor-pointer` to both the Cancel and Delete buttons in `ConfirmSheet.js
 
 ## 7. QUICK WINS
 
-1. **Add `cursor-pointer` to `ConfirmSheet` buttons** — `app/components/ConfirmSheet.js:22,26`. One-line fix, visible on every delete confirmation.
+~~1. **Add `cursor-pointer` to `ConfirmSheet` buttons** — `app/components/ConfirmSheet.js:22,26`. One-line fix, visible on every delete confirmation.~~ ✅ Done (U8)
 
-2. **Add `revalidatePath('/ledger')` to `addExpense`** — `app/actions/expenses.js:62`. Server cache stays correct without relying solely on client refetch.
+~~2. **Add `revalidatePath('/ledger')` to `addExpense`** — `app/actions/expenses.js:62`. Server cache stays correct without relying solely on client refetch.~~ ✅ Done (B5)
 
-3. ~~**Add auth guard to `saveAnniversaryDate`** — `app/actions/couple.js:99`. Add `getUser()` + ownership check before the update.~~ ✅ Done (B1)
+~~3. **Add auth guard to `saveAnniversaryDate`** — `app/actions/couple.js:99`. Add `getUser()` + ownership check before the update.~~ ✅ Done (B1)
 
-4. **Extract `CATEGORY_COLORS` to `lib/constants.js`** — remove duplication across 5 files. One source of truth.
+~~4. **Extract `CATEGORY_COLORS` to `lib/constants.js`** — remove duplication across 5 files. One source of truth.~~ ✅ Done (Q1)
 
 5. ~~**Add `onSuccess` to `useEffect` deps in `AddExpenseForm`** — `AddExpenseForm.js:60`. Fixes the eslint warning and is more correct.~~ ✅ Done (B9)
 
@@ -253,5 +246,5 @@ Added `cursor-pointer` to both the Cancel and Delete buttons in `ConfirmSheet.js
 **I5. Stabilize month navigation state in `CalendarClient`** — not worth it
 `prevMonth`/`nextMonth` read `viewYear`/`viewMonth` from the closure. Two taps before a re-render would compute the same destination and skip a month. The race condition is real, but practically impossible on a mobile-first UI — the first tap triggers an immediate re-render. The `useReducer` fix would require migrating 4 state variables into a reducer, disproportionate complexity for a problem no user will hit.
 
-**I6. Consider moving exchange rate calculation to the server for the Ledger page**
-Currently `LedgerClient` receives raw `rates` as a prop and does `computeUnifiedTotal` client-side. Since rates are already available server-side when the ledger page renders, the unified total could be computed once on the server and passed as a prop — reducing client bundle usage of `lib/exchangeRates.js`.
+**I6. Consider moving exchange rate calculation to the server for the Ledger page** — not worth it
+`TotalsBadges` computes `sumByCurrency(unpaid)` from live `expenses` state on every render — realtime updates and toggle-paid actions change this continuously. Pre-computing the total server-side would be immediately stale. The calculation must stay client-side. `computeUnifiedTotal` + `getRateLines` are 20 lines of pure functions; the bundle saving is negligible.

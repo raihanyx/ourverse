@@ -2,9 +2,7 @@
 
 import { useActionState, useEffect } from 'react'
 import { markAsDone } from '@/app/actions/bucket'
-import { formatDate } from '@/lib/currency'
-
-const TODAY = new Date().toLocaleDateString('en-CA')
+import { formatDate, todayISO } from '@/lib/currency'
 
 const CATEGORY_COLORS = {
   restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
@@ -29,7 +27,7 @@ export default function MarkDoneSheet({ item, coupleId, calendarDate, onSuccess,
     if (state?.success) onSuccess()
   }, [state])
 
-  const today = new Date().toLocaleDateString('en-CA')
+  const today = todayISO()
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
@@ -75,7 +73,7 @@ export default function MarkDoneSheet({ item, coupleId, calendarDate, onSuccess,
         </div>
 
         {/* Early date callout */}
-        {calendarDate && calendarDate > TODAY && (
+        {calendarDate && calendarDate > today && (
           <div className="flex items-start gap-2.5 bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-xl px-3.5 py-3 mb-4">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#A07060] dark:text-[#D4A090] flex-shrink-0 mt-[1px]" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />

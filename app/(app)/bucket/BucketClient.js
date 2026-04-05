@@ -106,6 +106,7 @@ export default function BucketClient({
 }) {
   const [items, setItems] = useState(initialItems)
   const [calendarDates, setCalendarDates] = useState(initialCalendarDates ?? {})
+  const [localMemoriesCount, setLocalMemoriesCount] = useState(memoriesCount)
   const [activeFilter, setActiveFilter] = useState('all')
   const [randomCategory, setRandomCategory] = useState('all')
   const [pickedItem, setPickedItem] = useState(null)
@@ -233,6 +234,7 @@ export default function BucketClient({
   function handleMarkDoneSuccess() {
     if (showDoneSheet) {
       setItems(prev => prev.map(i => i.id === showDoneSheet.id ? { ...i, is_done: true } : i))
+      setLocalMemoriesCount(prev => prev + 1)
     }
     setShowDoneSheet(null)
     setPickedItem(null)
@@ -290,6 +292,7 @@ export default function BucketClient({
     setBulkError(null)
     setBulkDoneIds(null)
     setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: true } : i))
+    setLocalMemoriesCount(prev => prev + ids.length)
     setIsSelecting(false)
     setSelectedIds(new Set())
     setPickedItem(null)
@@ -297,6 +300,7 @@ export default function BucketClient({
       const result = await bulkMarkDone(ids, date)
       if (result?.error) {
         setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: false } : i))
+        setLocalMemoriesCount(prev => prev - ids.length)
         setBulkError('Something went wrong. Please try again.')
       }
     })
@@ -393,7 +397,7 @@ export default function BucketClient({
               <div>
                 <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</p>
                 <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
-                  {memoriesCount === 0 ? 'Nothing done together yet' : `${memoriesCount} things you've done together`}
+                  {localMemoriesCount === 0 ? 'Nothing done together yet' : `${localMemoriesCount} things you've done together`}
                 </p>
               </div>
             </div>
@@ -624,7 +628,7 @@ export default function BucketClient({
 }
 
 function BulkMarkDoneSheet({ count, onConfirm, onCancel }) {
-  const today = new Date().toLocaleDateString('en-CA')
+  const today = todayISO()
   const [date, setDate] = useState(today)
 
   return (

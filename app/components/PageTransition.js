@@ -1,6 +1,6 @@
 export default function PageTransition({ children }) {
   return (
-    <div style={{ animation: 'pageEnter 280ms ease-out' }}>
+    <div className="animate-[pageEnter_280ms_ease-out]">
       {children}
     </div>
   )
