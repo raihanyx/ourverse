@@ -54,6 +54,14 @@ export async function joinCouple(prevState, formData) {
 
   if (!user) return { error: 'Not authenticated.' }
 
+  const { data: currentProfile } = await supabase
+    .from('users')
+    .select('couple_id')
+    .eq('id', user.id)
+    .single()
+
+  if (currentProfile?.couple_id) return { error: 'You are already in a couple space.' }
+
   const inviteCode = formData.get('inviteCode')?.toUpperCase().trim()
 
   if (!inviteCode || inviteCode.length !== 6) {
@@ -112,9 +120,14 @@ export async function saveAnniversaryDate(_, dateString) {
 
   if (!profile?.couple_id) return { error: 'No couple space found.' }
 
+  const parsed = new Date(dateString)
+  if (isNaN(parsed.getTime())) return { error: 'Invalid date.' }
+  if (parsed > new Date()) return { error: 'Anniversary date must be in the past.' }
+  const normalized = parsed.toISOString().slice(0, 10)
+
   await supabase
     .from('couples')
-    .update({ anniversary_date: dateString })
+    .update({ anniversary_date: normalized })
     .eq('id', profile.couple_id)
 
   revalidatePath('/dashboard')

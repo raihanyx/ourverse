@@ -25,9 +25,12 @@ export async function addExpense(prevState, formData) {
   // Field-level validation — return per-field errors so the form can show them inline
   const errors = {}
   if (!name) errors.name = 'Please enter a name for this expense.'
+  else if (name.length > 200) errors.name = 'Name must be 200 characters or fewer.'
   if (!formData.get('amount') || formData.get('amount') === '') errors.amount = 'Please enter an amount.'
   else if (isNaN(amount) || amount <= 0) errors.amount = 'Amount must be greater than zero.'
   if (!date) errors.date = 'Please select a date.'
+  else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
+  if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
   if (Object.keys(errors).length > 0) return { errors }
 
   if (!VALID_CURRENCIES.includes(currency)) return { error: 'Please select a valid currency.' }
@@ -80,6 +83,7 @@ export async function bulkSetPaid(ids, isPaid) {
   if (!user) return { error: 'Not authenticated.' }
 
   if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+  if (ids.length > 500) return { error: 'Too many items selected.' }
 
   const { data: profile } = await supabase
     .from('users')
@@ -110,6 +114,7 @@ export async function bulkDeleteExpenses(ids) {
   if (!user) return { error: 'Not authenticated.' }
 
   if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+  if (ids.length > 500) return { error: 'Too many items selected.' }
 
   const { data: profile } = await supabase
     .from('users')

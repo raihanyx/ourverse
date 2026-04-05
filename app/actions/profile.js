@@ -10,6 +10,7 @@ export async function updateName(prevState, formData) {
 
   const name = formData.get('name')?.trim()
   if (!name) return { errors: { name: 'Name cannot be empty.' } }
+  if (name.length > 200) return { errors: { name: 'Name must be 200 characters or fewer.' } }
 
   const { error } = await supabase
     .from('users')

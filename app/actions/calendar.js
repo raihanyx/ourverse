@@ -12,23 +12,29 @@ export async function addCalendarEntry(prevState, formData) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
 
+  const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+  const coupleId = profile.couple_id
+
   const title      = formData.get('title')?.trim()
   const date       = formData.get('date')
   const notes      = formData.get('notes')?.trim() || null
   const isPersonal = formData.get('is_personal') === 'true'
-  const coupleId   = formData.get('couple_id')
   const category   = formData.get('category') || 'other'
 
   const errors = {}
   if (!title) errors.title = 'Please enter a title.'
-  if (!date)  errors.date  = 'Please select a date.'
+  else if (title.length > 200) errors.title = 'Title must be 200 characters or fewer.'
+  if (!date) errors.date = 'Please select a date.'
+  else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
   if (!VALID_CATEGORIES.includes(category)) errors.category = 'Please select a valid category.'
+  if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
   if (Object.keys(errors).length > 0) return { errors }
 
   let bucketItemId = null
 
   // Couple entries auto-create a linked bucket_item
-  if (!isPersonal && coupleId) {
+  if (!isPersonal) {
     const { data: bucketItem, error: bucketError } = await supabase
       .from('bucket_items')
       .insert({
@@ -76,6 +82,7 @@ export async function markCalendarEntryDone(prevState, formData) {
   const note            = formData.get('note')?.trim() || null
 
   if (!date) return { error: 'Please select a date.' }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Invalid date format.' }
 
   const { data: profile } = await supabase
     .from('users')

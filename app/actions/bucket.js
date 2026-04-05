@@ -25,6 +25,8 @@ export async function addBucketItem(prevState, formData) {
   const notes = formData.get('notes')?.trim() || null
 
   if (!name) return { errors: { name: 'Please enter a name.' } }
+  if (name.length > 200) return { errors: { name: 'Name must be 200 characters or fewer.' } }
+  if (notes && notes.length > 1000) return { errors: { notes: 'Notes must be 1000 characters or fewer.' } }
   if (!VALID_CATEGORIES.includes(category)) return { error: 'Please select a valid category.' }
 
   const { error: insertError } = await supabase.from('bucket_items').insert({
@@ -61,6 +63,8 @@ export async function markAsDone(prevState, formData) {
   const note = formData.get('note')?.trim() || null
 
   if (!date) return { error: 'Please select a date.' }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Invalid date format.' }
+  if (note && note.length > 2000) return { error: 'Note must be 2000 characters or fewer.' }
 
   // Fetch name/category from DB — never trust form data for stored values
   const { data: bucketItem } = await supabase
@@ -110,6 +114,7 @@ export async function bulkMarkDone(ids, date) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
   if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+  if (ids.length > 500) return { error: 'Too many items selected.' }
 
   const { data: profile } = await supabase
     .from('users')
@@ -168,11 +173,16 @@ export async function bulkUndoDone(memoryIds) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
   if (!Array.isArray(memoryIds) || memoryIds.length === 0) return { error: 'No items selected.' }
+  if (memoryIds.length > 500) return { error: 'Too many items selected.' }
+
+  const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
 
   const { data: memories } = await supabase
     .from('memories')
     .select('id, bucket_item_id')
     .in('id', memoryIds)
+    .eq('couple_id', profile.couple_id)
 
   if (!memories?.length) return { error: 'Memories not found.' }
 
@@ -182,6 +192,7 @@ export async function bulkUndoDone(memoryIds) {
     .from('bucket_items')
     .update({ is_done: false })
     .in('id', bucketItemIds)
+    .eq('couple_id', profile.couple_id)
 
   if (updateError) return { error: 'Could not update bucket items.' }
 
@@ -189,6 +200,7 @@ export async function bulkUndoDone(memoryIds) {
     .from('memories')
     .delete()
     .in('id', memoryIds)
+    .eq('couple_id', profile.couple_id)
 
   if (deleteError) return { error: 'Could not delete memories.' }
 
@@ -221,7 +233,10 @@ export async function deleteBucketItem(id) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
 
-  const { error } = await supabase.from('bucket_items').delete().eq('id', id)
+  const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+
+  const { error } = await supabase.from('bucket_items').delete().eq('id', id).eq('couple_id', profile.couple_id)
   if (error) return { error: 'Could not delete item.' }
 
   return { success: true }
@@ -234,8 +249,12 @@ export async function bulkDeleteBucketItems(ids) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
   if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+  if (ids.length > 500) return { error: 'Too many items selected.' }
 
-  const { error } = await supabase.from('bucket_items').delete().in('id', ids)
+  const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
+
+  const { error } = await supabase.from('bucket_items').delete().in('id', ids).eq('couple_id', profile.couple_id)
   if (error) return { error: 'Could not delete items.' }
 
   return { success: true }
@@ -262,8 +281,11 @@ export async function addDirectMemory(prevState, formData) {
   const note     = formData.get('note')?.trim() || null
 
   if (!name) return { errors: { name: 'Please enter a name.' } }
+  if (name.length > 200) return { errors: { name: 'Name must be 200 characters or fewer.' } }
   if (!VALID_CATEGORIES.includes(category)) return { error: 'Please select a valid category.' }
   if (!date) return { error: 'Please provide a date.' }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Invalid date format.' }
+  if (note && note.length > 2000) return { error: 'Note must be 2000 characters or fewer.' }
 
   const { data: bucketItem, error: bucketError } = await supabase
     .from('bucket_items')
@@ -303,11 +325,16 @@ export async function bulkDeleteMemories(ids) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated.' }
   if (!Array.isArray(ids) || ids.length === 0) return { error: 'No items selected.' }
+  if (ids.length > 500) return { error: 'Too many items selected.' }
+
+  const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
+  if (!profile?.couple_id) return { error: 'No couple space found.' }
 
   const { data: memories } = await supabase
     .from('memories')
     .select('id, bucket_item_id')
     .in('id', ids)
+    .eq('couple_id', profile.couple_id)
 
   if (!memories?.length) return { error: 'Memories not found.' }
 
@@ -315,6 +342,7 @@ export async function bulkDeleteMemories(ids) {
     .from('memories')
     .delete()
     .in('id', ids)
+    .eq('couple_id', profile.couple_id)
 
   if (deleteMemoriesError) return { error: 'Could not delete memories.' }
 
