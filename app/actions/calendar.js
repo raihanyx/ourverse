@@ -103,6 +103,14 @@ export async function markCalendarEntryDone(prevState, formData) {
   if (!entry) return { error: 'Entry not found or you do not have permission.' }
 
   if (entry.bucket_item_id) {
+    const { data: bucketItem } = await supabase
+      .from('bucket_items')
+      .select('is_done')
+      .eq('id', entry.bucket_item_id)
+      .single()
+
+    if (bucketItem?.is_done) return { error: 'This entry has already been marked as done.' }
+
     const { error: updateError } = await supabase
       .from('bucket_items')
       .update({ is_done: true })

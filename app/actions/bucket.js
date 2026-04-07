@@ -66,15 +66,16 @@ export async function markAsDone(prevState, formData) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Invalid date format.' }
   if (note && note.length > 2000) return { error: 'Note must be 2000 characters or fewer.' }
 
-  // Fetch name/category from DB — never trust form data for stored values
+  // Fetch name/category/is_done from DB — never trust form data for stored values
   const { data: bucketItem } = await supabase
     .from('bucket_items')
-    .select('name, category')
+    .select('name, category, is_done')
     .eq('id', bucketItemId)
     .eq('couple_id', profile.couple_id)
     .single()
 
   if (!bucketItem) return { error: 'Item not found.' }
+  if (bucketItem.is_done) return { error: 'This item is already marked as done.' }
 
   const { error: updateError } = await supabase
     .from('bucket_items')
