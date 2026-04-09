@@ -172,7 +172,7 @@ export async function deleteCalendarEntry(id) {
     return { error: 'You can only delete your own personal entries.' }
   }
 
-  const { error } = await supabase.from('calendar_entries').delete().eq('id', id)
+  const { error } = await supabase.from('calendar_entries').delete().eq('id', id).eq('couple_id', profile.couple_id)
   if (error) return { error: 'Could not delete entry. Please try again.' }
 
   // If linked bucket_item exists and is not yet done, delete it too

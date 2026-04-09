@@ -22,5 +22,5 @@ export async function updateName(prevState, formData) {
   revalidatePath('/profile')
   revalidatePath('/dashboard')
   revalidatePath('/ledger')
-  return { success: true }
+  return { success: true, name }
 }

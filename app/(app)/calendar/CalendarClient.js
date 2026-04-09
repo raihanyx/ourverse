@@ -194,6 +194,14 @@ export default function CalendarClient({
           if (rY !== viewYear || rM - 1 !== viewMonth) return
           setEntries(prev => prev.some(e => e.id === payload.new.id) ? prev : [...prev, payload.new])
         } else if (payload.eventType === 'UPDATE') {
+          const rowDate = payload.new?.date
+          if (rowDate) {
+            const [rY, rM] = rowDate.split('-').map(Number)
+            if (rY !== viewYear || rM - 1 !== viewMonth) {
+              setEntries(prev => prev.filter(e => e.id !== payload.new.id))
+              return
+            }
+          }
           setEntries(prev => prev.map(e => e.id === payload.new.id ? payload.new : e))
         } else if (payload.eventType === 'DELETE') {
           setEntries(prev => prev.filter(e => e.id !== payload.old.id))

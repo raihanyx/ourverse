@@ -13,7 +13,8 @@ export default function ProfileClient({ name, email }) {
 
   useEffect(() => {
     if (state?.success) {
-      setDisplayName(draft)
+      setDisplayName(state.name)
+      setDraft(state.name)
       setEditing(false)
     }
   }, [state])

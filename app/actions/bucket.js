@@ -98,12 +98,14 @@ export async function markAsDone(prevState, formData) {
 
   revalidatePath('/bucket')
   revalidatePath('/memories')
+  revalidatePath('/calendar')
 
   // Move any linked calendar entry to the actual completion date
   await supabase
     .from('calendar_entries')
     .update({ date })
     .eq('bucket_item_id', bucketItemId)
+    .eq('couple_id', profile.couple_id)
 
   return { success: true }
 }
@@ -164,6 +166,8 @@ export async function bulkMarkDone(ids, date) {
     .eq('couple_id', profile.couple_id)
 
   revalidatePath('/calendar')
+  revalidatePath('/bucket')
+  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -224,6 +228,8 @@ export async function bulkUndoDone(memoryIds) {
   }
 
   revalidatePath('/calendar')
+  revalidatePath('/bucket')
+  revalidatePath('/memories')
   return { success: true }
 }
 
