@@ -4,6 +4,8 @@ import { fetchRates } from '@/lib/exchangeRates'
 import LedgerClient from './LedgerClient'
 import PageTransition from '@/app/components/PageTransition'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Ledger | Ourverse',
 }

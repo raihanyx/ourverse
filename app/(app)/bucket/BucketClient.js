@@ -140,9 +140,6 @@ export default function BucketClient({
     if (calEntries) setCalendarDates(Object.fromEntries(calEntries.map(e => [e.bucket_item_id, e.date])))
   }, [coupleId])
 
-  // Sync on mount — corrects stale initialItems from router cache
-  useEffect(() => { refetchItems() }, [refetchItems])
-
   // Realtime
   useEffect(() => {
     const supabase = createClient()

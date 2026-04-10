@@ -3,6 +3,8 @@ import { getAppSession } from '@/lib/data/getAppSession'
 import PageTransition from '@/app/components/PageTransition'
 import MemoriesClient from './MemoriesClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function MemoriesPage() {
   const { profile } = await getAppSession()
   const supabase = await createClient()

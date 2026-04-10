@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
+import { getActionContext } from '@/lib/data/getActionContext'
 
 function generateInviteCode() {
   // Omit ambiguous chars: 0/O, 1/I/L
@@ -41,6 +42,9 @@ export async function createCouple(prevState, formData) {
   if (profileError) {
     return { error: 'Could not link your profile. Please try again.' }
   }
+
+  // Write couple_id to auth metadata — enables fast path in getActionContext
+  await supabase.auth.updateUser({ data: { couple_id: couple.id } })
 
   // Return the code for display — do NOT redirect yet (partner needs to see it)
   return { inviteCode }
@@ -101,24 +105,16 @@ export async function joinCouple(prevState, formData) {
     return { error: 'Could not join couple space. Please try again.' }
   }
 
+  // Write couple_id to auth metadata — enables fast path in getActionContext
+  await supabase.auth.updateUser({ data: { couple_id: couple.id } })
+
   redirect('/dashboard')
 }
 
 export async function saveAnniversaryDate(_, dateString) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('couple_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.couple_id) return { error: 'No couple space found.' }
+  const ctx = await getActionContext()
+  if (ctx.error) return { error: ctx.error }
+  const { supabase, coupleId } = ctx
 
   const parsed = new Date(dateString)
   if (isNaN(parsed.getTime())) return { error: 'Invalid date.' }
@@ -128,7 +124,7 @@ export async function saveAnniversaryDate(_, dateString) {
   await supabase
     .from('couples')
     .update({ anniversary_date: normalized })
-    .eq('id', profile.couple_id)
+    .eq('id', coupleId)
 
   revalidatePath('/dashboard')
 }

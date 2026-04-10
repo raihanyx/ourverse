@@ -3,6 +3,8 @@ import { getAppSession } from '@/lib/data/getAppSession'
 import PageTransition from '@/app/components/PageTransition'
 import BucketClient from './BucketClient'
 
+export const dynamic = 'force-dynamic'
+
 export default async function BucketPage() {
   const { user, profile, partner } = await getAppSession()
   const supabase = await createClient()

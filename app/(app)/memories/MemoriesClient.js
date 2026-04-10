@@ -32,9 +32,6 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
     if (data) setMemories(data)
   }, [coupleId])
 
-  // Sync on mount — corrects stale initialMemories from router cache
-  useEffect(() => { refetch() }, [refetch])
-
   // Realtime — keep both users in sync
   useEffect(() => {
     const supabase = createClient()

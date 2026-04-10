@@ -1,20 +1,14 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { getActionContext } from '@/lib/data/getActionContext'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
 
 export async function addCalendarEntry(prevState, formData) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
-  if (!profile?.couple_id) return { error: 'No couple space found.' }
-  const coupleId = profile.couple_id
+  const ctx = await getActionContext()
+  if (ctx.error) return { error: ctx.error }
+  const { supabase, user, coupleId } = ctx
 
   const title      = formData.get('title')?.trim()
   const date       = formData.get('date')
@@ -71,11 +65,9 @@ export async function addCalendarEntry(prevState, formData) {
 }
 
 export async function markCalendarEntryDone(prevState, formData) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
+  const ctx = await getActionContext()
+  if (ctx.error) return { error: ctx.error }
+  const { supabase, coupleId } = ctx
 
   const calendarEntryId = formData.get('calendar_entry_id')
   const date            = formData.get('date')
@@ -84,20 +76,12 @@ export async function markCalendarEntryDone(prevState, formData) {
   if (!date) return { error: 'Please select a date.' }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Invalid date format.' }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('couple_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.couple_id) return { error: 'No couple space found.' }
-
   // Fetch entry server-side — verifies ownership, derives all fields from DB
   const { data: entry } = await supabase
     .from('calendar_entries')
     .select('bucket_item_id, title, category, couple_id')
     .eq('id', calendarEntryId)
-    .eq('couple_id', profile.couple_id)
+    .eq('couple_id', coupleId)
     .single()
 
   if (!entry) return { error: 'Entry not found or you do not have permission.' }
@@ -143,26 +127,16 @@ export async function markCalendarEntryDone(prevState, formData) {
 }
 
 export async function deleteCalendarEntry(id) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Not authenticated.' }
-
-  const { data: profile } = await supabase
-    .from('users')
-    .select('couple_id')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.couple_id) return { error: 'No couple space found.' }
+  const ctx = await getActionContext()
+  if (ctx.error) return { error: ctx.error }
+  const { supabase, user, coupleId } = ctx
 
   // Fetch entry scoped to couple — either partner can delete shared entries
   const { data: entry } = await supabase
     .from('calendar_entries')
     .select('bucket_item_id, is_personal, user_id')
     .eq('id', id)
-    .eq('couple_id', profile.couple_id)
+    .eq('couple_id', coupleId)
     .single()
 
   if (!entry) return { error: 'Entry not found or you do not have permission to delete it.' }
@@ -172,7 +146,7 @@ export async function deleteCalendarEntry(id) {
     return { error: 'You can only delete your own personal entries.' }
   }
 
-  const { error } = await supabase.from('calendar_entries').delete().eq('id', id).eq('couple_id', profile.couple_id)
+  const { error } = await supabase.from('calendar_entries').delete().eq('id', id).eq('couple_id', coupleId)
   if (error) return { error: 'Could not delete entry. Please try again.' }
 
   // If linked bucket_item exists and is not yet done, delete it too
