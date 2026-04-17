@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { deleteCalendarEntry } from '@/app/actions/calendar'
 import { formatDate, todayISO } from '@/lib/currency'
@@ -132,6 +132,10 @@ export default function CalendarClient({
   const [memories, setMemories]           = useState(initialMemories)
   const [viewYear, setViewYear]           = useState(initialYear)
   const [viewMonth, setViewMonth]         = useState(initialMonth)
+  const viewYearRef  = useRef(initialYear)
+  const viewMonthRef = useRef(initialMonth)
+  useEffect(() => { viewYearRef.current  = viewYear  }, [viewYear])
+  useEffect(() => { viewMonthRef.current = viewMonth }, [viewMonth])
   const [selectedDate, setSelectedDate]   = useState(null)
   const [showHelp, setShowHelp]           = useState(false)
   const [showAddForm, setShowAddForm]     = useState(false)
@@ -177,6 +181,9 @@ export default function CalendarClient({
   }
 
   // ── Realtime subscriptions ──────────────────────────────
+  // Subscribes once per coupleId. viewYearRef/viewMonthRef are read inside
+  // the callbacks so they always reflect the current month without causing
+  // the subscription to tear down and rebuild on every month navigation.
   useEffect(() => {
     const supabase = createClient()
 
@@ -187,17 +194,16 @@ export default function CalendarClient({
         if (row?.couple_id !== coupleId) return
 
         if (payload.eventType === 'INSERT') {
-          // Only add if it falls in the current viewed month
           const rowDate = payload.new?.date
           if (!rowDate) return
           const [rY, rM] = rowDate.split('-').map(Number)
-          if (rY !== viewYear || rM - 1 !== viewMonth) return
+          if (rY !== viewYearRef.current || rM - 1 !== viewMonthRef.current) return
           setEntries(prev => prev.some(e => e.id === payload.new.id) ? prev : [...prev, payload.new])
         } else if (payload.eventType === 'UPDATE') {
           const rowDate = payload.new?.date
           if (rowDate) {
             const [rY, rM] = rowDate.split('-').map(Number)
-            if (rY !== viewYear || rM - 1 !== viewMonth) {
+            if (rY !== viewYearRef.current || rM - 1 !== viewMonthRef.current) {
               setEntries(prev => prev.filter(e => e.id !== payload.new.id))
               return
             }
@@ -218,7 +224,7 @@ export default function CalendarClient({
         const memDate = payload.new?.date ?? payload.old?.date
         if (!memDate) return
         const [mY, mM] = memDate.split('-').map(Number)
-        if (mY !== viewYear || mM - 1 !== viewMonth) return
+        if (mY !== viewYearRef.current || mM - 1 !== viewMonthRef.current) return
 
         if (payload.eventType === 'INSERT') {
           setMemories(prev => prev.some(m => m.id === payload.new.id) ? prev : [...prev, payload.new])
@@ -234,7 +240,7 @@ export default function CalendarClient({
       supabase.removeChannel(calChannel)
       supabase.removeChannel(memChannel)
     }
-  }, [coupleId, viewYear, viewMonth])
+  }, [coupleId])
 
   // ── Completed bucket item IDs (have a memory) ──────────
   const completedBucketIds = useMemo(

@@ -19,10 +19,11 @@ Fixing just the top 5 issues below would dramatically improve perceived performa
 | Severity | Original | Fixed | Remaining |
 |----------|----------|-------|-----------|
 | CRITICAL | 4 | 3 | 0 *(1 reclassified to LOW)* |
-| HIGH | 8 | 2 | 6 |
+| HIGH | 8 | 5 | 1 *(1 reclassified to N/A, 1 reclassified to LOW)* |
 | MEDIUM | 7 | 0 | 7 |
-| LOW | 4 | 0 | 5 *(+1 reclassified from CRITICAL)* |
-| **Total** | **23** | **5** | **18** |
+| LOW | 4 | 0 | 6 *(+1 reclassified from CRITICAL, +1 reclassified from HIGH)* |
+| N/A | — | — | 2 *(reclassified: not real issues for this app)* |
+| **Total** | **23** | **8** | **14** |
 
 ---
 
@@ -45,7 +46,7 @@ Double data fetching
 
 ---
 
-### 1.2 HIGH — Root Page (`/`) Has No Loading State
+### 1.2 HIGH — Root Page (`/`) Has No Loading State ✅ Fixed
 
 **File:** `app/page.js:1`  
 **Problem:** The root page (`/`) is a server component that calls `supabase.auth.getUser()` and redirects to `/dashboard` or `/login`. There is no `app/loading.js` at the root level, so users see a blank white screen during this server-side redirect.
@@ -54,7 +55,7 @@ Double data fetching
 
 **Measurable impact:** 500ms–2s of blank screen on every fresh app visit.
 
-**Fix:** Add a root `loading.js`:
+**What was actually done:** Added `app/loading.js` with a centered spinner using the app's brand colors and page background. Next.js automatically wraps the root page in a Suspense boundary using this file, streaming the spinner immediately while the server resolves the auth check and redirect.
 
 ```jsx
 // app/loading.js
@@ -444,36 +445,19 @@ revalidatePath('/bucket')  // current page — keep this
 
 ## Category 6: Client Bundle Size
 
-### 6.1 HIGH — Large Client Components (500–600+ Lines Each)
+### 6.1 ~~HIGH~~ LOW — Large Client Components *(reassessed — not a real performance issue)*
 
-**File:** `app/(app)/ledger/LedgerClient.js` (~600 lines), `app/(app)/bucket/BucketClient.js` (~500 lines), `app/(app)/calendar/CalendarClient.js` (~500 lines)  
-**Problem:** Three main page client components are monolithic — each contains all state management, event handlers, realtime subscriptions, rendering logic, and sub-views (modals, sheets, bulk actions) in a single file.
+**File:** `app/(app)/ledger/LedgerClient.js` (595 lines), `app/(app)/bucket/BucketClient.js` (687 lines), `app/(app)/calendar/CalendarClient.js` (744 lines)
 
-**Why it's slow:** Large client components mean:
-- More JS to download and parse on mobile
-- Entire component re-renders when any piece of state changes
-- Cannot code-split sub-views (modals, sheets) since they're inline
-- Harder to optimize with React.memo or useMemo since everything is interleaved
+**Why the original assessment was wrong:** The audit assumed modals and sheets were defined inline and unsplittable. After reading the actual files, all modals and sheets (`AddExpenseForm`, `LedgerHelpSheet`, `MarkDoneSheet`, `AddCalendarEntryForm`, `CalendarMarkDoneSheet`, `CalendarHelpSheet`, `ConfirmSheet`, etc.) are already imported from their own separate files. Next.js already code-splits per route, so the size of one page's component has no impact on other pages. The "30–50KB" estimate was not grounded in the actual file contents.
 
-**Measurable impact:** Estimated 30–50KB of unnecessary JS per page (modals/sheets that aren't visible on initial render).
+**What is actually true:**
+- The sub-components (modals, sheets) are already properly separated — switching to `dynamic()` imports would be a marginal difference for components this small
+- The inline helpers (`TotalsBadges`, `ExpenseRow`, `BucketItemRow`, icon components) are small and belong co-located since they're used only in that file
+- `BulkMarkDoneSheet` in `BucketClient.js` is the one genuinely misplaced component — it's a full standalone sheet defined at the bottom of an unrelated file. Worth extracting as a code organisation fix, not a performance one.
+- For a 2-user app, no user will ever feel the difference from any of these changes
 
-**Fix:** Extract modals, sheets, and bulk action bars into separate client components loaded with `dynamic()`:
-
-```jsx
-// app/(app)/ledger/LedgerClient.js
-import dynamic from 'next/dynamic'
-
-const DeleteConfirmSheet = dynamic(() => import('./DeleteConfirmSheet'))
-const BulkActionBar = dynamic(() => import('./BulkActionBar'))
-const LedgerHelpSheet = dynamic(() => import('./LedgerHelpSheet'))
-
-// Only render when needed:
-{showDeleteConfirm && <DeleteConfirmSheet ... />}
-{selectedIds.size > 0 && <BulkActionBar ... />}
-{showHelp && <LedgerHelpSheet ... />}
-```
-
-This defers loading modal/sheet code until the user actually triggers them.
+**Recommendation:** Extract `BulkMarkDoneSheet` from `BucketClient.js` into its own file if the file ever becomes hard to navigate. Otherwise, leave as-is. Not a performance concern.
 
 ---
 
@@ -548,47 +532,22 @@ import { login } from '@/app/actions/auth'
 
 ## Category 8: Realtime Subscriptions
 
-### 8.1 HIGH — Realtime Subscriptions Have No Server-Side Filtering
+### 8.1 ~~HIGH~~ N/A — Realtime Subscriptions Have No Server-Side Filtering *(won't fix)*
 
-**File:** `app/(app)/ledger/LedgerClient.js` (realtime subscription), `app/(app)/bucket/BucketClient.js` (2 subscriptions), `app/(app)/calendar/CalendarClient.js` (2 subscriptions), `app/(app)/memories/MemoriesClient.js` (subscription)  
-**Problem:** All realtime subscriptions subscribe to entire tables without server-side `couple_id` filtering:
+**File:** `app/(app)/ledger/LedgerClient.js`, `app/(app)/bucket/BucketClient.js`, `app/(app)/calendar/CalendarClient.js`, `app/(app)/memories/MemoriesClient.js`
 
-```js
-supabase.channel('expenses')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, () => {
-    refetch()
-  })
-```
+**Why we're not fixing this:** Supabase Realtime's server-side row filtering requires enabling Replication per table in the Supabase dashboard plus a separate Realtime RLS configuration. If either is misconfigured, the filter silently fails — you either receive no events at all or receive everything as if no filter was set. The failure mode is invisible and hard to debug.
 
-This means **every change to the table by any user** triggers a callback.
+The current approach — subscribing to the full table and filtering client-side by `couple_id` — is deliberately chosen:
+- All subscriptions already guard with `if (row?.couple_id !== coupleId) return`, so no wrong data ever enters state
+- RLS enforces `couple_id` scoping at the DB level independently; the client filter is a UI optimization, not a security gate
+- Ourverse has 2 users per couple — the event volume this app will ever generate makes server-side filtering a non-issue at any realistic scale
 
-**Why it's slow:** 
-- Supabase sends change events for ALL rows in the table, not just the user's couple
-- Client receives and processes events that aren't relevant
-- Each irrelevant event triggers a `refetch()` or `router.refresh()`, causing unnecessary re-renders and network requests
-- As the user base grows, this gets exponentially worse
-
-**Measurable impact:** Unnecessary refetches and re-renders proportional to total app activity. Currently may be minor with few users, but will degrade as usage scales.
-
-**Fix:** Add a server-side filter to all realtime subscriptions:
-
-```js
-supabase.channel('expenses')
-  .on('postgres_changes', {
-    event: '*',
-    schema: 'public',
-    table: 'expenses',
-    filter: `couple_id=eq.${coupleId}`,
-  }, () => {
-    refetch()
-  })
-```
-
-This requires passing `coupleId` as a prop from the server component. Also requires enabling Realtime Row Level Security filters in Supabase dashboard for each table.
+**Reclassified:** Removed from HIGH. Not a real issue for this app.
 
 ---
 
-### 8.2 HIGH — Calendar Recreates Subscriptions on Every Month Change
+### 8.2 HIGH — Calendar Recreates Subscriptions on Every Month Change ✅ Fixed
 
 **File:** `app/(app)/calendar/CalendarClient.js` (useEffect with viewYear/viewMonth dependencies)  
 **Problem:** The calendar page's realtime subscription `useEffect` depends on `viewYear` and `viewMonth` state. Every time the user navigates to a different month, the subscriptions are torn down and recreated.
@@ -600,33 +559,7 @@ This requires passing `coupleId` as a prop from the server component. Also requi
 
 **Measurable impact:** ~100–200ms of subscription churn per month navigation. Potential for missed events during transition.
 
-**Fix:** Subscribe once without month filtering, and filter events client-side:
-
-```js
-useEffect(() => {
-  const channel = supabase.channel('calendar-realtime')
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'calendar_entries',
-      filter: `couple_id=eq.${coupleId}`,
-    }, () => {
-      // Refetch current month data
-      refetchMonth()
-    })
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'memories',
-      filter: `couple_id=eq.${coupleId}`,
-    }, () => {
-      refetchMonth()
-    })
-    .subscribe()
-
-  return () => { supabase.removeChannel(channel) }
-}, [coupleId])  // Only re-subscribe if couple changes, not month
-```
+**What was actually done:** Added `viewYearRef` and `viewMonthRef` (`useRef`) initialized to the same values as the state. Two single-line `useEffect`s keep the refs in sync whenever state changes. The subscription `useEffect` now reads `viewYearRef.current` / `viewMonthRef.current` inside all payload callbacks instead of the state variables, and its dependency array is `[coupleId]` only. The two channels subscribe once when the component mounts and stay alive for the entire session — no teardown or rebuild on month navigation. All payload filtering logic is unchanged.
 
 ---
 
@@ -666,7 +599,7 @@ const debouncedRefresh = useMemo(
 
 ## Category 9: Re-renders
 
-### 9.1 HIGH — Client Supabase Client Not Memoized
+### 9.1 HIGH — Client Supabase Client Not Memoized ✅ Fixed
 
 **File:** `lib/supabase/client.js`  
 **Problem:** `createClient()` creates a new Supabase client instance every time it's called. Multiple components on the same page each call `createClient()`, creating multiple instances.
@@ -681,7 +614,7 @@ When `LedgerClient.js` calls `createClient()` for its refetch AND for its realti
 
 **Measurable impact:** Unnecessary memory usage and potential duplicate auth state management. ~2–5KB memory overhead per extra instance.
 
-**Fix:** Memoize the client as a singleton:
+**What was actually done:** Added a module-level `client` variable so the first call creates the instance and every subsequent call returns the same one. All components that call `createClient()` — `LedgerClient`, `BucketClient`, `CalendarClient`, `MemoriesClient`, `RealtimeRefresh`, and `ProfileClient` — now share a single Supabase instance with one auth listener and one WebSocket connection pool.
 
 ```js
 // lib/supabase/client.js
