@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import { bulkSetPaid, togglePaid, bulkDeleteExpenses } from '@/app/actions/expenses'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
 import { formatAmount, formatDate } from '@/lib/currency'
@@ -75,10 +76,61 @@ export default function PaidExpensesClient({
   currentUserId,
   partnerId,
   partnerName,
+  coupleId,
   initialTab,
 }) {
   const [localExpenses, setLocalExpenses] = useState(expenses)
   const [activeTab, setActiveTab] = useState(initialTab)
+
+  const refetch = useCallback(async () => {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('expenses')
+      .select('id, paid_by_user_id, is_paid, name, amount, currency, category, date, notes, created_at')
+      .eq('couple_id', coupleId)
+      .eq('is_paid', true)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+    if (data) setLocalExpenses(data)
+  }, [coupleId])
+
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase
+      .channel('paid-expenses-' + coupleId)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'expenses' },
+        (payload) => {
+          const row = payload.new ?? payload.old
+          if (row?.couple_id !== coupleId) return
+
+          if (payload.eventType === 'INSERT') {
+            if (!payload.new.is_paid) return
+            setLocalExpenses(prev =>
+              prev.some(e => e.id === payload.new.id) ? prev : [payload.new, ...prev]
+            )
+          } else if (payload.eventType === 'UPDATE') {
+            if (payload.new.is_paid) {
+              // Became paid or was updated while paid — add or replace
+              setLocalExpenses(prev =>
+                prev.some(e => e.id === payload.new.id)
+                  ? prev.map(e => e.id === payload.new.id ? payload.new : e)
+                  : [payload.new, ...prev]
+              )
+            } else {
+              // Became unpaid — remove from this list
+              setLocalExpenses(prev => prev.filter(e => e.id !== payload.new.id))
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setLocalExpenses(prev => prev.filter(e => e.id !== payload.old.id))
+          }
+        }
+      )
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [coupleId])
   const [isPending, startTransition] = useTransition()
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isSelecting, setIsSelecting] = useState(false)
@@ -105,6 +157,7 @@ export default function PaidExpensesClient({
         if (removed) setLocalExpenses(prev => [removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
+      await refetch()
     })
   }
 
@@ -145,6 +198,7 @@ export default function PaidExpensesClient({
         setLocalExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
+      await refetch()
     })
   }
 

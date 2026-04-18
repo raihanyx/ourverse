@@ -136,6 +136,7 @@ export default function AddExpenseForm({
           name="date"
           type="date"
           defaultValue={today}
+          max={today}
           className={inputClass(!!e.date)}
         />
         <FieldError message={e.date} />

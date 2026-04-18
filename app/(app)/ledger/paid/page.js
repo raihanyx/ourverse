@@ -3,6 +3,8 @@ import { getAppSession } from '@/lib/data/getAppSession'
 import PaidExpensesClient from './PaidExpensesClient'
 import PageTransition from '@/app/components/PageTransition'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Paid expenses | Ourverse',
 }
@@ -27,6 +29,7 @@ export default async function PaidExpensesPage({ searchParams }) {
         currentUserId={user.id}
         partnerId={partner?.id ?? null}
         partnerName={partner?.name ?? 'your partner'}
+        coupleId={profile.couple_id}
         initialTab={tab === 'i_owe' ? 'i_owe' : 'owe_me'}
       />
     </PageTransition>

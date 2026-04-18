@@ -28,6 +28,8 @@ export async function addExpense(prevState, formData) {
   else if (isNaN(amount) || amount <= 0) errors.amount = 'Amount must be greater than zero.'
   if (!date) errors.date = 'Please select a date.'
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
+  else if (isNaN(new Date(date + 'T00:00:00').getTime())) errors.date = 'Please enter a valid date.'
+  else if (date > new Date().toISOString().slice(0, 10)) errors.date = 'Date cannot be in the future.'
   if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
   if (Object.keys(errors).length > 0) return { errors }
 
@@ -81,6 +83,7 @@ export async function bulkSetPaid(ids, isPaid) {
 
   if (error) return { error: 'Could not update expenses.' }
 
+  revalidatePath('/ledger')
   revalidatePath('/ledger/paid')
   revalidatePath('/dashboard')
   return { success: true }
@@ -113,23 +116,16 @@ export async function togglePaid(expenseId) {
   if (ctx.error) return { error: ctx.error }
   const { supabase, coupleId } = ctx
 
-  const { data: expense } = await supabase
-    .from('expenses')
-    .select('is_paid')
-    .eq('id', expenseId)
-    .eq('couple_id', coupleId)
-    .single()
-
-  if (!expense) return { error: 'Expense not found.' }
-
-  const { error } = await supabase
-    .from('expenses')
-    .update({ is_paid: !expense.is_paid })
-    .eq('id', expenseId)
-    .eq('couple_id', coupleId)
+  // Single round-trip: atomically flips is_paid via DB function (docs/sql/toggle_expense_paid.sql)
+  const { data, error } = await supabase.rpc('toggle_expense_paid', {
+    p_expense_id: expenseId,
+    p_couple_id: coupleId,
+  })
 
   if (error) return { error: 'Could not update expense.' }
+  if (data === null) return { error: 'Expense not found.' }
 
+  revalidatePath('/ledger')
   revalidatePath('/ledger/paid')
   revalidatePath('/dashboard')
   return { success: true }

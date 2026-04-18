@@ -65,12 +65,15 @@ app/
       loading.js          Bucket loading skeleton
     memories/
       page.js             Server component — fetches memories
-      MemoriesClient.js   Client component — memory list, select mode, bulk delete, back link to /bucket
+      MemoriesClient.js   Client component — memory list, select mode, undo done, bulk delete, back link to /bucket
+      AddMemoryForm.js    Slide-up form — directly log a memory (name, category, date, note) without a bucket item
+      MemoriesHelpSheet.js Slide-up help sheet explaining how memories, undo done, and delete work
       loading.js          Memories loading skeleton
     calendar/
       page.js             Server component — fetches calendar_entries + memories for current month + couple anniversary_date
       CalendarClient.js   Client component — month grid, day detail panel, month navigation with slide animation, realtime sync
       AddCalendarEntryForm.js  Slide-up form — title, date, category, notes, personal/couple toggle; couple entries auto-create a linked bucket_item
+      AddMemoryForm.js    Slide-up form — directly log a memory from the calendar page (same form as memories/AddMemoryForm.js, uses addDirectMemory action)
       CalendarMarkDoneSheet.js Slide-up sheet — mark a calendar entry done, pick completion date, creates a memory + updates bucket_item
       CalendarHelpSheet.js     Slide-up help sheet explaining calendar rules
       loading.js          Calendar loading skeleton
@@ -89,22 +92,29 @@ app/
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
     expenses.js           addExpense, togglePaid, bulkSetPaid, bulkDeleteExpenses
-    bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, bulkDeleteMemories
+    bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, addDirectMemory, bulkDeleteMemories
     calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry
     profile.js            updateName
   components/
     PageTransition.js     Fade-in wrapper used on all protected pages
     ConfirmSheet.js       Reusable slide-up confirmation dialog (message, confirmLabel, onConfirm, onCancel) — used for bulk deletes across ledger, paid expenses, bucket, memories
+    FieldError.js         Reusable inline field error — renders `<p>` in accent red if message is set, null otherwise
+    StyledSelect.js       Reusable custom select wrapper — `appearance: none` + absolute `▾` arrow div; use instead of inline select workarounds
   ThemeProvider.js        Client context — dark/light theme, persisted to localStorage
   icon.tsx                Custom favicon — "O" lettermark via next/og ImageResponse
   layout.js               Root layout (Geist fonts, metadata, ThemeProvider)
+  loading.js              Root loading state — full-screen centered spinner shown while navigating to protected routes
   page.js                 Root redirect → /dashboard or /login
   globals.css             Tailwind import + base styles + dark mode date picker icon fix
 lib/
   supabase/
     client.js             createBrowserClient (browser)
     server.js             createServerClient (server, async cookies)
-  currency.js             formatAmount, sumByCurrency, formatDate, SUPPORTED_CURRENCIES
+  data/
+    getAppSession.js      React-cached server helper — returns { user, profile, partner }; redirects to /login or /onboarding if not authed; use in all protected server components instead of manual getUser() calls
+    getActionContext.js   Server action helper — returns { supabase, user, coupleId } or { error }; reads couple_id from auth metadata (fast path) with DB fallback; use in all server actions instead of manual createClient()/getUser() calls
+  constants.js            Shared category color + label maps — EXPENSE_CATEGORY_COLORS, EXPENSE_CATEGORY_LABELS, BUCKET_CATEGORY_COLORS, BUCKET_CATEGORY_LABELS
+  currency.js             formatAmount, sumByCurrency, formatDate, todayISO, SUPPORTED_CURRENCIES
   exchangeRates.js        fetchRates, convertAmount, computeUnifiedTotal, getRateLines
 proxy.js                  Session refresh + route protection
 ```
@@ -194,7 +204,10 @@ All tables have RLS enabled. Policies use `get_my_couple_id()` (a `SECURITY DEFI
 ### Server Actions
 ```js
 'use server'
-// Always: await createClient(), then getUser() first
+import { getActionContext } from '@/lib/data/getActionContext'
+// Always call getActionContext() first — returns { supabase, user, coupleId } or { error }
+const { supabase, user, coupleId, error } = await getActionContext()
+if (error) return { error }
 // Return { error } or { errors: { field } } on failure
 // Return { success: true } when the client handles the next step
 // Use redirect() for server-driven navigation — outside try/catch
@@ -203,9 +216,10 @@ All tables have RLS enabled. Policies use `get_my_couple_id()` (a `SECURITY DEFI
 
 ### Server Components (data fetching)
 ```js
-const supabase = await createClient()
-const { data: { user } } = await supabase.auth.getUser()
-// Fetch data, pass as props to Client Components
+import { getAppSession } from '@/lib/data/getAppSession'
+const { user, profile, partner } = await getAppSession()
+// profile.couple_id is always set (getAppSession redirects otherwise)
+// Fetch additional data, pass as props to Client Components
 ```
 
 ### Client Components (forms)
@@ -247,9 +261,15 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Pass raw DB date strings (YYYY-MM-DD) — the function appends `T00:00:00` to avoid timezone shifts
 
 ### Custom Select Dropdowns
-- Use `appearance: none` + a custom `▾` div positioned absolutely to replace native browser arrows
-- See `StyledSelect` in `AddExpenseForm.js` and `AddBucketForm.js` for the pattern
+- Use the shared `StyledSelect` component from `app/components/StyledSelect.js` — wraps `<select>` with `appearance: none` and an absolutely positioned `▾` arrow
 - Arrow color: `#A07060` light / `#D4A090` dark
+
+### Today's Date (ISO)
+- Use `todayISO()` from `lib/currency.js` — returns `YYYY-MM-DD` via `en-CA` locale, safe across timezones
+- Use as `defaultValue` on date inputs and as `max` to prevent future-date selection
+
+### Category Constants
+- Use `BUCKET_CATEGORY_COLORS` / `BUCKET_CATEGORY_LABELS` and `EXPENSE_CATEGORY_COLORS` / `EXPENSE_CATEGORY_LABELS` from `lib/constants.js` — do not inline category color classes
 
 ---
 
