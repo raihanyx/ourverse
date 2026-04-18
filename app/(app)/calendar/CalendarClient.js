@@ -297,6 +297,11 @@ export default function CalendarClient({
   const selectedMemories = selectedDate ? (dateMap[selectedDate]?.memories ?? []) : []
   const selectedEntries  = selectedDate ? (dateMap[selectedDate]?.entries  ?? []) : []
 
+  // ── Subtitle count: visible entries + memories ──────────
+  const visibleCount =
+    entries.filter(e => e.is_personal || !e.bucket_item_id || !completedBucketIds.has(e.bucket_item_id)).length
+    + memories.length
+
   // ── Formatted selected date label ──────────────────────
   const selectedLabel = useMemo(() => {
     if (!selectedDate) return null
@@ -321,8 +326,8 @@ export default function CalendarClient({
           <div>
             <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Calendar</h1>
             <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
-              {entries.length > 0
-                ? `${entries.length} thing${entries.length === 1 ? '' : 's'} this month`
+              {visibleCount > 0
+                ? `${visibleCount} thing${visibleCount === 1 ? '' : 's'} this month`
                 : 'Plan your dates together'}
             </p>
           </div>
