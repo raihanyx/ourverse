@@ -297,6 +297,7 @@ export default function LedgerClient({
         setExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
+      await refetch()
     })
   }
 
@@ -514,7 +515,7 @@ export default function LedgerClient({
                 <button
                   onClick={handleBulkDelete}
                   disabled={isDeleting}
-                  className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors"
+                  className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors cursor-pointer"
                 >
                   {isDeleting ? 'Deleting…' : 'Delete'}
                 </button>

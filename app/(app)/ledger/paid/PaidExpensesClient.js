@@ -221,6 +221,7 @@ export default function PaidExpensesClient({
         setLocalExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
+      await refetch()
     })
   }
 
