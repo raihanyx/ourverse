@@ -281,16 +281,19 @@ export default function CalendarClient({
   async function handleDelete() {
     if (!deleteTarget) return
     setIsDeleting(true)
-    await deleteCalendarEntry(deleteTarget.id)
-    setEntries(prev => prev.filter(e => e.id !== deleteTarget.id))
-    // Close the detail panel if this was the only item on the selected date
-    const dayData = selectedDate ? dateMap[selectedDate] : null
-    const wasOnlyItem =
-      (dayData?.entries?.length ?? 0) === 1 &&
-      (dayData?.memories?.length ?? 0) === 0
-    if (wasOnlyItem) setSelectedDate(null)
+    const result = await deleteCalendarEntry(deleteTarget.id)
+    if (!result?.error) {
+      setEntries(prev => prev.filter(e => e.id !== deleteTarget.id))
+      // Close the detail panel if this was the only item on the selected date
+      const dayData = selectedDate ? dateMap[selectedDate] : null
+      const wasOnlyItem =
+        (dayData?.entries?.length ?? 0) === 1 &&
+        (dayData?.memories?.length ?? 0) === 0
+      if (wasOnlyItem) setSelectedDate(null)
+    }
     setIsDeleting(false)
     setDeleteTarget(null)
+    await refetchMonth(viewYear, viewMonth)
   }
 
   // ── Selected date detail ────────────────────────────────

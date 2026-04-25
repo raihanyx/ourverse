@@ -222,6 +222,7 @@ export async function bulkDeleteBucketItems(ids) {
   const { error } = await supabase.from('bucket_items').delete().in('id', ids).eq('couple_id', coupleId)
   if (error) return { error: 'Could not delete items.' }
 
+  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -305,5 +306,6 @@ export async function bulkDeleteMemories(ids) {
 
   revalidatePath('/calendar')
   revalidatePath('/bucket')
+  revalidatePath('/memories')
   return { success: true }
 }

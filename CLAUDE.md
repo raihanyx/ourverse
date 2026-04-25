@@ -91,9 +91,9 @@ app/
   actions/                Server Actions ('use server')
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
-    expenses.js           addExpense, togglePaid, bulkSetPaid, bulkDeleteExpenses
+    expenses.js           addExpense, togglePaid (uses `toggle_expense_paid` Postgres RPC — atomic single round-trip), bulkSetPaid, bulkDeleteExpenses
     bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, addDirectMemory, bulkDeleteMemories
-    calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry
+    calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry (personal entries may only be deleted by their creator; couple entries by either partner)
     profile.js            updateName
   components/
     PageTransition.js     Fade-in wrapper used on all protected pages
@@ -173,9 +173,9 @@ proxy.js                  Session refresh + route protection
 |---|---|---|
 | id | uuid PK | |
 | couple_id | uuid FK | References couples.id |
-| bucket_item_id | uuid FK | References bucket_items.id |
-| name | text | Copied from bucket item at time of marking done |
-| category | text | Copied from bucket item |
+| bucket_item_id | uuid FK | References bucket_items.id, nullable — null for memories from personal calendar entries |
+| name | text | Copied from bucket item or entry title at time of marking done |
+| category | text | Copied from bucket item or entry category |
 | date | date | Date the thing was done (user-selected) |
 | note | text | nullable |
 | created_at | timestamptz | |
