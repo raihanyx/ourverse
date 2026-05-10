@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { getActionContext } from '@/lib/data/getActionContext'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
@@ -59,8 +58,6 @@ export async function addCalendarEntry(prevState, formData) {
 
   if (insertError) return { error: 'Could not save entry. Please try again.' }
 
-  revalidatePath('/calendar')
-  if (!isPersonal) revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -120,9 +117,6 @@ export async function markCalendarEntryDone(prevState, formData) {
     .update({ date })
     .eq('id', calendarEntryId)
 
-  revalidatePath('/calendar')
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -161,7 +155,5 @@ export async function deleteCalendarEntry(id) {
     }
   }
 
-  revalidatePath('/calendar')
-  revalidatePath('/bucket')
   return { success: true }
 }

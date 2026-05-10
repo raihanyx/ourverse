@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { getActionContext } from '@/lib/data/getActionContext'
 
@@ -62,8 +61,6 @@ export async function addExpense(prevState, formData) {
 
   if (insertError) return { error: 'Could not save expense. Please try again.' }
 
-  revalidatePath('/ledger')
-  revalidatePath('/dashboard')
   return { success: true }
 }
 
@@ -83,9 +80,6 @@ export async function bulkSetPaid(ids, isPaid) {
 
   if (error) return { error: 'Could not update expenses.' }
 
-  revalidatePath('/ledger')
-  revalidatePath('/ledger/paid')
-  revalidatePath('/dashboard')
   return { success: true }
 }
 
@@ -105,9 +99,6 @@ export async function bulkDeleteExpenses(ids) {
 
   if (error) return { error: 'Could not delete expenses.' }
 
-  revalidatePath('/ledger')
-  revalidatePath('/ledger/paid')
-  revalidatePath('/dashboard')
   return { success: true }
 }
 
@@ -125,8 +116,5 @@ export async function togglePaid(expenseId) {
   if (error) return { error: 'Could not update expense.' }
   if (data === null) return { error: 'Expense not found.' }
 
-  revalidatePath('/ledger')
-  revalidatePath('/ledger/paid')
-  revalidatePath('/dashboard')
   return { success: true }
 }

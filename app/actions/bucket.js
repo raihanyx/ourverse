@@ -1,6 +1,5 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { getActionContext } from '@/lib/data/getActionContext'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
@@ -29,7 +28,6 @@ export async function addBucketItem(prevState, formData) {
 
   if (insertError) return { error: 'Could not save item. Please try again.' }
 
-  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -75,10 +73,6 @@ export async function markAsDone(prevState, formData) {
   })
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
-
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
-  revalidatePath('/calendar')
 
   // Move any linked calendar entry to the actual completion date
   await supabase
@@ -136,9 +130,6 @@ export async function bulkMarkDone(ids, date) {
     .in('bucket_item_id', ids)
     .eq('couple_id', coupleId)
 
-  revalidatePath('/calendar')
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -194,9 +185,6 @@ export async function bulkUndoDone(memoryIds) {
     )
   }
 
-  revalidatePath('/calendar')
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
 
@@ -222,7 +210,6 @@ export async function bulkDeleteBucketItems(ids) {
   const { error } = await supabase.from('bucket_items').delete().in('id', ids).eq('couple_id', coupleId)
   if (error) return { error: 'Could not delete items.' }
 
-  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -268,9 +255,6 @@ export async function addDirectMemory(prevState, formData) {
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
 
-  revalidatePath('/calendar')
-  revalidatePath('/memories')
-  revalidatePath('/bucket')
   return { success: true }
 }
 
@@ -304,8 +288,5 @@ export async function bulkDeleteMemories(ids) {
     await supabase.from('bucket_items').delete().in('id', bucketItemIds)
   }
 
-  revalidatePath('/calendar')
-  revalidatePath('/bucket')
-  revalidatePath('/memories')
   return { success: true }
 }
