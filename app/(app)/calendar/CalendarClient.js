@@ -293,7 +293,6 @@ export default function CalendarClient({
     }
     setIsDeleting(false)
     setDeleteTarget(null)
-    await refetchMonth(viewYear, viewMonth)
   }
 
   // ── Selected date detail ────────────────────────────────
@@ -710,10 +709,7 @@ export default function CalendarClient({
       {showAddMemoryForm && selectedDate && (
         <AddMemoryForm
           date={selectedDate}
-          onSuccess={() => {
-            setShowAddMemoryForm(false)
-            refetchMonth(viewYear, viewMonth)
-          }}
+          onSuccess={() => setShowAddMemoryForm(false)}
           onCancel={() => setShowAddMemoryForm(false)}
         />
       )}
@@ -724,10 +720,7 @@ export default function CalendarClient({
           date={selectedDate}
           coupleId={coupleId}
           partnerName={partnerName}
-          onSuccess={() => {
-            setShowAddForm(false)
-            refetchMonth(viewYear, viewMonth)
-          }}
+          onSuccess={() => setShowAddForm(false)}
           onCancel={() => setShowAddForm(false)}
         />
       )}
@@ -736,10 +729,7 @@ export default function CalendarClient({
       {markDoneTarget && (
         <CalendarMarkDoneSheet
           entry={markDoneTarget}
-          onSuccess={() => {
-            setMarkDoneTarget(null)
-            refetchMonth(viewYear, viewMonth)
-          }}
+          onSuccess={() => setMarkDoneTarget(null)}
           onCancel={() => setMarkDoneTarget(null)}
         />
       )}

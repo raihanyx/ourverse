@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect, useCallback } from 'react'
+import { useState, useTransition, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -82,18 +82,6 @@ export default function PaidExpensesClient({
   const [localExpenses, setLocalExpenses] = useState(expenses)
   const [activeTab, setActiveTab] = useState(initialTab)
 
-  const refetch = useCallback(async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('expenses')
-      .select('id, paid_by_user_id, is_paid, name, amount, currency, category, date, notes, created_at')
-      .eq('couple_id', coupleId)
-      .eq('is_paid', true)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
-    if (data) setLocalExpenses(data)
-  }, [coupleId])
-
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
@@ -157,7 +145,6 @@ export default function PaidExpensesClient({
         if (removed) setLocalExpenses(prev => [removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetch()
     })
   }
 
@@ -198,7 +185,6 @@ export default function PaidExpensesClient({
         setLocalExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetch()
     })
   }
 
@@ -221,7 +207,6 @@ export default function PaidExpensesClient({
         setLocalExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetch()
     })
   }
 

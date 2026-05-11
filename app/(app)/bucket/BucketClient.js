@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -122,24 +122,6 @@ export default function BucketClient({
   const [bulkDoneIds, setBulkDoneIds] = useState(null)
   const [bulkError, setBulkError] = useState(null)
 
-  const refetchItems = useCallback(async () => {
-    const supabase = createClient()
-    const [{ data }, { data: calEntries }] = await Promise.all([
-      supabase
-        .from('bucket_items')
-        .select('*')
-        .eq('couple_id', coupleId)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('calendar_entries')
-        .select('bucket_item_id, date')
-        .eq('couple_id', coupleId)
-        .not('bucket_item_id', 'is', null),
-    ])
-    if (data) setItems(data)
-    if (calEntries) setCalendarDates(Object.fromEntries(calEntries.map(e => [e.bucket_item_id, e.date])))
-  }, [coupleId])
-
   // Realtime
   useEffect(() => {
     const supabase = createClient()
@@ -224,7 +206,6 @@ export default function BucketClient({
   }
 
   function handleAddSuccess() {
-    refetchItems()
     handleCloseAdd()
   }
 
@@ -273,7 +254,6 @@ export default function BucketClient({
         setItems(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetchItems()
     })
   }
 

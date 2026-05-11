@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -21,16 +21,6 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   const [showHelp, setShowHelp] = useState(false)
   const [showAddForm, setShowAddForm] = useState(false)
   const [bulkError, setBulkError] = useState(null)
-
-  const refetch = useCallback(async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('memories')
-      .select('*')
-      .eq('couple_id', coupleId)
-      .order('date', { ascending: false })
-    if (data) setMemories(data)
-  }, [coupleId])
 
   // Realtime — keep both users in sync
   useEffect(() => {
@@ -110,7 +100,6 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
         setMemories(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetch()
     })
   }
 
@@ -317,7 +306,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
       {/* Add memory form */}
       {showAddForm && typeof document !== 'undefined' && createPortal(
         <AddMemoryForm
-          onSuccess={() => { setShowAddForm(false); refetch() }}
+          onSuccess={() => setShowAddForm(false)}
           onCancel={() => setShowAddForm(false)}
         />,
         document.body

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
+import { useState, useEffect, useTransition, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase/client'
 import { togglePaid, bulkSetPaid, bulkDeleteExpenses } from '@/app/actions/expenses'
@@ -147,17 +147,6 @@ export default function LedgerClient({
   const [isDeleting, startDeleteTransition] = useTransition()
   const [bulkError, setBulkError] = useState(null)
 
-  const refetch = useCallback(async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('expenses')
-      .select('*')
-      .eq('couple_id', coupleId)
-      .order('date', { ascending: false })
-      .order('created_at', { ascending: false })
-    if (data) setExpenses(data)
-  }, [coupleId])
-
   // Realtime subscription — no server-side filter (more reliable across configs)
   useEffect(() => {
     const supabase = createClient()
@@ -198,9 +187,8 @@ export default function LedgerClient({
     }, 220)
   }
 
-  async function handleExpenseAdded() {
+  function handleExpenseAdded() {
     handleClose()
-    await refetch()
   }
 
   function handleTabChange(tabKey) {
@@ -215,12 +203,13 @@ export default function LedgerClient({
 
   function handleToggle(expenseId) {
     setBulkError(null)
+    setExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, is_paid: !e.is_paid } : e))
     startTransition(async () => {
       const result = await togglePaid(expenseId)
       if (result?.error) {
+        setExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, is_paid: !e.is_paid } : e))
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetch()
     })
   }
 
@@ -248,14 +237,14 @@ export default function LedgerClient({
       .map(e => e.id)
     if (ids.length === 0) return
     setBulkError(null)
+    setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: true } : e))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
     startTransition(async () => {
       const result = await bulkSetPaid(ids, true)
-      await refetch()
       if (result?.error) {
+        setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: false } : e))
         setBulkError('Something went wrong. Please try again.')
-      } else {
-        setIsSelecting(false)
-        setSelectedIds(new Set())
       }
     })
   }
@@ -266,14 +255,14 @@ export default function LedgerClient({
       .map(e => e.id)
     if (ids.length === 0) return
     setBulkError(null)
+    setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: false } : e))
+    setIsSelecting(false)
+    setSelectedIds(new Set())
     startTransition(async () => {
       const result = await bulkSetPaid(ids, false)
-      await refetch()
       if (result?.error) {
+        setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: true } : e))
         setBulkError('Something went wrong. Please try again.')
-      } else {
-        setIsSelecting(false)
-        setSelectedIds(new Set())
       }
     })
   }
@@ -297,7 +286,6 @@ export default function LedgerClient({
         setExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')
       }
-      await refetch()
     })
   }
 

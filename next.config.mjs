@@ -3,7 +3,7 @@ const nextConfig = {
   devIndicators: false,
   experimental: {
     staleTimes: {
-      dynamic: 30,
+      dynamic: 300,
       static: 300,
     },
   },
