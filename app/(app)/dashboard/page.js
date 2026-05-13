@@ -92,23 +92,23 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Together hero */}
-        <TogetherCard
-          anniversaryDate={couple?.anniversary_date ?? null}
-          coupleId={profile.couple_id}
+        {/* Balance section */}
+        <BalanceCard
+          theyOweMeEntries={theyOweMeEntries}
+          iOweThemEntries={iOweThemEntries}
+          theyOweMeUnified={theyOweMeUnified}
+          iOweThemUnified={iOweThemUnified}
+          baseCurrency={baseCurrency}
+          partnerName={partnerName}
+          noExpensesYet={noExpensesYet}
+          balanceSettled={balanceSettled}
         />
 
-        {/* Balance section */}
+        {/* Together hero */}
         <div className="mt-6">
-          <BalanceCard
-            theyOweMeEntries={theyOweMeEntries}
-            iOweThemEntries={iOweThemEntries}
-            theyOweMeUnified={theyOweMeUnified}
-            iOweThemUnified={iOweThemUnified}
-            baseCurrency={baseCurrency}
-            partnerName={partnerName}
-            noExpensesYet={noExpensesYet}
-            balanceSettled={balanceSettled}
+          <TogetherCard
+            anniversaryDate={couple?.anniversary_date ?? null}
+            coupleId={profile.couple_id}
           />
         </div>
 

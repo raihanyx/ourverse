@@ -149,5 +149,6 @@ export async function updateBaseCurrency(prevState, formData) {
 
   revalidatePath('/dashboard')
   revalidatePath('/ledger')
+  revalidatePath('/profile')
   return { success: true }
 }
