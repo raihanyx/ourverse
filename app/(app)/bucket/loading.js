@@ -3,7 +3,7 @@ export default function BucketLoading() {
     <div className="animate-pulse">
 
       {/* Header */}
-      <div className="flex items-start justify-between pt-1 pb-5">
+      <div className="flex items-start justify-between pb-5">
         <div className="space-y-1.5">
           <div className="h-6 w-28 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
           <div className="h-3 w-32 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />

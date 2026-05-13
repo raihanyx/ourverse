@@ -385,7 +385,7 @@ export default function BucketClient({
       <div>
 
         {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-start justify-between pt-1 pb-5">
+        <div className="flex items-start justify-between pb-5">
           <div>
             <h1 className="text-[22px] font-bold text-[#1C1210] dark:text-[#FAF3F1] tracking-[-0.4px]">
               Bucket List
