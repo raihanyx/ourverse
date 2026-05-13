@@ -9,7 +9,7 @@ export default async function BucketPage() {
   const { user, profile, partner } = await getAppSession()
   const supabase = await createClient()
 
-  const [{ data: items }, { count: memoriesCount }, { data: calEntries }] = await Promise.all([
+  const [{ data: items }, { count: memoriesCount }, { data: calEntries }, { data: recentMemoriesData }] = await Promise.all([
     supabase
       .from('bucket_items')
       .select('*')
@@ -24,6 +24,12 @@ export default async function BucketPage() {
       .select('bucket_item_id, date')
       .eq('couple_id', profile.couple_id)
       .not('bucket_item_id', 'is', null),
+    supabase
+      .from('memories')
+      .select('id, name, category, date')
+      .eq('couple_id', profile.couple_id)
+      .order('created_at', { ascending: false })
+      .limit(3),
   ])
 
   const calendarDates = Object.fromEntries(
@@ -35,6 +41,7 @@ export default async function BucketPage() {
       <BucketClient
         initialItems={items ?? []}
         initialCalendarDates={calendarDates}
+        initialRecentMemories={recentMemoriesData ?? []}
         currentUserId={profile.id}
         currentUserName={profile.name}
         partnerId={partner?.id ?? null}

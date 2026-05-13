@@ -5,55 +5,87 @@ import { signup } from '@/app/actions/auth'
 import Link from 'next/link'
 import PageTransition from '@/app/components/PageTransition'
 
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#C89080',
+  display: 'block',
+  marginBottom: 8,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+}
+
+const inputStyle = {
+  width: '100%',
+  height: 48,
+  padding: '0 16px',
+  borderRadius: 13,
+  border: '1px solid #3A2418',
+  background: '#221714',
+  fontSize: 14,
+  color: '#FAF3F1',
+  fontFamily: 'inherit',
+  outline: 'none',
+  boxSizing: 'border-box',
+}
+
 export default function SignupPage() {
   const [state, formAction, isPending] = useActionState(signup, null)
 
   return (
     <PageTransition>
-      <h2 className="text-lg font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-0.5">Create your account</h2>
-      <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-5">Start your couple space in seconds</p>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#FAF3F1', marginBottom: 4, letterSpacing: '-0.3px' }}>
+        Create account
+      </h2>
+      <p style={{ fontSize: 13, color: '#C89080', marginBottom: 24 }}>
+        Start your shared journey
+      </p>
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction}>
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+          <div
+            style={{
+              fontSize: 13,
+              color: '#F0907F',
+              background: '#3D1E18',
+              border: '1px solid #5A2820',
+              padding: '10px 14px',
+              borderRadius: 12,
+              marginBottom: 16,
+            }}
+          >
             {state.error}
           </div>
         )}
 
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-            Your name
-          </label>
+        <div style={{ marginBottom: 14 }}>
+          <label htmlFor="name" style={labelStyle}>Your name</label>
           <input
             id="name"
             name="name"
             type="text"
             autoComplete="name"
             required
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="Your name or nickname"
+            style={inputStyle}
           />
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-            Email
-          </label>
+        <div style={{ marginBottom: 14 }}>
+          <label htmlFor="email" style={labelStyle}>Email</label>
           <input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="you@example.com"
+            style={inputStyle}
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-            Password
-          </label>
+        <div style={{ marginBottom: 20 }}>
+          <label htmlFor="password" style={labelStyle}>Password</label>
           <input
             id="password"
             name="password"
@@ -61,23 +93,38 @@ export default function SignupPage() {
             autoComplete="new-password"
             required
             minLength={6}
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="At least 6 characters"
+            style={inputStyle}
           />
         </div>
 
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#E8675A] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors mt-2"
+          style={{
+            width: '100%',
+            height: 50,
+            borderRadius: 14,
+            border: 'none',
+            background: isPending ? '#3D1E18' : '#E8675A',
+            color: isPending ? '#E8675A' : 'white',
+            fontSize: 15,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            transition: 'all 200ms',
+          }}
         >
-          {isPending ? 'Creating account…' : 'Get started'}
+          {isPending ? 'Creating…' : 'Create account'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-[#A07060] dark:text-[#D4A090] mt-6">
+      <p style={{ textAlign: 'center', fontSize: 13, color: '#C89080', marginTop: 20 }}>
         Already have an account?{' '}
-        <Link href="/login" className="text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline">
+        <Link
+          href="/login"
+          style={{ color: '#E8675A', fontWeight: 600 }}
+        >
           Sign in
         </Link>
       </p>

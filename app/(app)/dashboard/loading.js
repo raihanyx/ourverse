@@ -1,58 +1,71 @@
 export default function DashboardLoading() {
   return (
-    <div className="space-y-5 animate-loading">
+    <div className="animate-pulse">
 
-      {/* Page header: icon badge + name + subtitle */}
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-[#EDE0DC] dark:bg-[#3D2820] animate-pulse flex-shrink-0" />
+      {/* Greeting bar */}
+      <div className="flex items-start justify-between pt-1 pb-5">
         <div className="space-y-1.5">
-          <div className="h-[18px] w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-3 w-40 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+          <div className="h-3 w-24 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+          <div className="h-6 w-44 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
         </div>
+        <div className="w-10 h-10 rounded-full bg-[#EDE0DC] dark:bg-[#3A2418] flex-shrink-0" />
       </div>
 
-      {/* Balance card */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-3 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        <div className="flex items-center justify-between">
-          <div className="h-3 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-3 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-        </div>
-        <div className="pl-3 border-l-2 border-[#EDE0DC] dark:border-[#3D2820] space-y-1.5 py-0.5">
-          <div className="h-2.5 w-28 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-6 w-36 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-        </div>
-        <div className="pl-3 border-l-2 border-[#EDE0DC] dark:border-[#3D2820] space-y-1.5 py-0.5">
-          <div className="h-2.5 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-6 w-32 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-        </div>
-        <div className="border-t border-[#F5EDE9] dark:border-[#3D2820] pt-3 flex items-center justify-between">
-          <div className="h-3 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="h-7 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
-        </div>
-      </div>
-
-      {/* Together card */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-3 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        <div className="h-[10px] w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-        <div className="flex gap-2">
+      {/* Together hero */}
+      <div className="rounded-[24px] p-5 bg-[#F5EDE9] dark:bg-[#2E201C] border border-[#EDE0DC] dark:border-[#3A2418]">
+        <div className="h-3 w-14 bg-[#EDE0DC] dark:bg-[#3A2418] rounded mb-4" />
+        <div className="flex gap-1.5">
           {[0, 1, 2].map(i => (
-            <div key={i} className="flex-1 h-[72px] bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
+            <div key={i} className="flex-1 h-[88px] bg-[#EDE0DC] dark:bg-[#3A2418] rounded-[16px]" />
           ))}
         </div>
-        <div className="h-3 w-44 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="h-3 w-52 bg-[#EDE0DC] dark:bg-[#3A2418] rounded mt-3.5" />
       </div>
 
-      {/* Couple space card */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        <div className="h-[10px] w-28 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-        <div className="space-y-2">
-          <div className="h-3 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-11 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse" />
-            <div className="w-11 h-11 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-xl animate-pulse flex-shrink-0" />
-          </div>
+      {/* Balance section */}
+      <div className="mt-6 space-y-3">
+        <div className="flex items-center gap-2.5">
+          <div className="h-2.5 w-20 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+          <div className="flex-1 h-px bg-[#EDE0DC] dark:bg-[#3A2418]" />
         </div>
-        <div className="h-3 w-44 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+        <div className="flex items-end justify-between">
+          <div className="space-y-2">
+            <div className="h-3 w-28 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+            <div className="h-9 w-40 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+          </div>
+          <div className="h-9 w-24 bg-[#EDE0DC] dark:bg-[#3A2418] rounded-[10px]" />
+        </div>
+        <div className="h-3 w-28 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+        <div className="border-t border-[#EDE0DC] dark:border-[#3A2418] pt-3 flex items-center justify-between">
+          <div className="h-3 w-24 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+          <div className="h-7 w-16 bg-[#EDE0DC] dark:bg-[#3A2418] rounded-xl" />
+        </div>
+      </div>
+
+      {/* Recent section */}
+      <div className="mt-6 space-y-1">
+        <div className="flex items-center gap-2.5 mb-1">
+          <div className="h-2.5 w-14 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+          <div className="flex-1 h-px bg-[#EDE0DC] dark:bg-[#3A2418]" />
+        </div>
+        {[0, 1, 2].map(i => (
+          <div key={i} className="flex items-center gap-3 py-2.5">
+            <div className="w-10 h-10 rounded-[12px] bg-[#EDE0DC] dark:bg-[#3A2418] flex-shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-3.5 w-32 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+              <div className="h-3 w-24 bg-[#EDE0DC] dark:bg-[#3A2418] rounded" />
+            </div>
+            <div className="space-y-1.5 text-right">
+              <div className="h-3.5 w-20 bg-[#EDE0DC] dark:bg-[#3A2418] rounded ml-auto" />
+              <div className="h-3 w-14 bg-[#EDE0DC] dark:bg-[#3A2418] rounded ml-auto" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Invite code */}
+      <div className="mt-6">
+        <div className="rounded-[18px] h-[74px] bg-[#EDE0DC] dark:bg-[#3A2418]" />
       </div>
 
     </div>
