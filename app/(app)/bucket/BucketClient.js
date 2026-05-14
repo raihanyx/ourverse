@@ -191,6 +191,17 @@ export default function BucketClient({
       .then(({ data }) => { if (data) setItems(data) })
   }
 
+  function refetchCalendarDates() {
+    createClient()
+      .from('calendar_entries')
+      .select('bucket_item_id, date')
+      .eq('couple_id', coupleId)
+      .not('bucket_item_id', 'is', null)
+      .then(({ data }) => {
+        if (data) setCalendarDates(Object.fromEntries(data.map(e => [e.bucket_item_id, e.date])))
+      })
+  }
+
   function refetchMemories() {
     const supabase = createClient()
     Promise.all([
@@ -210,9 +221,10 @@ export default function BucketClient({
     })
   }
 
-  // Fetch fresh memories on mount (server prop may be stale if navigating back)
+  // Fetch fresh data on mount (server props may be stale if navigating back)
   useEffect(() => {
     refetchMemories()
+    refetchCalendarDates()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [coupleId])
 
@@ -667,7 +679,7 @@ export default function BucketClient({
             <AddBucketForm
               coupleId={coupleId}
               currentUserId={currentUserId}
-              onSuccess={handleCloseAdd}
+              onSuccess={handleAddSuccess}
               onCancel={handleCloseAdd}
             />
           </div>

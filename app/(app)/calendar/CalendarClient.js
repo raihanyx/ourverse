@@ -277,6 +277,22 @@ export default function CalendarClient({
   const daysInMonth    = new Date(viewYear, viewMonth + 1, 0).getDate()
   const todayStr       = todayISO()
 
+  // ── Add / mark-done handlers ────────────────────────────
+  function handleAddEntrySuccess() {
+    setShowAddForm(false)
+    refetchMonth(viewYearRef.current, viewMonthRef.current)
+  }
+
+  function handleAddMemorySuccess() {
+    setShowAddMemoryForm(false)
+    refetchMonth(viewYearRef.current, viewMonthRef.current)
+  }
+
+  function handleMarkDoneSuccess() {
+    setMarkDoneTarget(null)
+    refetchMonth(viewYearRef.current, viewMonthRef.current)
+  }
+
   // ── Delete handler ──────────────────────────────────────
   async function handleDelete() {
     if (!deleteTarget) return
@@ -709,7 +725,7 @@ export default function CalendarClient({
       {showAddMemoryForm && selectedDate && (
         <AddMemoryForm
           date={selectedDate}
-          onSuccess={() => setShowAddMemoryForm(false)}
+          onSuccess={handleAddMemorySuccess}
           onCancel={() => setShowAddMemoryForm(false)}
         />
       )}
@@ -720,7 +736,7 @@ export default function CalendarClient({
           date={selectedDate}
           coupleId={coupleId}
           partnerName={partnerName}
-          onSuccess={() => setShowAddForm(false)}
+          onSuccess={handleAddEntrySuccess}
           onCancel={() => setShowAddForm(false)}
         />
       )}
@@ -729,7 +745,7 @@ export default function CalendarClient({
       {markDoneTarget && (
         <CalendarMarkDoneSheet
           entry={markDoneTarget}
-          onSuccess={() => setMarkDoneTarget(null)}
+          onSuccess={handleMarkDoneSuccess}
           onCancel={() => setMarkDoneTarget(null)}
         />
       )}

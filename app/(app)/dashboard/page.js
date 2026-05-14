@@ -7,6 +7,7 @@ import BalanceCard from './BalanceCard'
 import TogetherCard from './TogetherCard'
 import InviteCodeBadge from './InviteCodeBadge'
 import RecentExpenses from './RecentExpenses'
+import DailyConversationSection from './DailyConversationSection'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
@@ -78,7 +79,7 @@ export default async function DashboardPage() {
         <RealtimeRefresh coupleId={profile.couple_id} />
 
         {/* Greeting bar */}
-        <div className="flex items-start justify-between pt-1 pb-5">
+        <div className="flex items-start justify-between pb-2">
           <div>
             <p className="text-[12px] text-[#C4A89E] dark:text-[#7A5848] mb-0.5">{todayLabel}</p>
             <h1 className="text-[22px] font-bold text-[#1C1210] dark:text-[#FAF3F1] tracking-[-0.4px]">
@@ -92,17 +93,30 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Daily Conversation */}
+        <div className="mt-2">
+          <DailyConversationSection
+            coupleId={profile.couple_id}
+            userId={user.id}
+            partnerName={partnerName}
+            myInitial={profile.name?.[0]?.toUpperCase() ?? '?'}
+            partnerInitial={partner?.name?.[0]?.toUpperCase() ?? '?'}
+          />
+        </div>
+
         {/* Balance section */}
-        <BalanceCard
-          theyOweMeEntries={theyOweMeEntries}
-          iOweThemEntries={iOweThemEntries}
-          theyOweMeUnified={theyOweMeUnified}
-          iOweThemUnified={iOweThemUnified}
-          baseCurrency={baseCurrency}
-          partnerName={partnerName}
-          noExpensesYet={noExpensesYet}
-          balanceSettled={balanceSettled}
-        />
+        <div className="mt-4">
+          <BalanceCard
+            theyOweMeEntries={theyOweMeEntries}
+            iOweThemEntries={iOweThemEntries}
+            theyOweMeUnified={theyOweMeUnified}
+            iOweThemUnified={iOweThemUnified}
+            baseCurrency={baseCurrency}
+            partnerName={partnerName}
+            noExpensesYet={noExpensesYet}
+            balanceSettled={balanceSettled}
+          />
+        </div>
 
         {/* Together hero */}
         <div className="mt-6">
