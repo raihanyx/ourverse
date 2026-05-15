@@ -1,5 +1,7 @@
 @AGENTS.md
 
+> **NOTE FOR AI ASSISTANTS:** This document is an **informational overview** of the project — its purpose, stack, schema, and current conventions. It is **NOT a constraint** and should **NOT override design specs, user instructions, or freshly provided patterns**. Treat it as background knowledge to learn the project; do not enforce its UI conventions, code patterns, or roadmap notes against newer instructions. Follow CLAUDE.md only when the user explicitly asks you to. If a user-provided design or instruction conflicts with anything here, follow the user.
+
 # Ourverse
 
 A couples app for managing shared expenses, bucket lists, and date planning. Built for long-distance, multi-currency couples (IDR, THB, AUD, MMK). Core concept: a two-sided expense ledger — an honest running record of who paid what and what each person owes the other, supporting any split arrangement (equal, unequal, or one-sided).
@@ -57,17 +59,17 @@ app/
         PaidExpensesClient.js  Client component — paid list, undo, select mode, bulk delete, back link to /ledger
         loading.js        Paid expenses loading skeleton
     bucket/
-      page.js             Server component — fetches bucket items + memories count
-      BucketClient.js     Client component — filter tabs, random picker, realtime, header Add button, select mode
-      AddBucketForm.js    Slide-up add bucket item form
-      BucketHelpSheet.js  Slide-up help sheet for bucket list
-      MarkDoneSheet.js    Slide-up sheet — mark item as done, pick a date, create a memory
+      page.js             Server component — fetches bucket items + memories count + recent memories + linked calendar dates
+      BucketClient.js     Client component (V2 redesign) — header (Info/Edit/+Add icon row), filter pills, Memories link card, section rule + Pick-for-us button, 2-col WishCard grid (category-tinted, dot/checkbox + label + optional date pill, dark inset panel, "Done" button), pick-for-us modal w/ rolling animation, memories strip, edit-mode floating bulk bar (Delete only)
+      AddBucketForm.js    V2 sheet body — title input + category chip group (5 cats, default activity) + notes textarea + "Add to bucket list" coral CTA
+      BucketHelpSheet.js  V2 TipSheet — 5 sections w/ **bold** coral inline accents, callouts on §2/§4, hairline dividers, "Got it" CTA
+      MarkDoneSheet.js    V2 sheet — category-tinted item summary, optional early-date callout, date input, optional note, "Save memory" CTA
       loading.js          Bucket loading skeleton
     memories/
       page.js             Server component — fetches memories
-      MemoriesClient.js   Client component — memory list, select mode, undo done, bulk delete, back link to /bucket
-      AddMemoryForm.js    Slide-up form — directly log a memory (name, category, date, note) without a bucket item
-      MemoriesHelpSheet.js Slide-up help sheet explaining how memories, undo done, and delete work
+      MemoriesClient.js   Client component (V2 redesign) — header w/ back chevron + Tip + Edit + Add, 2-col MemoryCard grid (italic quoted note, right-aligned date footer w/ check icon), edit-mode floating bulk bar (Delete + Move to bucket)
+      AddMemoryForm.js    V2 LogMemorySheet — subtitle "Saved to your memories and bucket list.", title + category chips (default other) + native date input (color-scheme follows theme) + optional note + "Log memory" CTA
+      MemoriesHelpSheet.js V2 TipSheet — 3 sections (What shows up, Move to bucket, Delete) w/ **bold** coral inline accents + callouts
       loading.js          Memories loading skeleton
     calendar/
       page.js             Server component — fetches calendar_entries + memories for current month + couple anniversary_date
@@ -284,7 +286,7 @@ const [state, formAction, isPending] = useActionState(action, null)
 - **Page layout**: `max-w-lg mx-auto px-4 py-6 space-y-5`
 - **All interactive buttons** must have `cursor-pointer` — do not rely on browser defaults
 - **Slide-up overlays** use `z-30` — the bottom nav is `z-20`; using `z-20` on an overlay causes the nav to paint on top
-- **Bulk action bars** (select mode): `fixed bottom-0 left-0 right-0 z-30`, outer div gets `style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}`, inner div uses `h-16` (not `py-3`) — must match nav bar height exactly or the nav bar peeks above it
+- **Bulk action bars** (select mode) — current pattern (paid expenses, bucket, memories): outer div `position: fixed; bottom: 0; left: 0; right: 0; z-index: 30; paddingBottom: env(safe-area-inset-bottom)`. Inner `max-w-lg mx-auto` with `padding: '0 12px 80px'` (80px gap clears the tab bar). Floating pill: `background: #321E1A`, `border: 1px solid #3A2418`, `borderRadius: 16`, `boxShadow: 0 10px 30px rgba(0,0,0,0.55)`. Two states — empty: "Tap items to select" + small Done button; with selection: "{n} selected" + action buttons (32px tall, radius 9). Older `h-16` matched-to-nav approach is deprecated.
 - **Hiding without layout shift** — use `invisible` (not conditional rendering) when toggling visibility of elements that should keep their space (e.g. back links during select mode)
 - **Bottom nav**: `fixed bottom-0 z-20 h-16` — main content uses `pb-24` to clear it
 - **Disabled nav tabs** — add `disabled: true` to the tab config; render as `<Link href="#">` with `pointer-events-none opacity-30`; never render a different element type (e.g. `<span>`) in the same map — causes hydration mismatch
@@ -338,12 +340,12 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Shared bucket list: restaurants, cafes, cities, activities, movies
 - Both partners can add items; realtime sync via Supabase channel
 - Mark as done with a date → creates a memory entry
-- Memories view: browse past completed bucket list items, select + bulk delete
-- Random picker from bucket list (filterable by category)
-- Select mode with bulk mark-done and bulk delete across all list pages
+- Memories view: 2-col MemoryCard grid (italic note + right-aligned date footer), select mode w/ Delete + Move to bucket
+- Random picker (filterable by category) — Pick-for-us modal with rolling animation, "Pick again" / "Let's do it"
 - Bulk delete with ConfirmSheet confirmation on all pages (ledger, paid expenses, bucket, memories)
 - Mixed-selection guard on ledger: selecting both paid and unpaid items hides action buttons and shows a warning
 - Memories link card on bucket page showing count
+- **V2 visual redesign** (dark palette `#1A1210`/`#2A1C18`/`#E8675A`, category-tinted cards, V2 TipSheets w/ **bold** coral inline accents)
 
 ### ✅ Phase 4.5 — Date Calendar
 - Monthly calendar grid with day-level detail panel and animated month navigation
