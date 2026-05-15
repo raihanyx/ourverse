@@ -34,7 +34,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
 
   return (
     <div style={{
-      position: 'fixed', inset: 0, zIndex: 40,
+      position: 'fixed', inset: 0, zIndex: 80,
       background: 'radial-gradient(circle at 30% -10%, rgba(192,80,90,0.4) 0%, transparent 50%), linear-gradient(180deg, #2A1018 0%, #1A0810 60%, #14060B 100%)',
       display: 'flex', flexDirection: 'column',
       animation: 'dcSlideUp 280ms cubic-bezier(0.32,0.72,0,1)',
@@ -114,7 +114,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           value={text}
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
-          placeholder="Write your answer…"
+          placeholder="Write your answer"
           style={{
             flex: 1, minHeight: 40, padding: '10px 14px',
             borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)',

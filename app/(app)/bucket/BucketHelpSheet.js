@@ -5,25 +5,20 @@ import { useState } from 'react'
 const SECTIONS = [
   {
     heading: 'Add things you want to do together',
-    body: 'Add restaurants you want to try, trips you want to take, movies to watch, or anything else. Both of you can add to the same list.',
+    body: 'Restaurants to try, trips to take, movies to watch — anything. Both of you can add to the same list.',
   },
   {
     heading: 'Can’t decide? Let us pick',
     body: 'Use the random picker to let the app choose for you. Filter by category if you’re only in the mood for a restaurant or a movie.',
-    callout: 'Stuck on where to eat?\nSelect **Restaurants** then tap **Pick for us**.',
+    callout: 'Stuck on where to eat? Select Restaurants then tap Pick for us.',
   },
   {
-    heading: 'Done · it becomes a memory',
-    body: 'When you do something, mark it as done. You can add the date and a note about how it went. It moves to your Memories page as a keepsake, and also appears on the calendar on the date you did it.',
+    heading: 'Plan → do → memory',
+    body: 'Mark an item **Done** when you finish it. Add the date and a note. It moves to your Memories page and appears on the calendar on the date you did it. Items planned from the Calendar show up here automatically until you mark them done.',
   },
   {
-    heading: 'Connected to the calendar',
-    body: 'When you plan a date from the Calendar page, it automatically creates a bucket list item here. Marking it done from either place works the same way: it moves to Memories and updates the calendar.',
-    callout: 'Items added from the calendar show up here just like any other bucket list item — you can mark them done, delete them, or pick them with the random picker.',
-  },
-  {
-    heading: 'Changed your mind? Undo from Memories',
-    body: 'Tap **Edit** on the Memories page, select items, then **Undo done**. The item comes back to your bucket list as undone. If it was originally added from the Calendar, it also goes back to its original planned date on the calendar.',
+    heading: 'Changed your mind? Move it back',
+    body: 'Tap **Edit** on the Memories page, select items, then **Move to bucket**. The item comes back here. If it originally came from the Calendar, it returns to its planned date too.',
   },
 ]
 

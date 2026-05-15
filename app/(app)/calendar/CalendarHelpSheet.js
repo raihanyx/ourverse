@@ -98,19 +98,19 @@ export default function CalendarHelpSheet({ isOpen, onClose }) {
           <div className="rounded-xl px-3 py-1" style={{ background: V2.bg, border: `1px solid ${V2.border}` }}>
             <DotRow
               color={V2.accent}
-              label="Red dot"
+              label="Red"
               body="Something you've done together. Created when you mark a calendar entry or bucket item as done."
             />
             <div style={{ height: 1, background: V2.border }} />
             <DotRow
               color="#7AB0D8"
-              label="Blue dot"
+              label="Blue"
               body="Something you're planning together. Also creates a matching bucket list item to track and mark done."
             />
             <div style={{ height: 1, background: V2.border }} />
             <DotRow
               color="#8EC44C"
-              label="Green dot"
+              label="Green"
               body="A personal plan (flight, appointment, etc.). Doesn't create a bucket list item, but your partner can still see it."
             />
             <div style={{ height: 1, background: V2.border }} />

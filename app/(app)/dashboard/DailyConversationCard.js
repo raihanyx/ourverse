@@ -91,39 +91,46 @@ export default function DailyConversationCard({
       <div style={{
         background: 'linear-gradient(135deg, #2E1B22 0%, #3A1E18 60%, #2A1810 100%)',
         borderRadius: 22,
-        padding: '16px 18px',
+        padding: 16,
         border: '1px solid #3A2418',
         position: 'relative',
         overflow: 'hidden',
       }}>
-        {/* Decorative emoji */}
+        {/* Top row: countdown chip + emoji bubble */}
         <div style={{
-          position: 'absolute', top: 14, right: 14,
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 22, lineHeight: 1, pointerEvents: 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          height: 26, marginBottom: 14,
         }}>
-          {conversation.emoji}
-        </div>
-
-        {/* Countdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
-          <span style={{ fontSize: 12 }}>⏱️</span>
-          <span style={{
-            fontSize: 10.5, fontWeight: 700, color: '#E8675A',
-            textTransform: 'uppercase', letterSpacing: '0.1em',
-            fontVariantNumeric: 'tabular-nums',
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            height: 22, padding: '0 9px', borderRadius: 9999,
+            background: 'rgba(232,103,90,0.10)',
+            border: '1px solid rgba(232,103,90,0.33)',
           }}>
-            Next in {fmtCountdown(target - now)}
-          </span>
+            <span style={{ fontSize: 11 }}>⏱️</span>
+            <span style={{
+              fontSize: 10, fontWeight: 700, color: '#E8675A',
+              textTransform: 'uppercase', letterSpacing: '0.1em',
+              fontVariantNumeric: 'tabular-nums',
+            }}>
+              Next in {fmtCountdown(target - now)}
+            </span>
+          </div>
+          <div style={{
+            width: 26, height: 26, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 14, lineHeight: 1,
+          }}>
+            {conversation.emoji}
+          </div>
         </div>
 
         {/* Question */}
         <p style={{
-          fontSize: 17, fontWeight: 700, color: '#FAF3F1',
+          fontSize: 18, fontWeight: 700, color: '#FAF3F1',
           lineHeight: 1.3, letterSpacing: '-0.2px',
-          marginBottom: 16, maxWidth: '85%',
+          marginBottom: 16, textWrap: 'pretty',
         }}>
           {conversation.question}
         </p>

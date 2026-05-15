@@ -85,7 +85,7 @@ export default function DailyConversationSection({
       ...(newStreak !== undefined ? { streak: newStreak } : {}),
     } : prev)
     setShowAnswer(false)
-    setShowResults(true)
+    setTimeout(() => setShowResults(true), 320)
   }
 
   if (loading) {
