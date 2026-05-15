@@ -302,6 +302,11 @@ export default function LedgerClient({
     setTimeout(() => { setShowForm(false); setIsClosing(false) }, 220)
   }
 
+  function handleAddSuccess(row) {
+    if (row) setExpenses(prev => prev.some(e => e.id === row.id) ? prev : [row, ...prev])
+    handleClose()
+  }
+
   function handleTabChange(tabKey) {
     const tabOrder = ['owe_me', 'i_owe']
     const newIndex = tabOrder.indexOf(tabKey)
@@ -793,7 +798,7 @@ export default function LedgerClient({
               currentUserName={currentUserName}
               partnerId={partnerId}
               partnerName={partnerName}
-              onSuccess={handleClose}
+              onSuccess={handleAddSuccess}
               onCancel={handleClose}
             />
           </div>

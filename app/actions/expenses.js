@@ -47,7 +47,7 @@ export async function addExpense(prevState, formData) {
     if (partnerProfile?.id) paidByUserId = partnerProfile.id
   }
 
-  const { error: insertError } = await supabase.from('expenses').insert({
+  const { data: inserted, error: insertError } = await supabase.from('expenses').insert({
     couple_id: coupleId,
     paid_by_user_id: paidByUserId,
     name,
@@ -57,11 +57,11 @@ export async function addExpense(prevState, formData) {
     is_paid: false,
     date,
     notes,
-  })
+  }).select('*').single()
 
   if (insertError) return { error: 'Could not save expense. Please try again.' }
 
-  return { success: true }
+  return { success: true, data: inserted }
 }
 
 export async function bulkSetPaid(ids, isPaid) {

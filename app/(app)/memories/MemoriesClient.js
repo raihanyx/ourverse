@@ -183,9 +183,17 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
     setSelectedIds(new Set())
   }
 
+  // Memories with origin='direct' have no plan/bucket to return to. Block move.
+  const selectedMemories = memories.filter(m => selectedIds.has(m.id))
+  const directSelected   = selectedMemories.filter(m => m.origin === 'direct')
+  const hasDirect        = directSelected.length > 0
+  const allDirect        = hasDirect && directSelected.length === selectedMemories.length
+  const moveDisabled     = hasDirect
+
   function handleMoveToBucket() {
     const ids = [...selectedIds]
     if (ids.length === 0) return
+    if (moveDisabled) return
     setBulkError(null)
     const removed = memories.filter(m => ids.includes(m.id))
     setMemories(prev => prev.filter(m => !ids.includes(m.id)))
@@ -325,36 +333,55 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
               <div
                 style={{
                   background: '#321E1A', border: '1px solid #3A2418',
-                  borderRadius: 16, padding: '8px 8px 8px 14px',
-                  display: 'flex', alignItems: 'center', gap: 8,
+                  borderRadius: 16, padding: '10px 10px 10px 14px',
+                  display: 'flex', flexDirection: 'column', gap: 6,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1', flex: 1 }}>
-                  {selectedIds.size} selected
-                </span>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  style={{
-                    height: 32, padding: '0 12px', borderRadius: 9,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#FAF3F1', fontSize: 12.5, fontWeight: 600,
-                    fontFamily: 'inherit', cursor: 'pointer',
-                  }}
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={handleMoveToBucket}
-                  style={{
-                    height: 32, padding: '0 12px', borderRadius: 9, border: 'none',
-                    background: '#E8675A', color: 'white',
-                    fontSize: 12.5, fontWeight: 600,
-                    fontFamily: 'inherit', cursor: 'pointer',
-                  }}
-                >
-                  Move to bucket
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1', flex: 1 }}>
+                    {selectedIds.size} selected
+                  </span>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    style={{
+                      height: 32, padding: '0 12px', borderRadius: 9,
+                      border: '1px solid #3A2418', background: 'transparent',
+                      color: '#FAF3F1', fontSize: 12.5, fontWeight: 600,
+                      fontFamily: 'inherit', cursor: 'pointer',
+                    }}
+                  >
+                    Delete
+                  </button>
+                  {!allDirect && (
+                    <button
+                      onClick={handleMoveToBucket}
+                      disabled={moveDisabled}
+                      style={{
+                        height: 32, padding: '0 12px', borderRadius: 9, border: 'none',
+                        background: moveDisabled ? '#3A2418' : '#E8675A',
+                        color: moveDisabled ? '#7A5848' : 'white',
+                        fontSize: 12.5, fontWeight: 600,
+                        fontFamily: 'inherit',
+                        cursor: moveDisabled ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      Move to bucket
+                    </button>
+                  )}
+                </div>
+                {allDirect && (
+                  <p style={{ fontSize: 11, color: '#C89080', lineHeight: 1.4 }}>
+                    Logged directly — can’t move to bucket.
+                  </p>
+                )}
+                {hasDirect && !allDirect && (
+                  <p style={{ fontSize: 11, color: '#C89080', lineHeight: 1.4 }}>
+                    {directSelected.length === 1
+                      ? `“${directSelected[0].name}” was logged directly and can’t move to bucket.`
+                      : `${directSelected.length} selected items were logged directly and can’t move to bucket.`}
+                  </p>
+                )}
               </div>
             ) : (
               <div
@@ -398,7 +425,10 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
       {/* ── Add memory form ──────────────────────────────────────────── */}
       {showAddForm && typeof document !== 'undefined' && createPortal(
         <AddMemoryForm
-          onSuccess={() => setShowAddForm(false)}
+          onSuccess={(row) => {
+            if (row) setMemories(prev => prev.some(m => m.id === row.id) ? prev : [row, ...prev])
+            setShowAddForm(false)
+          }}
           onCancel={() => setShowAddForm(false)}
         />,
         document.body

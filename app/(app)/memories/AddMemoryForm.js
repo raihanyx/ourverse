@@ -31,7 +31,7 @@ export default function AddMemoryForm({ onSuccess, onCancel }) {
   const isDark = theme === 'dark'
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state])
 
   const e = state?.errors ?? {}

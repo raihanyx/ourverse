@@ -60,7 +60,7 @@ export default function AddExpenseForm({
   const [paidBy, setPaidBy] = useState('me')
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state, onSuccess])
 
   const today = todayISO()

@@ -111,13 +111,28 @@ function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onT
           {item.name}
         </p>
         {!isSelecting && (
-          <button
-            onClick={e => { e.stopPropagation(); onMarkDone(item) }}
-            className="self-start h-6 px-2.5 rounded-[7px] bg-transparent text-[10.5px] font-semibold cursor-pointer"
-            style={{ border: `1px solid ${c.fg}55`, color: c.fg }}
-          >
-            Done
-          </button>
+          calendarDate ? (
+            <span
+              className="self-start inline-flex items-center gap-1 text-[10.5px] italic font-medium"
+              style={{ color: c.fg, opacity: 0.7 }}
+            >
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              On calendar
+            </span>
+          ) : (
+            <button
+              onClick={e => { e.stopPropagation(); onMarkDone(item) }}
+              className="self-start h-6 px-2.5 rounded-[7px] bg-transparent text-[10.5px] font-semibold cursor-pointer"
+              style={{ border: `1px solid ${c.fg}55`, color: c.fg }}
+            >
+              Done
+            </button>
+          )
         )}
       </div>
     </div>
@@ -178,15 +193,6 @@ export default function BucketClient({
   const rollTimerRef = useRef(null)
 
   // Refetch helpers
-  function refetchItems() {
-    createClient()
-      .from('bucket_items')
-      .select('*')
-      .eq('couple_id', coupleId)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => { if (data) setItems(data) })
-  }
-
   function refetchMemories() {
     const supabase = createClient()
     Promise.all([
@@ -287,20 +293,19 @@ export default function BucketClient({
     setTimeout(() => { setShowAddForm(false); setIsClosingAdd(false) }, 220)
   }
 
-  function handleAddSuccess() {
+  function handleAddSuccess(row) {
+    if (row) setItems(prev => prev.some(i => i.id === row.id) ? prev : [row, ...prev])
     handleCloseAdd()
-    refetchItems()
   }
 
-  function handleMarkDoneSuccess() {
+  function handleMarkDoneSuccess(memoryRow) {
     if (showDoneSheet) {
       setItems(prev => prev.map(i => i.id === showDoneSheet.id ? { ...i, is_done: true } : i))
       setLocalMemoriesCount(prev => prev + 1)
-      setRecentMemories(prev => [
-        { id: 'opt-' + showDoneSheet.id, name: showDoneSheet.name, category: showDoneSheet.category, date: null },
-        ...prev,
-      ].slice(0, 8))
-      refetchMemories()
+      const memCard = memoryRow
+        ? { id: memoryRow.id, name: memoryRow.name, category: memoryRow.category, date: memoryRow.date }
+        : { id: 'opt-' + showDoneSheet.id, name: showDoneSheet.name, category: showDoneSheet.category, date: null }
+      setRecentMemories(prev => [memCard, ...prev.filter(m => m.id !== memCard.id)].slice(0, 8))
     }
     setShowDoneSheet(null)
     setPicked(null)

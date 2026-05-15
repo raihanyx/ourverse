@@ -19,6 +19,30 @@ A couples app for managing shared expenses, bucket lists, and date planning. Bui
 
 ---
 
+## Performance Constraints (HARD — do not violate)
+
+This app must feel like a fast SPA. Two non-negotiable rules:
+
+1. **Page navigation stays fast.** Do not introduce blocking work in `layout.js`, `proxy.js`, `loading.js`, or root server components beyond what's already there. Do not add `router.refresh()` to navigation paths, do not add full-page reloads, do not turn client components into server components that force waterfalls. The auth guard + `getAppSession` pattern already minimizes round-trips — preserve it.
+
+2. **Mutations appear instantly without manual refresh.** Every add / delete / undo / mark-done / toggle action MUST update local state immediately (optimistic update). Server actions return the inserted/updated row via `.insert(...).select().single()` (or equivalent), and the client prepends/updates state synchronously before/while the action runs in `useTransition`. Realtime subscriptions are a cross-device backstop only — never rely on realtime self-echo for the acting user's own UI feedback. On error, roll back the optimistic state.
+
+**Do not:**
+- Add `await` chains in server components that block initial render (use `Promise.all` for parallel fetches).
+- Add a `refetch()` after a successful mutation when the action already returns the row — that's a wasted round-trip and a perceived delay.
+- Replace optimistic updates with `router.refresh()` to "be safer" — it re-runs the server component and feels like a page reload.
+- Add loading spinners on actions that should feel instant (the optimistic update IS the feedback).
+- Convert a working client-side flow into a server action redirect just for "consistency."
+
+**Do:**
+- Keep server actions returning `{ success, data }` so clients can prepend rows immediately.
+- Wrap network work in `useTransition` so optimistic state isn't blocked by the request.
+- Preserve realtime subscriptions for partner-device sync, with id-based de-duplication.
+
+If a future change conflicts with either rule, stop and ask the user before proceeding.
+
+---
+
 ## Critical Next.js 16 Rules
 
 These are breaking changes from earlier versions — do not skip these:

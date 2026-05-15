@@ -30,7 +30,7 @@ export default function MarkDoneSheet({ item, coupleId, calendarDate, onSuccess,
   const today = todayISO()
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state])
 
   const cat = CAT_PALETTE[item.category] ?? CAT_PALETTE.other

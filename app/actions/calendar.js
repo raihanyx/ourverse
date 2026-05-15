@@ -3,30 +3,63 @@
 import { getActionContext } from '@/lib/data/getActionContext'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
+const VALID_TYPES      = ['couple', 'personal', 'memory', 'anniversary']
 
 export async function addCalendarEntry(prevState, formData) {
   const ctx = await getActionContext()
   if (ctx.error) return { error: ctx.error }
   const { supabase, user, coupleId } = ctx
 
-  const title      = formData.get('title')?.trim()
-  const date       = formData.get('date')
-  const notes      = formData.get('notes')?.trim() || null
-  const isPersonal = formData.get('is_personal') === 'true'
-  const category   = formData.get('category') || 'other'
+  const title    = formData.get('title')?.trim()
+  const date     = formData.get('date')
+  const notes    = formData.get('notes')?.trim() || null
+  const type     = formData.get('type') || 'couple'
+  const category = formData.get('category') || 'other'
 
   const errors = {}
   if (!title) errors.title = 'Please enter a title.'
   else if (title.length > 200) errors.title = 'Title must be 200 characters or fewer.'
   if (!date) errors.date = 'Please select a date.'
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
+  if (!VALID_TYPES.includes(type)) errors.type = 'Please select a valid type.'
   if (!VALID_CATEGORIES.includes(category)) errors.category = 'Please select a valid category.'
   if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
   if (Object.keys(errors).length > 0) return { errors }
 
+  // Anniversary: write to couples.anniversary_date instead of creating a calendar entry.
+  if (type === 'anniversary') {
+    const { error: annErr } = await supabase
+      .from('couples')
+      .update({ anniversary_date: date })
+      .eq('id', coupleId)
+    if (annErr) return { error: 'Could not save anniversary. Please try again.' }
+    return { success: true, data: { kind: 'anniversary', anniversary_date: date } }
+  }
+
+  // Memory direct-log from AddEventSheet — past-only enforcement here.
+  if (type === 'memory') {
+    const today = new Date().toLocaleDateString('en-CA')
+    if (date > today) return { error: 'Memory must be on today or a past date.' }
+
+    const { data: memory, error: memErr } = await supabase.from('memories').insert({
+      couple_id:      coupleId,
+      bucket_item_id: null,
+      name:           title,
+      category,
+      date,
+      note:           notes,
+      origin:         'direct',
+      original_date:  null,
+    }).select('*').single()
+
+    if (memErr) return { error: 'Could not save memory. Please try again.' }
+    return { success: true, data: { kind: 'memory', memory } }
+  }
+
+  // couple / personal types
+  const isPersonal = type === 'personal'
   let bucketItemId = null
 
-  // Couple entries auto-create a linked bucket_item
   if (!isPersonal) {
     const { data: bucketItem, error: bucketError } = await supabase
       .from('bucket_items')
@@ -44,7 +77,7 @@ export async function addCalendarEntry(prevState, formData) {
     bucketItemId = bucketItem.id
   }
 
-  const { error: insertError } = await supabase.from('calendar_entries').insert({
+  const { data: insertedEntry, error: insertError } = await supabase.from('calendar_entries').insert({
     couple_id:      coupleId,
     user_id:        user.id,
     bucket_item_id: bucketItemId,
@@ -54,11 +87,11 @@ export async function addCalendarEntry(prevState, formData) {
     category,
     notes,
     is_personal:    isPersonal,
-  })
+  }).select('*').single()
 
   if (insertError) return { error: 'Could not save entry. Please try again.' }
 
-  return { success: true }
+  return { success: true, data: { kind: 'entry', entry: insertedEntry } }
 }
 
 export async function markCalendarEntryDone(prevState, formData) {
@@ -73,10 +106,9 @@ export async function markCalendarEntryDone(prevState, formData) {
   if (!date) return { error: 'Please select a date.' }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { error: 'Invalid date format.' }
 
-  // Fetch entry server-side — verifies ownership, derives all fields from DB
   const { data: entry } = await supabase
     .from('calendar_entries')
-    .select('bucket_item_id, title, category, couple_id')
+    .select('id, bucket_item_id, title, category, couple_id, is_personal, original_date, date')
     .eq('id', calendarEntryId)
     .eq('couple_id', coupleId)
     .single()
@@ -100,24 +132,26 @@ export async function markCalendarEntryDone(prevState, formData) {
     if (updateError) return { error: 'Could not update item. Please try again.' }
   }
 
-  const { error: memoryError } = await supabase.from('memories').insert({
-    couple_id:      entry.couple_id,
-    bucket_item_id: entry.bucket_item_id,
-    name:           entry.title,
-    category:       entry.category,
+  const { data: insertedMemory, error: memoryError } = await supabase.from('memories').insert({
+    couple_id:         entry.couple_id,
+    bucket_item_id:    entry.bucket_item_id,
+    calendar_entry_id: entry.id,
+    name:              entry.title,
+    category:          entry.category,
     date,
     note,
-  })
+    origin:            entry.is_personal ? 'personal_entry' : 'couple_entry',
+    original_date:     entry.original_date ?? entry.date,
+  }).select('*').single()
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
 
-  // Move the calendar entry to the actual completion date
   await supabase
     .from('calendar_entries')
     .update({ date })
     .eq('id', calendarEntryId)
 
-  return { success: true }
+  return { success: true, data: { memory: insertedMemory, calendarEntryId, date } }
 }
 
 export async function deleteCalendarEntry(id) {
@@ -125,7 +159,6 @@ export async function deleteCalendarEntry(id) {
   if (ctx.error) return { error: ctx.error }
   const { supabase, user, coupleId } = ctx
 
-  // Fetch entry scoped to couple — either partner can delete shared entries
   const { data: entry } = await supabase
     .from('calendar_entries')
     .select('bucket_item_id, is_personal, user_id')
@@ -135,7 +168,6 @@ export async function deleteCalendarEntry(id) {
 
   if (!entry) return { error: 'Entry not found or you do not have permission to delete it.' }
 
-  // Personal entries can only be deleted by their creator
   if (entry.is_personal && entry.user_id !== user.id) {
     return { error: 'You can only delete your own personal entries.' }
   }
@@ -143,7 +175,6 @@ export async function deleteCalendarEntry(id) {
   const { error } = await supabase.from('calendar_entries').delete().eq('id', id).eq('couple_id', coupleId)
   if (error) return { error: 'Could not delete entry. Please try again.' }
 
-  // If linked bucket_item exists and is not yet done, delete it too
   if (entry.bucket_item_id) {
     const { data: item } = await supabase
       .from('bucket_items')
