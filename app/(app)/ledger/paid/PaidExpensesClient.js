@@ -10,11 +10,11 @@ import { formatAmount } from '@/lib/currency'
 
 // Category box colors for expense categories
 const EXPENSE_CAT = {
-  food:          { bg: '#372510', fg: '#F0A840', label: 'Food' },
-  transport:     { bg: '#1A2535', fg: '#7AB0D8', label: 'Transport' },
-  accommodation: { bg: '#271A36', fg: '#C084FC', label: 'Accommodation' },
-  shopping:      { bg: '#321624', fg: '#F472B6', label: 'Shopping' },
-  other:         { bg: '#222222', fg: '#9CA3AF', label: 'Other' },
+  food:          { bg: 'var(--cat-food-bg)',     fg: 'var(--cat-food-fg)',     label: 'Food' },
+  transport:     { bg: 'var(--cat-travel-bg)',   fg: 'var(--cat-travel-fg)',   label: 'Transport' },
+  accommodation: { bg: 'var(--cat-movie-bg)',    fg: 'var(--cat-movie-fg)',    label: 'Accommodation' },
+  shopping:      { bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)', label: 'Shopping' },
+  other:         { bg: 'var(--cat-other-bg)',    fg: 'var(--cat-other-fg)',    label: 'Other' },
 }
 
 function CatBox({ category }) {
@@ -216,7 +216,7 @@ export default function PaidExpensesClient({
           href="/ledger"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontSize: 13, color: '#C89080', textDecoration: 'none',
+            fontSize: 13, color: 'var(--v2-t2)', textDecoration: 'none',
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -234,10 +234,10 @@ export default function PaidExpensesClient({
         }}
       >
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#FAF3F1', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--v2-t1)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
             Settled up
           </h1>
-          <p style={{ fontSize: 13, color: '#7A5848', marginTop: 3 }}>
+          <p style={{ fontSize: 13, color: 'var(--v2-t3)', marginTop: 3 }}>
             {localExpenses.length > 0
               ? `${localExpenses.length} paid expense${localExpenses.length === 1 ? '' : 's'} total`
               : 'No paid expenses yet'}
@@ -250,9 +250,9 @@ export default function PaidExpensesClient({
               display: 'flex', alignItems: 'center', gap: 5,
               height: 30, padding: '0 12px 0 10px',
               borderRadius: 9,
-              border: `1px solid ${isSelecting ? 'rgba(232,103,90,0.4)' : '#3A2418'}`,
-              background: isSelecting ? '#3D1E18' : '#221714',
-              color: isSelecting ? '#E8675A' : '#C89080',
+              border: `1px solid ${isSelecting ? 'rgba(var(--v2-accentRgb), 0.4)' : 'var(--v2-border)'}`,
+              background: isSelecting ? 'var(--v2-accentDim)' : 'var(--v2-surface)',
+              color: isSelecting ? 'var(--v2-accent)' : 'var(--v2-t2)',
               fontSize: 12.5, fontWeight: 600,
               fontFamily: 'inherit', cursor: 'pointer',
               flexShrink: 0, transition: 'all 150ms',
@@ -272,8 +272,8 @@ export default function PaidExpensesClient({
       {bulkError && (
         <div
           style={{
-            fontSize: 13, color: '#F0907F',
-            background: '#3D1E18', border: '1px solid #5A2820',
+            fontSize: 13, color: 'var(--v2-accent)',
+            background: 'var(--v2-accentDim)', border: '1px solid rgba(var(--v2-accentRgb), 0.27)',
             padding: '10px 14px', borderRadius: 12, marginBottom: 14,
           }}
         >
@@ -284,9 +284,9 @@ export default function PaidExpensesClient({
       {/* Summary strip */}
       <div
         style={{
-          background: '#221714',
+          background: 'var(--v2-surface)',
           borderRadius: 18, padding: '14px 18px',
-          border: '1px solid #3A2418',
+          border: '1px solid var(--v2-border)',
           display: 'flex', alignItems: 'center', gap: 10,
           marginBottom: 14,
         }}
@@ -294,18 +294,18 @@ export default function PaidExpensesClient({
         <div
           style={{
             width: 36, height: 36, borderRadius: 10,
-            background: '#162404',
+            background: 'var(--cat-activity-bg)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8EC44C" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--v2-green)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12" />
           </svg>
         </div>
         <div>
-          <p style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1' }}>{summaryLabel}</p>
-          <p style={{ fontSize: 12, color: '#7A5848', marginTop: 2 }}>{summarySub}</p>
+          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--v2-t1)' }}>{summaryLabel}</p>
+          <p style={{ fontSize: 12, color: 'var(--v2-t3)', marginTop: 2 }}>{summarySub}</p>
         </div>
       </div>
 
@@ -313,9 +313,9 @@ export default function PaidExpensesClient({
       <div
         style={{
           display: 'flex',
-          background: '#221714',
+          background: 'var(--v2-surface)',
           borderRadius: 14, padding: 4, gap: 4,
-          border: '1px solid #3A2418',
+          border: '1px solid var(--v2-border)',
           marginBottom: 8,
         }}
       >
@@ -325,8 +325,8 @@ export default function PaidExpensesClient({
             onClick={() => handleTabChange(key)}
             style={{
               flex: 1, height: 36, borderRadius: 10, border: 'none',
-              background: activeTab === key ? '#3D1E18' : 'transparent',
-              color: activeTab === key ? '#E8675A' : '#7A5848',
+              background: activeTab === key ? 'var(--v2-accentDim)' : 'transparent',
+              color: activeTab === key ? 'var(--v2-accent)' : 'var(--v2-t3)',
               fontSize: 13, fontWeight: activeTab === key ? 600 : 400,
               cursor: 'pointer', fontFamily: 'inherit', transition: 'all 150ms',
             }}
@@ -340,10 +340,10 @@ export default function PaidExpensesClient({
       {sorted.length === 0 ? (
         <div style={{ padding: '60px 0', textAlign: 'center' }}>
           <p style={{ fontSize: 32, marginBottom: 12 }}>✨</p>
-          <p style={{ fontSize: 15, fontWeight: 600, color: '#C89080', marginBottom: 6 }}>
+          <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--v2-t2)', marginBottom: 6 }}>
             Nothing settled here yet
           </p>
-          <p style={{ fontSize: 13, color: '#7A5848' }}>
+          <p style={{ fontSize: 13, color: 'var(--v2-t3)' }}>
             {activeTab === 'owe_me'
               ? `Expenses ${partnerName} pays back will show up here`
               : 'Expenses you pay back will show up here'}
@@ -356,7 +356,7 @@ export default function PaidExpensesClient({
               style={{
                 fontSize: 11, fontWeight: 700,
                 textTransform: 'uppercase', letterSpacing: '0.1em',
-                color: '#7A5848', marginBottom: 8,
+                color: 'var(--v2-t3)', marginBottom: 8,
               }}
             >
               {group.label}
@@ -372,7 +372,7 @@ export default function PaidExpensesClient({
                       padding: isSelecting ? '10px 10px' : '10px 0',
                       margin: isSelecting ? '0 -10px' : 0,
                       borderRadius: isSelecting ? 12 : 0,
-                      background: isSelected ? '#3D1E18' : 'transparent',
+                      background: isSelected ? 'var(--v2-accentDim)' : 'transparent',
                       opacity: isSelected ? 1 : 0.55,
                       cursor: isSelecting ? 'pointer' : 'default',
                       transition: 'background 150ms, opacity 250ms',
@@ -383,7 +383,7 @@ export default function PaidExpensesClient({
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p
                         style={{
-                          fontSize: 14, fontWeight: 500, color: '#FAF3F1',
+                          fontSize: 14, fontWeight: 500, color: 'var(--v2-t1)',
                           textDecoration: 'line-through', marginBottom: 4,
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                         }}
@@ -397,7 +397,7 @@ export default function PaidExpensesClient({
                       <div>
                         <p
                           style={{
-                            fontSize: 14, fontWeight: 600, color: '#FAF3F1',
+                            fontSize: 14, fontWeight: 600, color: 'var(--v2-t1)',
                             fontVariantNumeric: 'tabular-nums',
                             marginBottom: isSelecting ? 0 : 6, textAlign: 'right',
                           }}
@@ -410,7 +410,7 @@ export default function PaidExpensesClient({
                             disabled={isPending}
                             style={{
                               height: 24, padding: '0 10px', borderRadius: 7,
-                              border: '1px solid #3A2418', color: '#7A5848',
+                              border: '1px solid var(--v2-border)', color: 'var(--v2-t3)',
                               background: 'transparent', fontSize: 10, fontWeight: 600,
                               cursor: 'pointer', fontFamily: 'inherit',
                             }}
@@ -423,8 +423,8 @@ export default function PaidExpensesClient({
                         <div
                           style={{
                             width: 22, height: 22, borderRadius: '50%',
-                            border: `1.5px solid ${isSelected ? '#E8675A' : '#3A2418'}`,
-                            background: isSelected ? '#E8675A' : 'transparent',
+                            border: `1.5px solid ${isSelected ? 'var(--v2-accent)' : 'var(--v2-border)'}`,
+                            background: isSelected ? 'var(--v2-accent)' : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0, transition: 'all 150ms',
                           }}
@@ -439,7 +439,7 @@ export default function PaidExpensesClient({
                     </div>
                   </div>
                   {!isSelecting && i < group.items.length - 1 && (
-                    <div style={{ height: 1, background: '#261812' }} />
+                    <div style={{ height: 1, background: 'var(--v2-divider)' }} />
                   )}
                 </div>
               )
@@ -460,13 +460,13 @@ export default function PaidExpensesClient({
             {selectedIds.size > 0 ? (
               <div
                 style={{
-                  background: '#321E1A', border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
                   borderRadius: 16, padding: '8px 8px 8px 14px',
                   display: 'flex', alignItems: 'center', gap: 8,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1', flex: 1 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--v2-t1)', flex: 1 }}>
                   {selectedIds.size} selected
                 </span>
                 <button
@@ -474,8 +474,8 @@ export default function PaidExpensesClient({
                   disabled={isDeleting}
                   style={{
                     height: 32, padding: '0 12px', borderRadius: 9,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#FAF3F1', fontSize: 12.5, fontWeight: 600,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t1)', fontSize: 12.5, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
                 >
@@ -486,7 +486,7 @@ export default function PaidExpensesClient({
                   disabled={isPending}
                   style={{
                     height: 32, padding: '0 12px', borderRadius: 9, border: 'none',
-                    background: '#E8675A', color: 'white',
+                    background: 'var(--v2-accent)', color: 'white',
                     fontSize: 12.5, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
@@ -497,19 +497,19 @@ export default function PaidExpensesClient({
             ) : (
               <div
                 style={{
-                  background: '#321E1A', border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
                   borderRadius: 16, padding: '10px 14px',
                   display: 'flex', alignItems: 'center', gap: 10,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, color: '#C89080', flex: 1 }}>Tap items to select</span>
+                <span style={{ fontSize: 13, color: 'var(--v2-t2)', flex: 1 }}>Tap items to select</span>
                 <button
                   onClick={handleCancelSelecting}
                   style={{
                     height: 28, padding: '0 12px', borderRadius: 8,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#C89080', fontSize: 12, fontWeight: 600,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t2)', fontSize: 12, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
                 >

@@ -11,11 +11,11 @@ import AddMemoryForm from './AddMemoryForm'
 import { useTheme } from '@/app/ThemeProvider'
 
 const CAT_PALETTE = {
-  restaurant: { lightBg: '#FDECEA', lightFg: '#C2493A', darkBg: '#3D1E18', darkFg: '#F0907F', label: 'Restaurant' },
-  travel:     { lightBg: '#DBEAFE', lightFg: '#1E40AF', darkBg: '#1A2535', darkFg: '#7AB0D8', label: 'Travel'     },
-  activity:   { lightBg: '#EAF3DE', lightFg: '#3B6D11', darkBg: '#162404', darkFg: '#8EC44C', label: 'Activity'   },
-  movie:      { lightBg: '#EDE9FE', lightFg: '#5B21B6', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
-  other:      { lightBg: '#F3F4F6', lightFg: '#374151', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
+  restaurant: { lightBg: '#FCE3DC', lightFg: '#B83820', darkBg: 'var(--v2-accentDim)', darkFg: 'var(--v2-accent)', label: 'Restaurant' },
+  travel:     { lightBg: '#DDE9F5', lightFg: '#2E6FA8', darkBg: 'var(--v2-blueBg)', darkFg: 'var(--v2-blue)', label: 'Travel'     },
+  activity:   { lightBg: '#DCEDC4', lightFg: '#527C24', darkBg: '#162404', darkFg: 'var(--v2-green)', label: 'Activity'   },
+  movie:      { lightBg: '#ECE0F8', lightFg: '#6F3DAB', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
+  other:      { lightBg: '#EEEEEE', lightFg: '#555555', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
 }
 
 function catPair(key, isDark) {
@@ -33,8 +33,8 @@ function formatMemoryDate(iso) {
 
 function MemoryCard({ memory, isSelecting, isSelected, onToggleSelect, isDark }) {
   const c = catPair(memory.category, isDark)
-  const accent = isDark ? '#E8675A' : '#C2493A'
-  const accentDim = isDark ? '#3D1E18' : '#FDECEA'
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
   const innerBg = isDark
     ? (isSelected ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.22)')
     : (isSelected ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.4)')
@@ -78,13 +78,13 @@ function MemoryCard({ memory, isSelecting, isSelected, onToggleSelect, isDark })
         className="rounded-xl px-3 pt-[11px] pb-2.5 flex flex-col gap-1.5"
         style={{ background: innerBg, minHeight: 78 }}
       >
-        <p className="text-[14px] font-semibold leading-[1.3] text-[#1C1210] dark:text-[#FAF3F1]">
+        <p className="text-[14px] font-semibold leading-[1.3] text-[#2A1810] dark:text-[#FAF3F1]">
           {memory.name}
         </p>
         {memory.note && (
           <p
             className="text-[11px] italic leading-[1.4] flex-1"
-            style={{ color: isDark ? '#C89080' : '#A07060', opacity: 0.85 }}
+            style={{ color: isDark ? 'var(--v2-t2)' : '#7A5C4E', opacity: 0.85 }}
           >
             “{memory.note}”
           </p>
@@ -110,17 +110,17 @@ function MemoryCard({ memory, isSelecting, isSelected, onToggleSelect, isDark })
 // ── IconBtn ──────────────────────────────────────────────────────────────────
 
 function IconBtn({ onClick, active, ariaLabel, isDark, children }) {
-  const accent = isDark ? '#E8675A' : '#C2493A'
-  const accentDim = isDark ? '#3D1E18' : '#FDECEA'
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel}
       className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center cursor-pointer transition-all flex-shrink-0"
       style={{
-        border: `1px solid ${active ? `${accent}66` : (isDark ? '#3A2418' : '#EDE0DC')}`,
-        background: active ? accentDim : (isDark ? '#221714' : '#FDF7F6'),
-        color: active ? accent : (isDark ? '#C89080' : '#A07060'),
+        border: `1px solid ${active ? `${accent}66` : (isDark ? 'var(--v2-border)' : '#ECDFD2')}`,
+        background: active ? accentDim : (isDark ? 'var(--v2-surface)' : '#F8F2EB'),
+        color: active ? accent : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
       }}
     >
       {children}
@@ -232,17 +232,17 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
           <Link
             href="/bucket"
             aria-label="Back to bucket list"
-            className="w-9 h-9 rounded-[10px] border border-[#EDE0DC] dark:border-[#3A2418] bg-[#FDF7F6] dark:bg-[#221714] text-[#A07060] dark:text-[#C89080] flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5"
+            className="w-9 h-9 rounded-[10px] border border-[#ECDFD2] dark:border-[#3A2418] bg-[#F8F2EB] dark:bg-[#221714] text-[#7A5C4E] dark:text-[#C89080] flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="text-[24px] font-bold leading-tight tracking-[-0.4px] text-[#1C1210] dark:text-[#FAF3F1]">
+            <h1 className="text-[24px] font-bold leading-tight tracking-[-0.4px] text-[#2A1810] dark:text-[#FAF3F1]">
               Memories
             </h1>
-            <p className="text-[13px] mt-[3px] text-[#C4A89E] dark:text-[#7A5848]">
+            <p className="text-[13px] mt-[3px] text-[#B19A8B] dark:text-[#7A5848]">
               {memories.length} {memories.length === 1 ? 'thing' : 'things'} you’ve done together
             </p>
           </div>
@@ -267,7 +267,7 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
             </IconBtn>
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#C2493A] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0"
+              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#D8513E] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -279,25 +279,25 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
         </div>
 
         {bulkError && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
             {bulkError}
           </div>
         )}
 
         {memories.length === 0 ? (
           <div className="py-14 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center mx-auto mb-3">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#E8675A]" aria-hidden="true">
+            <div className="w-12 h-12 rounded-2xl bg-[#FCE3DC] dark:bg-[#3D1E18] flex items-center justify-center mx-auto mb-3">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#D8513E" className="dark:fill-[#E8675A]" aria-hidden="true">
                 <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
               </svg>
             </div>
-            <p className="text-[15px] font-semibold mb-2 text-[#1C1210] dark:text-[#FAF3F1]">No memories yet</p>
-            <p className="text-[13px] mb-5 leading-relaxed text-[#A07060] dark:text-[#C89080]">
+            <p className="text-[15px] font-semibold mb-2 text-[#2A1810] dark:text-[#FAF3F1]">No memories yet</p>
+            <p className="text-[13px] mb-5 leading-relaxed text-[#7A5C4E] dark:text-[#C89080]">
               Mark bucket list items as done to create your first memory together
             </p>
             <Link
               href="/bucket"
-              className="inline-block h-10 px-5 rounded-xl bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#D45849] text-white text-sm font-medium leading-10 transition-colors"
+              className="inline-block h-10 px-5 rounded-xl bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] dark:hover:bg-[#D45849] text-white text-sm font-medium leading-10 transition-colors"
             >
               Go to bucket list
             </Link>
@@ -332,22 +332,22 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
             {selectedIds.size > 0 ? (
               <div
                 style={{
-                  background: '#321E1A', border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
                   borderRadius: 16, padding: '10px 10px 10px 14px',
                   display: 'flex', flexDirection: 'column', gap: 6,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1', flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--v2-t1)', flex: 1 }}>
                     {selectedIds.size} selected
                   </span>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
                     style={{
                       height: 32, padding: '0 12px', borderRadius: 9,
-                      border: '1px solid #3A2418', background: 'transparent',
-                      color: '#FAF3F1', fontSize: 12.5, fontWeight: 600,
+                      border: '1px solid var(--v2-border)', background: 'transparent',
+                      color: 'var(--v2-t1)', fontSize: 12.5, fontWeight: 600,
                       fontFamily: 'inherit', cursor: 'pointer',
                     }}
                   >
@@ -359,8 +359,8 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
                       disabled={moveDisabled}
                       style={{
                         height: 32, padding: '0 12px', borderRadius: 9, border: 'none',
-                        background: moveDisabled ? '#3A2418' : '#E8675A',
-                        color: moveDisabled ? '#7A5848' : 'white',
+                        background: moveDisabled ? 'var(--v2-border)' : 'var(--v2-accent)',
+                        color: moveDisabled ? 'var(--v2-t3)' : 'white',
                         fontSize: 12.5, fontWeight: 600,
                         fontFamily: 'inherit',
                         cursor: moveDisabled ? 'not-allowed' : 'pointer',
@@ -371,12 +371,12 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
                   )}
                 </div>
                 {allDirect && (
-                  <p style={{ fontSize: 11, color: '#C89080', lineHeight: 1.4 }}>
+                  <p style={{ fontSize: 11, color: 'var(--v2-t2)', lineHeight: 1.4 }}>
                     Logged directly — can’t move to bucket.
                   </p>
                 )}
                 {hasDirect && !allDirect && (
-                  <p style={{ fontSize: 11, color: '#C89080', lineHeight: 1.4 }}>
+                  <p style={{ fontSize: 11, color: 'var(--v2-t2)', lineHeight: 1.4 }}>
                     {directSelected.length === 1
                       ? `“${directSelected[0].name}” was logged directly and can’t move to bucket.`
                       : `${directSelected.length} selected items were logged directly and can’t move to bucket.`}
@@ -386,19 +386,19 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
             ) : (
               <div
                 style={{
-                  background: '#321E1A', border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
                   borderRadius: 16, padding: '10px 14px',
                   display: 'flex', alignItems: 'center', gap: 10,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, color: '#C89080', flex: 1 }}>Tap items to select</span>
+                <span style={{ fontSize: 13, color: 'var(--v2-t2)', flex: 1 }}>Tap items to select</span>
                 <button
                   onClick={exitSelectMode}
                   style={{
                     height: 28, padding: '0 12px', borderRadius: 8,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#C89080', fontSize: 12, fontWeight: 600,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t2)', fontSize: 12, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
                 >

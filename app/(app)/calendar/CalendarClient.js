@@ -9,30 +9,30 @@ import CalendarHelpSheet from './CalendarHelpSheet'
 
 // ─── V2 tokens ─────────────────────────────────────────────────
 const V2 = {
-  bg:        '#1A1210',
-  surface:   '#2A1C18',
-  border:    '#3A2418',
-  t1:        '#FAF3F1',
-  t2:        '#C89080',
-  t3:        '#A07868',
-  accent:    '#E8675A',
-  accentDim: '#3D1E18',
+  bg:        'var(--v2-bg)',
+  surface:   'var(--v2-card)',
+  border:    'var(--v2-border)',
+  t1:        'var(--v2-t1)',
+  t2:        'var(--v2-t2)',
+  t3:        'var(--v2-t3)',
+  accent:    'var(--v2-accent)',
+  accentDim: 'var(--v2-accentDim)',
 }
 
 // ─── Type meta ─────────────────────────────────────────────────
 const TYPE_META = {
-  couple:      { color: '#7AB0D8', label: 'Together'    },
-  personal:    { color: '#8EC44C', label: 'Personal'    },
+  couple:      { color: 'var(--v2-blue)', label: 'Together'    },
+  personal:    { color: 'var(--v2-green)', label: 'Personal'    },
   memory:      { color: V2.accent, label: 'Memory'      },
-  anniversary: { color: '#F0A840', label: 'Anniversary' },
+  anniversary: { color: 'var(--v2-orange)', label: 'Anniversary' },
 }
 
 const CAT_FG = {
-  restaurant: '#F0907F',
-  travel:     '#7AB0D8',
-  activity:   '#8EC44C',
-  movie:      '#C084FC',
-  other:      '#9CA3AF',
+  restaurant: 'var(--cat-restaurant-fg)',
+  travel:     'var(--cat-travel-fg)',
+  activity:   'var(--cat-activity-fg)',
+  movie:      'var(--cat-movie-fg)',
+  other:      'var(--cat-other-fg)',
 }
 const CAT_LABEL = {
   restaurant: 'Restaurant',
@@ -546,8 +546,8 @@ export default function CalendarClient({
             style={{
               padding: '10px 14px',
               borderRadius: 14,
-              background: `${TYPE_META.anniversary.color}1A`,
-              border: `1px solid ${TYPE_META.anniversary.color}44`,
+              background: `color-mix(in srgb, ${TYPE_META.anniversary.color}, transparent 90%)`,
+              border: `1px solid color-mix(in srgb, ${TYPE_META.anniversary.color}, transparent 73%)`,
             }}
           >
             <span style={{ color: TYPE_META.anniversary.color, fontSize: 16 }}>♥</span>

@@ -18,8 +18,8 @@ function fmtCountdown(ms) {
 }
 
 function AvatarWithCheck({ initial, tone, answered }) {
-  const bg = tone === 'me' ? '#3D1E18' : '#1A2535'
-  const fg = tone === 'me' ? '#E8675A' : '#7AB0D8'
+  const bg = tone === 'me' ? 'var(--v2-accentDim)' : 'var(--v2-blueBg)'
+  const fg = tone === 'me' ? 'var(--v2-accent)' : 'var(--v2-blue)'
   return (
     <div style={{ position: 'relative' }}>
       <div style={{
@@ -27,7 +27,7 @@ function AvatarWithCheck({ initial, tone, answered }) {
         background: bg, color: fg,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 12, fontWeight: 700,
-        border: '2px solid #1A1210',
+        border: '2px solid var(--v2-bg)',
       }}>
         {initial}
       </div>
@@ -35,7 +35,7 @@ function AvatarWithCheck({ initial, tone, answered }) {
         <div style={{
           position: 'absolute', bottom: -2, right: -2,
           width: 14, height: 14, borderRadius: '50%',
-          background: '#4ADE80', border: '2px solid #1A1210',
+          background: '#4ADE80', border: '2px solid var(--v2-bg)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <svg width={7} height={7} viewBox="0 0 24 24" fill="none" stroke="#0A1A0A" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
@@ -72,15 +72,15 @@ export default function DailyConversationCard({
     <div>
       {/* Section header */}
       <div className="flex items-center justify-between mb-3">
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#FAF3F1', letterSpacing: '-0.2px', margin: 0 }}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--v2-t1)', letterSpacing: '-0.2px', margin: 0 }}>
           Daily Conversation
         </h2>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 4,
           height: 26, padding: '0 10px', borderRadius: 9999,
-          border: '1px solid rgba(232,103,90,0.33)',
-          background: '#3D1E18',
-          color: '#E8675A', fontSize: 12, fontWeight: 700,
+          border: '1px solid rgba(var(--v2-accentRgb), 0.33)',
+          background: 'var(--v2-accentDim)',
+          color: 'var(--v2-accent)', fontSize: 12, fontWeight: 700,
           fontVariantNumeric: 'tabular-nums',
         }}>
           {streak}<span style={{ fontSize: 12, marginLeft: 2 }}>🔥</span>
@@ -89,10 +89,10 @@ export default function DailyConversationCard({
 
       {/* Card */}
       <div style={{
-        background: 'linear-gradient(135deg, #2E1B22 0%, #3A1E18 60%, #2A1810 100%)',
+        background: 'var(--v2-dcGrad)',
         borderRadius: 22,
         padding: 16,
-        border: '1px solid #3A2418',
+        border: '1px solid var(--v2-border)',
         position: 'relative',
         overflow: 'hidden',
       }}>
@@ -104,12 +104,12 @@ export default function DailyConversationCard({
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 5,
             height: 22, padding: '0 9px', borderRadius: 9999,
-            background: 'rgba(232,103,90,0.10)',
-            border: '1px solid rgba(232,103,90,0.33)',
+            background: 'rgba(var(--v2-accentRgb), 0.10)',
+            border: '1px solid rgba(var(--v2-accentRgb), 0.33)',
           }}>
             <span style={{ fontSize: 11 }}>⏱️</span>
             <span style={{
-              fontSize: 10, fontWeight: 700, color: '#E8675A',
+              fontSize: 10, fontWeight: 700, color: 'var(--v2-accent)',
               textTransform: 'uppercase', letterSpacing: '0.1em',
               fontVariantNumeric: 'tabular-nums',
             }}>
@@ -128,7 +128,7 @@ export default function DailyConversationCard({
 
         {/* Question */}
         <p style={{
-          fontSize: 18, fontWeight: 700, color: '#FAF3F1',
+          fontSize: 18, fontWeight: 700, color: 'var(--v2-t1)',
           lineHeight: 1.3, letterSpacing: '-0.2px',
           marginBottom: 16, textWrap: 'pretty',
         }}>
@@ -153,8 +153,8 @@ export default function DailyConversationCard({
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               height: 34, padding: '0 14px', borderRadius: 10,
-              border: '1px solid rgba(232,103,90,0.53)',
-              background: '#3D1E18', color: '#E8675A',
+              border: '1px solid rgba(var(--v2-accentRgb), 0.53)',
+              background: 'var(--v2-accentDim)', color: 'var(--v2-accent)',
               fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
               textTransform: 'uppercase', letterSpacing: '0.06em',
               cursor: 'pointer',
@@ -162,7 +162,7 @@ export default function DailyConversationCard({
           >
             {myAnswered && <span style={{ fontSize: 11 }}>↺</span>}
             {myAnswered ? 'Results' : 'Answer'}
-            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="#E8675A" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="var(--v2-accent)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </button>

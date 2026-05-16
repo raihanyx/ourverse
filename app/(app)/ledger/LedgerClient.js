@@ -13,11 +13,11 @@ import Link from 'next/link'
 
 // Category box colors for expense categories
 const EXPENSE_CAT = {
-  food:          { bg: '#372510', fg: '#F0A840', label: 'Food' },
-  transport:     { bg: '#1A2535', fg: '#7AB0D8', label: 'Transport' },
-  accommodation: { bg: '#271A36', fg: '#C084FC', label: 'Accommodation' },
-  shopping:      { bg: '#321624', fg: '#F472B6', label: 'Shopping' },
-  other:         { bg: '#222222', fg: '#9CA3AF', label: 'Other' },
+  food:          { bg: 'var(--cat-food-bg)',     fg: 'var(--cat-food-fg)',     label: 'Food' },
+  transport:     { bg: 'var(--cat-travel-bg)',   fg: 'var(--cat-travel-fg)',   label: 'Transport' },
+  accommodation: { bg: 'var(--cat-movie-bg)',    fg: 'var(--cat-movie-fg)',    label: 'Accommodation' },
+  shopping:      { bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)', label: 'Shopping' },
+  other:         { bg: 'var(--cat-other-bg)',    fg: 'var(--cat-other-fg)',    label: 'Other' },
 }
 
 function CatBox({ category }) {
@@ -76,7 +76,7 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
   const rateLines = getRateLines(baseCurrency, rates)
 
   if (entries.length === 0) {
-    return <p style={{ fontSize: 13, color: '#7A5848' }}>Nothing owed</p>
+    return <p style={{ fontSize: 13, color: 'var(--v2-t3)' }}>Nothing owed</p>
   }
 
   return (
@@ -88,13 +88,13 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              background: '#3D1E18',
-              color: '#E8675A',
+              background: 'var(--v2-accentDim)',
+              color: 'var(--v2-accent)',
               fontSize: 12,
               fontWeight: 600,
               padding: '4px 12px',
               borderRadius: 9999,
-              border: '1px solid rgba(232,103,90,0.27)',
+              border: '1px solid rgba(var(--v2-accentRgb), 0.27)',
             }}
           >
             {formatAmount(amount, currency)}
@@ -102,12 +102,12 @@ function TotalsBadges({ expenses, baseCurrency, rates }) {
         ))}
       </div>
       {rates && unifiedTotal !== null && unifiedTotal > 0 && (
-        <p style={{ fontSize: 11, color: '#7A5848', marginTop: 6 }}>
+        <p style={{ fontSize: 11, color: 'var(--v2-t3)', marginTop: 6 }}>
           ≈ {formatAmount(unifiedTotal, baseCurrency)} at current rates
         </p>
       )}
       {rates && rateLines.length > 0 && (
-        <p style={{ fontSize: 11, color: '#5A3828', marginTop: 3, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 11, color: 'var(--v2-t3)', marginTop: 3, lineHeight: 1.5 }}>
           {rateLines.join(' · ')}
         </p>
       )}
@@ -165,7 +165,7 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
         padding: isSelecting ? '10px 10px' : '10px 0',
         margin: isSelecting ? '0 -10px' : 0,
         borderRadius: isSelecting ? 12 : 0,
-        background: isSelected ? '#3D1E18' : 'transparent',
+        background: isSelected ? 'var(--v2-accentDim)' : 'transparent',
         opacity: muted ? 0.45 : 1,
         cursor: isSelecting ? 'pointer' : 'default',
       }}
@@ -177,7 +177,7 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
           style={{
             fontSize: 14,
             fontWeight: 500,
-            color: '#FAF3F1',
+            color: 'var(--v2-t1)',
             textDecoration: isPaid ? 'line-through' : 'none',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -196,7 +196,7 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
             style={{
               fontSize: 14,
               fontWeight: 600,
-              color: '#FAF3F1',
+              color: 'var(--v2-t1)',
               fontVariantNumeric: 'tabular-nums',
               marginBottom: isSelecting ? 0 : 6,
               textAlign: 'right',
@@ -212,9 +212,9 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
                 height: 24,
                 padding: '0 10px',
                 borderRadius: 7,
-                border: isPaid ? '1px solid #3A2418' : '1px solid rgba(232,103,90,0.53)',
-                color: isPaid ? '#7A5848' : '#E8675A',
-                background: isPaid ? 'transparent' : '#3D1E18',
+                border: isPaid ? '1px solid var(--v2-border)' : '1px solid rgba(var(--v2-accentRgb), 0.53)',
+                color: isPaid ? 'var(--v2-t3)' : 'var(--v2-accent)',
+                background: isPaid ? 'transparent' : 'var(--v2-accentDim)',
                 fontSize: 10,
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -232,8 +232,8 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
               width: 22,
               height: 22,
               borderRadius: '50%',
-              border: `1.5px solid ${isSelected ? '#E8675A' : '#3A2418'}`,
-              background: isSelected ? '#E8675A' : 'transparent',
+              border: `1.5px solid ${isSelected ? 'var(--v2-accent)' : 'var(--v2-border)'}`,
+              background: isSelected ? 'var(--v2-accent)' : 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -426,10 +426,10 @@ export default function LedgerClient({
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 18 }}>
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: '#FAF3F1', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--v2-t1)', letterSpacing: '-0.4px', lineHeight: 1.2 }}>
               Ledger
             </h1>
-            <p style={{ fontSize: 13, color: '#7A5848', marginTop: 3 }}>
+            <p style={{ fontSize: 13, color: 'var(--v2-t3)', marginTop: 3 }}>
               {unpaidCount > 0 ? `${unpaidCount} unsettled` : 'All settled up ✓'}
             </p>
           </div>
@@ -440,14 +440,14 @@ export default function LedgerClient({
               aria-label="Ledger tips"
               style={{
                 width: 30, height: 30, borderRadius: 9,
-                border: '1px solid #3A2418',
-                background: '#221714',
+                border: '1px solid var(--v2-border)',
+                background: 'var(--v2-surface)',
                 cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C89080" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--v2-t2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
                 <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -460,15 +460,15 @@ export default function LedgerClient({
                 aria-label={isSelecting ? 'Cancel selection' : 'Select items'}
                 style={{
                   width: 30, height: 30, borderRadius: 9,
-                  border: `1px solid ${isSelecting ? 'rgba(232,103,90,0.4)' : '#3A2418'}`,
-                  background: isSelecting ? '#3D1E18' : '#221714',
+                  border: `1px solid ${isSelecting ? 'rgba(var(--v2-accentRgb), 0.4)' : 'var(--v2-border)'}`,
+                  background: isSelecting ? 'var(--v2-accentDim)' : 'var(--v2-surface)',
                   cursor: 'pointer',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                   transition: 'all 150ms',
                 }}
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isSelecting ? '#E8675A' : '#C89080'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={isSelecting ? 'var(--v2-accent)' : 'var(--v2-t2)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 20h9" />
                   <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
                 </svg>
@@ -480,7 +480,7 @@ export default function LedgerClient({
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 height: 30, padding: '0 11px 0 9px',
-                background: '#E8675A', color: 'white',
+                background: 'var(--v2-accent)', color: 'white',
                 borderRadius: 9, border: 'none',
                 fontSize: 12.5, fontWeight: 600,
                 fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
@@ -498,8 +498,8 @@ export default function LedgerClient({
         {bulkError && (
           <div
             style={{
-              fontSize: 13, color: '#F0907F',
-              background: '#3D1E18', border: '1px solid #5A2820',
+              fontSize: 13, color: 'var(--v2-accent)',
+              background: 'var(--v2-accentDim)', border: '1px solid rgba(var(--v2-accentRgb), 0.27)',
               padding: '10px 14px', borderRadius: 12, marginBottom: 14,
             }}
           >
@@ -510,16 +510,16 @@ export default function LedgerClient({
         {/* Balance summary */}
         <div
           style={{
-            background: '#221714',
+            background: 'var(--v2-surface)',
             borderRadius: 20,
             padding: '16px 18px',
-            border: '1px solid #3A2418',
+            border: '1px solid var(--v2-border)',
             marginBottom: 14,
           }}
         >
           <p
             style={{
-              fontSize: 11, color: '#7A5848', fontWeight: 700,
+              fontSize: 11, color: 'var(--v2-t3)', fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10,
             }}
           >
@@ -533,11 +533,11 @@ export default function LedgerClient({
           key={activeTab + '-tabs'}
           style={{
             display: 'flex',
-            background: '#221714',
+            background: 'var(--v2-surface)',
             borderRadius: 14,
             padding: 4,
             gap: 4,
-            border: '1px solid #3A2418',
+            border: '1px solid var(--v2-border)',
             marginBottom: 8,
           }}
         >
@@ -547,8 +547,8 @@ export default function LedgerClient({
               onClick={() => handleTabChange(key)}
               style={{
                 flex: 1, height: 36, borderRadius: 10, border: 'none',
-                background: activeTab === key ? '#3D1E18' : 'transparent',
-                color: activeTab === key ? '#E8675A' : '#7A5848',
+                background: activeTab === key ? 'var(--v2-accentDim)' : 'transparent',
+                color: activeTab === key ? 'var(--v2-accent)' : 'var(--v2-t3)',
                 fontSize: 13, fontWeight: activeTab === key ? 600 : 400,
                 cursor: 'pointer', fontFamily: 'inherit', transition: 'all 150ms',
               }}
@@ -563,10 +563,10 @@ export default function LedgerClient({
           {visibleExpenses.length === 0 ? (
             <div style={{ padding: '60px 0', textAlign: 'center' }}>
               <p style={{ fontSize: 32, marginBottom: 12 }}>🧾</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#C89080', marginBottom: 6 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: 'var(--v2-t2)', marginBottom: 6 }}>
                 Nothing here yet
               </p>
-              <p style={{ fontSize: 13, color: '#7A5848' }}>Tap Add to log an expense</p>
+              <p style={{ fontSize: 13, color: 'var(--v2-t3)' }}>Tap Add to log an expense</p>
             </div>
           ) : (
             <>
@@ -577,7 +577,7 @@ export default function LedgerClient({
                     style={{
                       fontSize: 11, fontWeight: 700,
                       textTransform: 'uppercase', letterSpacing: '0.1em',
-                      color: '#7A5848', marginBottom: 8,
+                      color: 'var(--v2-t3)', marginBottom: 8,
                     }}
                   >
                     {group.label}
@@ -593,7 +593,7 @@ export default function LedgerClient({
                         onSelect={handleSelect}
                       />
                       {!isSelecting && i < group.items.length - 1 && (
-                        <div style={{ height: 1, background: '#261812', margin: '0' }} />
+                        <div style={{ height: 1, background: 'var(--v2-divider)', margin: '0' }} />
                       )}
                     </div>
                   ))}
@@ -609,7 +609,7 @@ export default function LedgerClient({
                         style={{
                           fontSize: 11, fontWeight: 700,
                           textTransform: 'uppercase', letterSpacing: '0.1em',
-                          color: '#7A5848', marginBottom: 8,
+                          color: 'var(--v2-t3)', marginBottom: 8,
                         }}
                       >
                         {group.label}
@@ -625,7 +625,7 @@ export default function LedgerClient({
                             onSelect={handleSelect}
                           />
                           {!isSelecting && i < group.items.length - 1 && (
-                            <div style={{ height: 1, background: '#261812' }} />
+                            <div style={{ height: 1, background: 'var(--v2-divider)' }} />
                           )}
                         </div>
                       ))}
@@ -633,10 +633,10 @@ export default function LedgerClient({
                   ))}
 
                   {hasMorePaid && (
-                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid #261812' }}>
+                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--v2-divider)' }}>
                       <Link
                         href={`/ledger/paid?tab=${activeTab}`}
-                        style={{ fontSize: 13, color: '#E8675A', textDecoration: 'none' }}
+                        style={{ fontSize: 13, color: 'var(--v2-accent)', textDecoration: 'none' }}
                       >
                         See all {paidSorted.length} paid expenses →
                       </Link>
@@ -669,15 +669,15 @@ export default function LedgerClient({
             {selectedIds.size > 0 ? (
               <div
                 style={{
-                  background: '#321E1A',
-                  border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)',
+                  border: '1px solid var(--v2-border)',
                   borderRadius: 16,
                   padding: '8px 8px 8px 14px',
                   display: 'flex', alignItems: 'center', gap: 8,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1', flex: 1 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--v2-t1)', flex: 1 }}>
                   {selectedIds.size} selected
                 </span>
                 <button
@@ -685,8 +685,8 @@ export default function LedgerClient({
                   disabled={isDeleting}
                   style={{
                     height: 32, padding: '0 12px', borderRadius: 9,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#FAF3F1', fontSize: 12.5, fontWeight: 600,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t1)', fontSize: 12.5, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
                 >
@@ -698,7 +698,7 @@ export default function LedgerClient({
                     disabled={isPending}
                     style={{
                       height: 32, padding: '0 12px', borderRadius: 9, border: 'none',
-                      background: '#E8675A', color: 'white',
+                      background: 'var(--v2-accent)', color: 'white',
                       fontSize: 12.5, fontWeight: 600,
                       fontFamily: 'inherit', cursor: 'pointer',
                     }}
@@ -712,7 +712,7 @@ export default function LedgerClient({
                     disabled={isPending}
                     style={{
                       height: 32, padding: '0 12px', borderRadius: 9, border: 'none',
-                      background: '#E8675A', color: 'white',
+                      background: 'var(--v2-accent)', color: 'white',
                       fontSize: 12.5, fontWeight: 600,
                       fontFamily: 'inherit', cursor: 'pointer',
                     }}
@@ -724,21 +724,21 @@ export default function LedgerClient({
             ) : (
               <div
                 style={{
-                  background: '#321E1A',
-                  border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)',
+                  border: '1px solid var(--v2-border)',
                   borderRadius: 16,
                   padding: '10px 14px',
                   display: 'flex', alignItems: 'center', gap: 10,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, color: '#C89080', flex: 1 }}>Tap items to select</span>
+                <span style={{ fontSize: 13, color: 'var(--v2-t2)', flex: 1 }}>Tap items to select</span>
                 <button
                   onClick={handleCancelSelecting}
                   style={{
                     height: 28, padding: '0 12px', borderRadius: 8,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#C89080', fontSize: 12, fontWeight: 600,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t2)', fontSize: 12, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
                 >
@@ -770,23 +770,23 @@ export default function LedgerClient({
         <div className="fixed inset-0 z-30 flex flex-col justify-end">
           <div
             className={`absolute inset-0 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
-            style={{ background: 'rgba(10,6,5,0.70)' }}
+            style={{ background: 'rgba(var(--v2-overlayBase), 0.70)' }}
             onClick={handleClose}
           />
           <div
             className={`relative max-h-[92vh] overflow-y-auto ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}
             style={{
-              background: '#2A1C18',
+              background: 'var(--v2-card)',
               borderRadius: '24px 24px 0 0',
               padding: '10px 20px 26px',
             }}
           >
-            <div style={{ width: 36, height: 3, borderRadius: 9999, background: '#3A2418', margin: '0 auto 14px' }} />
+            <div style={{ width: 36, height: 3, borderRadius: 9999, background: 'var(--v2-border)', margin: '0 auto 14px' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <span style={{ fontSize: 17, fontWeight: 600, color: '#FAF3F1' }}>Add expense</span>
+              <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--v2-t1)' }}>Add expense</span>
               <button
                 onClick={handleClose}
-                style={{ background: 'none', border: 'none', color: '#7A5848', cursor: 'pointer', padding: 4 }}
+                style={{ background: 'none', border: 'none', color: 'var(--v2-t3)', cursor: 'pointer', padding: 4 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <line x1="18" y1="6" x2="6" y2="18" />

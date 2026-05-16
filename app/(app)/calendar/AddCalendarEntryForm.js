@@ -5,10 +5,10 @@ import { addCalendarEntry } from '@/app/actions/calendar'
 import { todayISO } from '@/lib/currency'
 
 const TYPE_OPTIONS = [
-  { key: 'couple',      label: 'Together',    dot: '#7AB0D8' },
-  { key: 'personal',    label: 'Just me',     dot: '#8EC44C' },
-  { key: 'memory',      label: 'Memory',      dot: '#E8675A' },
-  { key: 'anniversary', label: 'Anniversary', dot: '#F0A840' },
+  { key: 'couple',      label: 'Together',    dot: 'var(--v2-blue)' },
+  { key: 'personal',    label: 'Just me',     dot: 'var(--v2-green)' },
+  { key: 'memory',      label: 'Memory',      dot: 'var(--v2-accent)' },
+  { key: 'anniversary', label: 'Anniversary', dot: 'var(--v2-orange)' },
 ]
 
 const CATEGORIES = [
@@ -20,11 +20,11 @@ const CATEGORIES = [
 ]
 
 const CAT_FG = {
-  restaurant: '#F0907F',
-  travel:     '#7AB0D8',
-  activity:   '#8EC44C',
-  movie:      '#C084FC',
-  other:      '#9CA3AF',
+  restaurant: 'var(--cat-restaurant-fg)',
+  travel:     'var(--cat-travel-fg)',
+  activity:   'var(--cat-activity-fg)',
+  movie:      'var(--cat-movie-fg)',
+  other:      'var(--cat-other-fg)',
 }
 
 export default function AddCalendarEntryForm({ date: defaultDate, coupleId, partnerName, onSuccess, onCancel }) {
@@ -46,21 +46,21 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        className="absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.65)] animate-fade-in"
         onClick={onCancel}
       />
       <div
         className="relative rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up"
-        style={{ background: '#2A1C18', color: '#FAF3F1' }}
+        style={{ background: 'var(--v2-card)', color: 'var(--v2-t1)' }}
       >
-        <div className="w-8 h-[3px] rounded-sm mx-auto mb-[14px]" style={{ background: '#3D2820' }} />
+        <div className="w-8 h-[3px] rounded-sm mx-auto mb-[14px]" style={{ background: 'var(--v2-border)' }} />
 
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-[16px] font-semibold">Add event</h2>
           <button
             type="button"
             onClick={onCancel}
-            className="text-[#A07868] hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
+            className="text-[#B19A8B] dark:text-[#A07868] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
             aria-label="Close"
           >
             ×
@@ -68,7 +68,7 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
         </div>
 
         {state?.error && (
-          <div className="text-sm text-[#F0907F] bg-[#3D1E18] border border-[#5A2A20] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#B83820] dark:text-[#F0907F] bg-[#FCE5DD] dark:bg-[#3D1E18] border border-[#F4C8BD] dark:border-[#5A2A20] px-4 py-3 rounded-xl mb-4">
             {state.error}
           </div>
         )}
@@ -80,26 +80,26 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
 
           {/* Title */}
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: '#C89080' }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
               Title
             </label>
             <input
               name="title"
               type="text"
               placeholder="e.g. Dinner at Sushi Tei, Bali trip…"
-              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#7A5848]"
+              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848]"
               style={{
-                background: '#1A1210',
-                color: '#FAF3F1',
-                borderColor: state?.errors?.title ? '#F0907F' : '#3A2418',
+                background: 'var(--v2-bg)',
+                color: 'var(--v2-t1)',
+                borderColor: state?.errors?.title ? 'var(--v2-accent)' : 'var(--v2-border)',
               }}
             />
-            {state?.errors?.title && <p className="text-xs text-[#F0907F] mt-1">{state.errors.title}</p>}
+            {state?.errors?.title && <p className="text-xs text-[#B83820] dark:text-[#F0907F] mt-1">{state.errors.title}</p>}
           </div>
 
           {/* Type pills */}
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: '#C89080' }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
               Type
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -112,9 +112,9 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
                     onClick={() => setType(opt.key)}
                     className="h-[38px] rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold cursor-pointer transition-colors"
                     style={{
-                      background: selected ? `${opt.dot}38` : 'transparent',
-                      color: selected ? opt.dot : '#A07868',
-                      border: `1px solid ${selected ? `${opt.dot}A8` : '#3A2418'}`,
+                      background: selected ? `color-mix(in srgb, ${opt.dot}, transparent 78%)` : 'transparent',
+                      color: selected ? opt.dot : 'var(--v2-t3)',
+                      border: `1px solid ${selected ? `color-mix(in srgb, ${opt.dot}, transparent 34%)` : 'var(--v2-border)'}`,
                     }}
                   >
                     <span className="w-2 h-2 rounded-full" style={{ background: opt.dot }} />
@@ -124,22 +124,22 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
               })}
             </div>
             {type === 'couple' && (
-              <p className="text-[11px] mt-2" style={{ color: '#A07868' }}>
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
                 Adds a matching item to your bucket list{partnerName ? ` with ${partnerName}` : ''}.
               </p>
             )}
             {type === 'personal' && (
-              <p className="text-[11px] mt-2" style={{ color: '#A07868' }}>
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
                 Your own plan. Your partner can still see it.
               </p>
             )}
             {type === 'memory' && (
-              <p className="text-[11px] mt-2" style={{ color: '#A07868' }}>
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
                 Log a memory directly. Past dates only.
               </p>
             )}
             {type === 'anniversary' && (
-              <p className="text-[11px] mt-2" style={{ color: '#A07868' }}>
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
                 Sets your couple anniversary date. Shows as a heart every year.
               </p>
             )}
@@ -148,7 +148,7 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
           {/* Category pills */}
           {showCategory && (
             <div>
-              <label className="block text-[12px] font-semibold mb-1.5" style={{ color: '#C89080' }}>
+              <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
                 Category
               </label>
               <div className="flex flex-wrap gap-2">
@@ -162,9 +162,9 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
                       onClick={() => setCategory(c.value)}
                       className="h-8 px-3 rounded-[9px] text-[12px] font-semibold cursor-pointer transition-colors"
                       style={{
-                        background: selected ? `${fg}30` : 'transparent',
-                        color: selected ? fg : '#A07868',
-                        border: `1px solid ${selected ? `${fg}88` : '#3A2418'}`,
+                        background: selected ? `color-mix(in srgb, ${fg}, transparent 80%)` : 'transparent',
+                        color: selected ? fg : 'var(--v2-t3)',
+                        border: `1px solid ${selected ? `color-mix(in srgb, ${fg}, transparent 47%)` : 'var(--v2-border)'}`,
                       }}
                     >
                       {c.label}
@@ -177,7 +177,7 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
 
           {/* Date */}
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: '#C89080' }}>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
               Date
             </label>
             <input
@@ -187,9 +187,9 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
               max={isMemory ? today : undefined}
               className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors"
               style={{
-                background: '#1A1210',
-                color: '#FAF3F1',
-                borderColor: '#3A2418',
+                background: 'var(--v2-bg)',
+                color: 'var(--v2-t1)',
+                borderColor: 'var(--v2-border)',
                 colorScheme: 'dark',
               }}
             />
@@ -197,18 +197,18 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
 
           {/* Notes */}
           <div>
-            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: '#C89080' }}>
-              Notes <span className="font-normal" style={{ color: '#7A5848' }}>(optional)</span>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
+              Notes <span className="font-normal" style={{ color: 'var(--v2-t3)' }}>(optional)</span>
             </label>
             <textarea
               name="notes"
               rows={2}
               placeholder="Any details, reminders, or links…"
-              className="w-full px-3.5 py-[10px] rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#7A5848] resize-none"
+              className="w-full px-3.5 py-[10px] rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848] resize-none"
               style={{
-                background: '#1A1210',
-                color: '#FAF3F1',
-                borderColor: '#3A2418',
+                background: 'var(--v2-bg)',
+                color: 'var(--v2-t1)',
+                borderColor: 'var(--v2-border)',
                 height: 56,
               }}
             />
@@ -220,7 +220,7 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
             className="w-full rounded-[13px] font-semibold text-[13px] disabled:opacity-50 cursor-pointer transition-colors"
             style={{
               height: 46,
-              background: '#E8675A',
+              background: 'var(--v2-accent)',
               color: 'white',
             }}
           >

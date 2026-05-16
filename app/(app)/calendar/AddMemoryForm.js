@@ -4,13 +4,13 @@ import { useActionState, useEffect, useState } from 'react'
 import { addDirectMemory } from '@/app/actions/bucket'
 
 const V2 = {
-  bg:      '#1A1210',
-  surface: '#2A1C18',
-  border:  '#3A2418',
-  t1:      '#FAF3F1',
-  t2:      '#C89080',
-  t3:      '#A07868',
-  accent:  '#E8675A',
+  bg:      'var(--v2-bg)',
+  surface: 'var(--v2-card)',
+  border:  'var(--v2-border)',
+  t1:      'var(--v2-t1)',
+  t2:      'var(--v2-t2)',
+  t3:      'var(--v2-t3)',
+  accent:  'var(--v2-accent)',
 }
 
 const CATEGORIES = [
@@ -21,11 +21,11 @@ const CATEGORIES = [
   { value: 'other',      label: 'Other'      },
 ]
 const CAT_FG = {
-  restaurant: '#F0907F',
-  travel:     '#7AB0D8',
-  activity:   '#8EC44C',
-  movie:      '#C084FC',
-  other:      '#9CA3AF',
+  restaurant: 'var(--cat-restaurant-fg)',
+  travel:     'var(--cat-travel-fg)',
+  activity:   'var(--cat-activity-fg)',
+  movie:      'var(--cat-movie-fg)',
+  other:      'var(--cat-other-fg)',
 }
 
 export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }) {
@@ -40,7 +40,7 @@ export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
         className="absolute inset-0 animate-fade-in"
-        style={{ background: 'rgba(10,6,5,0.65)' }}
+        style={{ background: 'rgba(var(--v2-overlayBase), 0.65)' }}
         onClick={onCancel}
       />
       <div
@@ -57,13 +57,13 @@ export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }
           <button
             type="button"
             onClick={onCancel}
-            className="text-[#A07868] hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
+            className="text-[#B19A8B] dark:text-[#A07868] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
             aria-label="Close"
           >×</button>
         </div>
 
         {state?.error && (
-          <div className="text-sm text-[#F0907F] bg-[#3D1E18] border border-[#5A2A20] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#B83820] dark:text-[#F0907F] bg-[#FCE5DD] dark:bg-[#3D1E18] border border-[#F4C8BD] dark:border-[#5A2A20] px-4 py-3 rounded-xl mb-4">
             {state.error}
           </div>
         )}
@@ -80,14 +80,14 @@ export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }
               name="name"
               type="text"
               placeholder="e.g. Coffee date, Bali trip…"
-              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#7A5848]"
+              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848]"
               style={{
                 background: V2.bg,
                 color: V2.t1,
-                borderColor: state?.errors?.name ? '#F0907F' : V2.border,
+                borderColor: state?.errors?.name ? 'var(--v2-accent)' : V2.border,
               }}
             />
-            {state?.errors?.name && <p className="text-xs text-[#F0907F] mt-1">{state.errors.name}</p>}
+            {state?.errors?.name && <p className="text-xs text-[#B83820] dark:text-[#F0907F] mt-1">{state.errors.name}</p>}
           </div>
 
           <div>
@@ -105,9 +105,9 @@ export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }
                     onClick={() => setCategory(c.value)}
                     className="h-8 px-3 rounded-[9px] text-[12px] font-semibold cursor-pointer transition-colors"
                     style={{
-                      background: selected ? `${fg}30` : 'transparent',
+                      background: selected ? `color-mix(in srgb, ${fg}, transparent 80%)` : 'transparent',
                       color: selected ? fg : V2.t3,
-                      border: `1px solid ${selected ? `${fg}88` : V2.border}`,
+                      border: `1px solid ${selected ? `color-mix(in srgb, ${fg}, transparent 47%)` : V2.border}`,
                     }}
                   >
                     {c.label}
@@ -125,7 +125,7 @@ export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }
               name="note"
               rows={2}
               placeholder="How was it? Any details to remember…"
-              className="w-full px-3.5 py-[10px] rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#7A5848] resize-none"
+              className="w-full px-3.5 py-[10px] rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848] resize-none"
               style={{ background: V2.bg, color: V2.t1, borderColor: V2.border, height: 56 }}
             />
           </div>

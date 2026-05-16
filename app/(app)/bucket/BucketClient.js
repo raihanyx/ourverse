@@ -14,11 +14,11 @@ import { useTheme } from '@/app/ThemeProvider'
 // ── Category palette ─────────────────────────────────────────────────────────
 
 const CAT_PALETTE = {
-  restaurant: { lightBg: '#FDECEA', lightFg: '#C2493A', darkBg: '#3D1E18', darkFg: '#F0907F', label: 'Restaurant' },
-  travel:     { lightBg: '#DBEAFE', lightFg: '#1E40AF', darkBg: '#1A2535', darkFg: '#7AB0D8', label: 'Travel'     },
-  activity:   { lightBg: '#EAF3DE', lightFg: '#3B6D11', darkBg: '#162404', darkFg: '#8EC44C', label: 'Activity'   },
-  movie:      { lightBg: '#EDE9FE', lightFg: '#5B21B6', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
-  other:      { lightBg: '#F3F4F6', lightFg: '#374151', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
+  restaurant: { lightBg: '#FCE3DC', lightFg: '#B83820', darkBg: 'var(--v2-accentDim)', darkFg: 'var(--v2-accent)', label: 'Restaurant' },
+  travel:     { lightBg: '#DDE9F5', lightFg: '#2E6FA8', darkBg: 'var(--v2-blueBg)', darkFg: 'var(--v2-blue)', label: 'Travel'     },
+  activity:   { lightBg: '#DCEDC4', lightFg: '#527C24', darkBg: '#162404', darkFg: 'var(--v2-green)', label: 'Activity'   },
+  movie:      { lightBg: '#ECE0F8', lightFg: '#6F3DAB', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
+  other:      { lightBg: '#EEEEEE', lightFg: '#555555', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
 }
 function catPair(key, isDark) {
   const c = CAT_PALETTE[key] ?? CAT_PALETTE.other
@@ -43,8 +43,8 @@ function formatCalDate(dateString) {
 
 function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onToggleSelect, isDark }) {
   const c = catPair(item.category, isDark)
-  const accent = isDark ? '#E8675A' : '#C2493A'
-  const accentDim = isDark ? '#3D1E18' : '#FDECEA'
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
   const innerBg = isDark
     ? (isSelected ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.22)')
     : (isSelected ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.4)')
@@ -107,7 +107,7 @@ function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onT
         className="rounded-xl px-3 pt-[11px] pb-3 flex flex-col gap-2.5"
         style={{ background: innerBg, minHeight: 78 }}
       >
-        <p className="text-[14px] font-semibold leading-[1.3] flex-1 text-[#1C1210] dark:text-[#FAF3F1]">
+        <p className="text-[14px] font-semibold leading-[1.3] flex-1 text-[#2A1810] dark:text-[#FAF3F1]">
           {item.name}
         </p>
         {!isSelecting && (
@@ -151,7 +151,7 @@ function MiniMemoryCard({ memory, isDark }) {
       <span className="text-[9px] font-bold uppercase tracking-[0.08em]" style={{ color: c.fg }}>
         {c.label}
       </span>
-      <p className="text-[12.5px] font-semibold leading-[1.3] text-[#1C1210] dark:text-[#FAF3F1]">
+      <p className="text-[12.5px] font-semibold leading-[1.3] text-[#2A1810] dark:text-[#FAF3F1]">
         {memory.name}
       </p>
     </div>
@@ -341,8 +341,8 @@ export default function BucketClient({
     })
   }
 
-  const accent = isDark ? '#E8675A' : '#C2493A'
-  const accentDim = isDark ? '#3D1E18' : '#FDECEA'
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
 
   return (
     <>
@@ -350,10 +350,10 @@ export default function BucketClient({
         {/* ── Header ─────────────────────────────────────────────────── */}
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h1 className="text-[24px] font-bold leading-tight tracking-[-0.4px] text-[#1C1210] dark:text-[#FAF3F1]">
+            <h1 className="text-[24px] font-bold leading-tight tracking-[-0.4px] text-[#2A1810] dark:text-[#FAF3F1]">
               Bucket List
             </h1>
-            <p className="text-[13px] mt-[3px] text-[#C4A89E] dark:text-[#7A5848]">
+            <p className="text-[13px] mt-[3px] text-[#B19A8B] dark:text-[#7A5848]">
               {undoneItems.length} left · {localMemoriesCount} done
             </p>
           </div>
@@ -378,7 +378,7 @@ export default function BucketClient({
             </IconBtn>
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#C2493A] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0"
+              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#D8513E] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -390,7 +390,7 @@ export default function BucketClient({
         </div>
 
         {bulkError && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
             {bulkError}
           </div>
         )}
@@ -405,9 +405,9 @@ export default function BucketClient({
                 onClick={() => setActiveFilter(f.key)}
                 className="flex-shrink-0 h-[30px] px-3.5 rounded-full text-[12px] font-medium border cursor-pointer transition-colors"
                 style={{
-                  background: active ? accent : (isDark ? '#221714' : '#FDF7F6'),
-                  color: active ? 'white' : (isDark ? '#C89080' : '#A07060'),
-                  borderColor: active ? accent : (isDark ? '#3A2418' : '#EDE0DC'),
+                  background: active ? accent : (isDark ? 'var(--v2-surface)' : '#F8F2EB'),
+                  color: active ? 'white' : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
+                  borderColor: active ? accent : (isDark ? 'var(--v2-border)' : '#ECDFD2'),
                 }}
               >
                 {f.label}
@@ -418,7 +418,7 @@ export default function BucketClient({
 
         {/* ── Memories link card ─────────────────────────────────────── */}
         <Link href="/memories" className="block mb-5">
-          <div className="rounded-[14px] border border-[#EDE0DC] dark:border-[#3A2418] bg-white dark:bg-[#221714] px-3.5 py-3 flex items-center gap-3 cursor-pointer transition-colors hover:border-[#C2493A] dark:hover:border-[#E8675A]">
+          <div className="rounded-[14px] border border-[#ECDFD2] dark:border-[#3A2418] bg-white dark:bg-[#221714] px-3.5 py-3 flex items-center gap-3 cursor-pointer transition-colors hover:border-[#D8513E] dark:hover:border-[#E8675A]">
             <div
               className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center flex-shrink-0"
               style={{ background: accentDim }}
@@ -428,14 +428,14 @@ export default function BucketClient({
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13.5px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">
+              <p className="text-[13.5px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">
                 {localMemoriesCount} {localMemoriesCount === 1 ? 'Memory' : 'Memories'}
               </p>
-              <p className="text-[11.5px] mt-0.5 text-[#C4A89E] dark:text-[#7A5848]">
+              <p className="text-[11.5px] mt-0.5 text-[#B19A8B] dark:text-[#7A5848]">
                 Things you’ve done together
               </p>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#C4A89E] dark:text-[#7A5848] flex-shrink-0" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#B19A8B] dark:text-[#7A5848] flex-shrink-0" aria-hidden="true">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </div>
@@ -443,10 +443,10 @@ export default function BucketClient({
 
         {/* ── Section header + Pick for us ──────────────────────────── */}
         <div className="flex items-center gap-2.5 mb-3.5">
-          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#C4A89E] dark:text-[#7A5848] flex-shrink-0">
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#B19A8B] dark:text-[#7A5848] flex-shrink-0">
             Bucket list · {filteredWishlist.length}
           </span>
-          <div className="flex-1 h-px bg-[#EDE0DC] dark:bg-[#3A2418]" />
+          <div className="flex-1 h-px bg-[#ECDFD2] dark:bg-[#3A2418]" />
           <button
             onClick={pickRandom}
             disabled={filteredWishlist.length === 0 || rolling}
@@ -470,7 +470,7 @@ export default function BucketClient({
         {/* ── Bucket grid ───────────────────────────────────────────── */}
         {filteredWishlist.length === 0 ? (
           <div className="py-[30px] text-center">
-            <p className="text-[14px] text-[#C4A89E] dark:text-[#7A5848]">Nothing in this category yet</p>
+            <p className="text-[14px] text-[#B19A8B] dark:text-[#7A5848]">Nothing in this category yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2.5">
@@ -493,10 +493,10 @@ export default function BucketClient({
         {localMemoriesCount > 0 && recentMemories.length > 0 && (
           <div className="mt-6">
             <div className="flex items-center gap-2.5 mb-3.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#C4A89E] dark:text-[#7A5848] flex-shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#B19A8B] dark:text-[#7A5848] flex-shrink-0">
                 Memories · {localMemoriesCount}
               </span>
-              <div className="flex-1 h-px bg-[#EDE0DC] dark:bg-[#3A2418]" />
+              <div className="flex-1 h-px bg-[#ECDFD2] dark:bg-[#3A2418]" />
             </div>
             <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
               {recentMemories.map(m => (
@@ -521,20 +521,20 @@ export default function BucketClient({
             {selectedIds.size > 0 ? (
               <div
                 style={{
-                  background: '#321E1A', border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
                   borderRadius: 16, padding: '8px 8px 8px 14px',
                   display: 'flex', alignItems: 'center', gap: 8,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#FAF3F1', flex: 1 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--v2-t1)', flex: 1 }}>
                   {selectedIds.size} selected
                 </span>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   style={{
                     height: 32, padding: '0 14px', borderRadius: 9, border: 'none',
-                    background: '#E8675A', color: 'white',
+                    background: 'var(--v2-accent)', color: 'white',
                     fontSize: 12.5, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
@@ -545,19 +545,19 @@ export default function BucketClient({
             ) : (
               <div
                 style={{
-                  background: '#321E1A', border: '1px solid #3A2418',
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
                   borderRadius: 16, padding: '10px 14px',
                   display: 'flex', alignItems: 'center', gap: 10,
                   boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
                 }}
               >
-                <span style={{ fontSize: 13, color: '#C89080', flex: 1 }}>Tap items to select</span>
+                <span style={{ fontSize: 13, color: 'var(--v2-t2)', flex: 1 }}>Tap items to select</span>
                 <button
                   onClick={exitSelectMode}
                   style={{
                     height: 28, padding: '0 12px', borderRadius: 8,
-                    border: '1px solid #3A2418', background: 'transparent',
-                    color: '#C89080', fontSize: 12, fontWeight: 600,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t2)', fontSize: 12, fontWeight: 600,
                     fontFamily: 'inherit', cursor: 'pointer',
                   }}
                 >
@@ -574,14 +574,14 @@ export default function BucketClient({
       {showAddForm && (
         <div className="fixed inset-0 z-30 flex flex-col justify-end">
           <div
-            className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.7)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
+            className={`absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
             onClick={handleCloseAdd}
           />
           <div className={`relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto ${isClosingAdd ? 'animate-slide-down' : 'animate-slide-up'}`}>
-            <div className="w-9 h-[3px] rounded-full bg-[#EDE0DC] dark:bg-[#3A2418] mx-auto mb-[14px]" />
+            <div className="w-9 h-[3px] rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] mx-auto mb-[14px]" />
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[17px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Add to bucket list</h2>
-              <button onClick={handleCloseAdd} className="p-1 text-[#C4A89E] dark:text-[#7A5848] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] cursor-pointer" aria-label="Close">
+              <h2 className="text-[17px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">Add to bucket list</h2>
+              <button onClick={handleCloseAdd} className="p-1 text-[#B19A8B] dark:text-[#7A5848] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] cursor-pointer" aria-label="Close">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
@@ -642,17 +642,17 @@ export default function BucketClient({
 // ── IconBtn ──────────────────────────────────────────────────────────────────
 
 function IconBtn({ onClick, active, ariaLabel, isDark, children }) {
-  const accent = isDark ? '#E8675A' : '#C2493A'
-  const accentDim = isDark ? '#3D1E18' : '#FDECEA'
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel}
       className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center cursor-pointer transition-all flex-shrink-0"
       style={{
-        border: `1px solid ${active ? `${accent}66` : (isDark ? '#3A2418' : '#EDE0DC')}`,
-        background: active ? accentDim : (isDark ? '#221714' : '#FDF7F6'),
-        color: active ? accent : (isDark ? '#C89080' : '#A07060'),
+        border: `1px solid ${active ? `${accent}66` : (isDark ? 'var(--v2-border)' : '#ECDFD2')}`,
+        background: active ? accentDim : (isDark ? 'var(--v2-surface)' : '#F8F2EB'),
+        color: active ? accent : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
       }}
     >
       {children}
@@ -664,25 +664,25 @@ function IconBtn({ onClick, active, ariaLabel, isDark, children }) {
 
 function PickModal({ item, rolling, onPickAgain, onClose, isDark }) {
   const c = catPair(item.category, isDark)
-  const accent = isDark ? '#E8675A' : '#C2493A'
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
   return (
     <div
       className="fixed inset-0 z-40 flex items-center justify-center p-5"
-      style={{ background: 'rgba(10,6,5,0.72)', transition: 'opacity 200ms', opacity: rolling ? 0.95 : 1 }}
+      style={{ background: 'rgba(var(--v2-overlayBase), 0.72)', transition: 'opacity 200ms', opacity: rolling ? 0.95 : 1 }}
       onClick={onClose}
     >
       <div
         onClick={e => e.stopPropagation()}
         className="w-full max-w-[300px] rounded-[22px] px-5 pt-5 pb-4 transition-transform duration-[80ms]"
         style={{
-          background: isDark ? '#2A1C18' : '#FFFFFF',
-          border: `1px solid ${isDark ? '#3A2418' : '#EDE0DC'}`,
+          background: isDark ? 'var(--v2-card)' : '#FFFFFF',
+          border: `1px solid ${isDark ? 'var(--v2-border)' : '#ECDFD2'}`,
           boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
           transform: rolling ? 'rotate(-1deg) scale(0.98)' : 'rotate(0) scale(1)',
         }}
       >
         <p
-          className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3 text-center text-[#C4A89E] dark:text-[#7A5848]"
+          className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3 text-center text-[#B19A8B] dark:text-[#7A5848]"
         >
           {rolling ? 'Rolling…' : 'Tonight’s pick 🎲'}
         </p>
@@ -693,7 +693,7 @@ function PickModal({ item, rolling, onPickAgain, onClose, isDark }) {
           <span className="text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: c.fg }}>
             {c.label}
           </span>
-          <p className="text-[18px] font-bold leading-[1.25] mt-1.5 tracking-[-0.2px] text-[#1C1210] dark:text-[#FAF3F1]">
+          <p className="text-[18px] font-bold leading-[1.25] mt-1.5 tracking-[-0.2px] text-[#2A1810] dark:text-[#FAF3F1]">
             {item.name}
           </p>
         </div>
@@ -703,8 +703,8 @@ function PickModal({ item, rolling, onPickAgain, onClose, isDark }) {
             disabled={rolling}
             className="flex-1 h-10 rounded-[11px] bg-transparent text-[13px] font-semibold cursor-pointer transition-opacity"
             style={{
-              border: `1px solid ${isDark ? '#3A2418' : '#EDE0DC'}`,
-              color: isDark ? '#FAF3F1' : '#1C1210',
+              border: `1px solid ${isDark ? 'var(--v2-border)' : '#ECDFD2'}`,
+              color: isDark ? 'var(--v2-t1)' : '#2A1810',
               opacity: rolling ? 0.6 : 1,
             }}
           >

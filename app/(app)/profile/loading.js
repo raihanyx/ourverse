@@ -3,10 +3,10 @@ export default function ProfileLoading() {
     <div className="space-y-5 animate-loading">
 
       {/* Page title */}
-      <div className="h-8 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded-lg animate-pulse pt-1" />
+      <div className="h-8 w-20 bg-[#ECDFD2] dark:bg-[#3D2820] rounded-lg animate-pulse pt-1" />
 
       {/* Couple card */}
-      <div className="rounded-[22px] p-5 bg-[#EDE0DC] dark:bg-[#2E201C] border border-[#EDE0DC] dark:border-[#3D2820]">
+      <div className="rounded-[22px] p-5 bg-[#ECDFD2] dark:bg-[#2E201C] border border-[#ECDFD2] dark:border-[#3D2820]">
         <div className="flex items-start">
           {/* You */}
           <div className="flex-1 flex flex-col items-center gap-2.5">
@@ -39,23 +39,23 @@ export default function ProfileLoading() {
       {/* Preferences section */}
       <div>
         <div className="flex items-center gap-2.5 mb-3">
-          <div className="h-2.5 w-20 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-          <div className="flex-1 h-px bg-[#EDE0DC] dark:bg-[#3D2820]" />
+          <div className="h-2.5 w-20 bg-[#ECDFD2] dark:bg-[#3D2820] rounded animate-pulse" />
+          <div className="flex-1 h-px bg-[#ECDFD2] dark:bg-[#3D2820]" />
         </div>
         {[1, 2, 3].map(i => (
           <div key={i} className="flex items-center gap-3.5 py-[14px] border-b border-[#F5EDE9] dark:border-[#261812] last:border-b-0">
-            <div className="w-[34px] h-[34px] rounded-[10px] bg-[#EDE0DC] dark:bg-[#3D2820] animate-pulse flex-shrink-0" />
+            <div className="w-[34px] h-[34px] rounded-[10px] bg-[#ECDFD2] dark:bg-[#3D2820] animate-pulse flex-shrink-0" />
             <div className="flex-1 space-y-1.5">
-              <div className="h-3.5 w-24 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
-              <div className="h-3 w-16 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse" />
+              <div className="h-3.5 w-24 bg-[#ECDFD2] dark:bg-[#3D2820] rounded animate-pulse" />
+              <div className="h-3 w-16 bg-[#ECDFD2] dark:bg-[#3D2820] rounded animate-pulse" />
             </div>
-            <div className="w-4 h-4 bg-[#EDE0DC] dark:bg-[#3D2820] rounded animate-pulse flex-shrink-0" />
+            <div className="w-4 h-4 bg-[#ECDFD2] dark:bg-[#3D2820] rounded animate-pulse flex-shrink-0" />
           </div>
         ))}
       </div>
 
       {/* Sign out button */}
-      <div className="h-[46px] w-full bg-[#EDE0DC] dark:bg-[#3D2820] rounded-[14px] animate-pulse" />
+      <div className="h-[46px] w-full bg-[#ECDFD2] dark:bg-[#3D2820] rounded-[14px] animate-pulse" />
 
     </div>
   )

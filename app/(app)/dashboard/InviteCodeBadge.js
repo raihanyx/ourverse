@@ -31,19 +31,19 @@ export default function InviteCodeBadge({ code }) {
   }
 
   return (
-    <div className="rounded-[18px] p-[16px_18px] flex items-center justify-between bg-white dark:bg-[#221714] border border-[#EDE0DC] dark:border-[#3A2418]">
+    <div className="rounded-[18px] p-[16px_18px] flex items-center justify-between bg-white dark:bg-[#221714] border border-[#ECDFD2] dark:border-[#3A2418]">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#C4A89E] dark:text-[#7A5848] mb-2">
+        <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#B19A8B] dark:text-[#7A5848] mb-2">
           Invite code
         </p>
-        <p className="text-[22px] font-bold tracking-[0.2em] font-mono text-[#C2493A] dark:text-[#E8675A]">
+        <p className="text-[22px] font-bold tracking-[0.2em] font-mono text-[#D8513E] dark:text-[#E8675A]">
           {code ?? '------'}
         </p>
       </div>
       <button
         onClick={handleCopy}
         aria-label="Copy invite code"
-        className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-[#FDECEA] dark:bg-[#3D1E18] text-[#C2493A] dark:text-[#E8675A] cursor-pointer border border-[#C2493A]/20 dark:border-[#E8675A]/20 transition-colors hover:bg-[#FAD5D0] dark:hover:bg-[#4D2820]"
+        className="w-9 h-9 rounded-[10px] flex items-center justify-center bg-[#FCE3DC] dark:bg-[#3D1E18] text-[#D8513E] dark:text-[#E8675A] cursor-pointer border border-[#D8513E]/20 dark:border-[#E8675A]/20 transition-colors hover:bg-[#FAD5D0] dark:hover:bg-[#4D2820]"
       >
         {copied ? <CheckIcon /> : <LinkIcon />}
       </button>

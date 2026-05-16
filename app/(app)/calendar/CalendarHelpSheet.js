@@ -3,14 +3,14 @@
 import { useState } from 'react'
 
 const V2 = {
-  bg:       '#1A1210',
-  surface:  '#2A1C18',
-  border:   '#3A2418',
-  t1:       '#FAF3F1',
-  t2:       '#C89080',
-  t3:       '#A07868',
-  accent:   '#E8675A',
-  accentBg: '#3D1E18',
+  bg:       'var(--v2-bg)',
+  surface:  'var(--v2-card)',
+  border:   'var(--v2-border)',
+  t1:       'var(--v2-t1)',
+  t2:       'var(--v2-t2)',
+  t3:       'var(--v2-t3)',
+  accent:   'var(--v2-accent)',
+  accentBg: 'var(--v2-accentDim)',
 }
 
 function Bold({ children }) {
@@ -81,7 +81,7 @@ export default function CalendarHelpSheet({ isOpen, onClose }) {
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
         className={`absolute inset-0 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
-        style={{ background: 'rgba(10,6,5,0.65)' }}
+        style={{ background: 'rgba(var(--v2-overlayBase), 0.65)' }}
         onClick={handleClose}
       />
       <div
@@ -103,19 +103,19 @@ export default function CalendarHelpSheet({ isOpen, onClose }) {
             />
             <div style={{ height: 1, background: V2.border }} />
             <DotRow
-              color="#7AB0D8"
+              color="var(--v2-blue)"
               label="Blue"
               body="Something you're planning together. Also creates a matching bucket list item to track and mark done."
             />
             <div style={{ height: 1, background: V2.border }} />
             <DotRow
-              color="#8EC44C"
+              color="var(--v2-green)"
               label="Green"
               body="A personal plan (flight, appointment, etc.). Doesn't create a bucket list item, but your partner can still see it."
             />
             <div style={{ height: 1, background: V2.border }} />
             <DotRow
-              color="#F0A840"
+              color="var(--v2-orange)"
               glyph="♥"
               label="Heart"
               body="Marks your anniversary date. Appears every year on that day."

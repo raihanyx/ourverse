@@ -35,7 +35,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 80,
-      background: 'radial-gradient(circle at 30% -10%, rgba(192,80,90,0.4) 0%, transparent 50%), linear-gradient(180deg, #2A1018 0%, #1A0810 60%, #14060B 100%)',
+      background: 'var(--v2-dcFullBg)',
       display: 'flex', flexDirection: 'column',
       animation: 'dcSlideUp 280ms cubic-bezier(0.32,0.72,0,1)',
     }}>
@@ -51,11 +51,11 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           onClick={onBack}
           style={{
             width: 38, height: 38, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.95)', border: 'none', cursor: 'pointer',
+            background: 'var(--v2-fabBg)', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
           }}
         >
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#1A0810" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--v2-fabFg)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
@@ -63,13 +63,13 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           onClick={() => setShowInfo(true)}
           style={{
             width: 38, height: 38, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'var(--v2-dcAnswerTint)',
+            border: '1px solid var(--v2-dcAnswerBorder)',
             cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
           }}
         >
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="#C89080" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--v2-t2)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
             <circle cx={12} cy={12} r={10} />
             <line x1={12} y1={16} x2={12} y2={12} />
             <line x1={12} y1={8} x2="12.01" y2={8} />
@@ -80,13 +80,13 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
       {/* Content */}
       <div style={{ padding: '32px 24px 0' }}>
         <p style={{
-          fontSize: 11, fontWeight: 700, color: '#7A5848',
+          fontSize: 11, fontWeight: 700, color: 'var(--v2-t3)',
           textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 14,
         }}>
           Daily Conversation
         </p>
         <h1 style={{
-          fontSize: 26, fontWeight: 700, color: '#FAF3F1',
+          fontSize: 26, fontWeight: 700, color: 'var(--v2-t1)',
           lineHeight: 1.25, letterSpacing: '-0.4px', margin: 0,
         }}>
           {dc.conversation.question}
@@ -97,7 +97,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
 
       {/* Error */}
       {error && (
-        <p style={{ textAlign: 'center', color: '#F0907F', fontSize: 13, padding: '0 20px 8px' }}>
+        <p style={{ textAlign: 'center', color: 'var(--v2-accent)', fontSize: 13, padding: '0 20px 8px' }}>
           {error}
         </p>
       )}
@@ -117,9 +117,9 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           placeholder="Write your answer"
           style={{
             flex: 1, minHeight: 40, padding: '10px 14px',
-            borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)',
-            background: 'rgba(255,255,255,0.06)',
-            color: '#FAF3F1', fontSize: 14, fontFamily: 'inherit',
+            borderRadius: 12, border: '1px solid var(--v2-dcAnswerBorder)',
+            background: 'var(--v2-dcAnswerTint)',
+            color: 'var(--v2-t1)', fontSize: 14, fontFamily: 'inherit',
             outline: 'none', resize: 'none', lineHeight: 1.4,
             boxSizing: 'border-box',
           }}
@@ -130,7 +130,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           aria-label="Send"
           style={{
             width: 40, height: 40, borderRadius: '50%',
-            background: canSend ? '#E8675A' : 'rgba(255,255,255,0.12)',
+            background: canSend ? 'var(--v2-accent)' : 'var(--v2-dcAnswerDisabled)',
             border: 'none', cursor: canSend ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, padding: 0, transition: 'background 150ms',
@@ -148,7 +148,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
         <div
           style={{
             position: 'absolute', inset: 0, zIndex: 50,
-            background: 'rgba(10,6,5,0.7)',
+            background: 'rgba(var(--v2-overlayBase), 0.7)',
             display: 'flex', alignItems: 'flex-end',
           }}
           onClick={() => setShowInfo(false)}
@@ -156,17 +156,17 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              width: '100%', background: '#2A1C18',
+              width: '100%', background: 'var(--v2-card)',
               borderRadius: '24px 24px 0 0',
               paddingTop: 10, paddingLeft: 20, paddingRight: 20,
               paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 26px)',
             }}
           >
-            <div style={{ width: 36, height: 3, borderRadius: 9999, background: '#3A2418', margin: '0 auto 14px' }} />
+            <div style={{ width: 36, height: 3, borderRadius: 9999, background: 'var(--v2-border)', margin: '0 auto 14px' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <span style={{ fontSize: 17, fontWeight: 600, color: '#FAF3F1' }}>How it works</span>
+              <span style={{ fontSize: 17, fontWeight: 600, color: 'var(--v2-t1)' }}>How it works</span>
               <button onClick={() => setShowInfo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}>
-                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#7A5848" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="var(--v2-t3)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                   <line x1={18} y1={6} x2={6} y2={18} />
                   <line x1={6} y1={6} x2={18} y2={18} />
                 </svg>
@@ -182,11 +182,11 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
                 <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                   <div style={{
                     width: 22, height: 22, borderRadius: '50%',
-                    background: '#3D1E18', color: '#E8675A',
+                    background: 'var(--v2-accentDim)', color: 'var(--v2-accent)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1,
                   }}>{i + 1}</div>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.5, color: '#FAF3F1', flex: 1, margin: 0 }}>{tip}</p>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.5, color: 'var(--v2-t1)', flex: 1, margin: 0 }}>{tip}</p>
                 </div>
               ))}
             </div>

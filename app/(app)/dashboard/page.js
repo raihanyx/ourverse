@@ -81,13 +81,13 @@ export default async function DashboardPage() {
         {/* Greeting bar */}
         <div className="flex items-start justify-between pb-2">
           <div>
-            <p className="text-[12px] text-[#C4A89E] dark:text-[#7A5848] mb-0.5">{todayLabel}</p>
-            <h1 className="text-[22px] font-bold text-[#1C1210] dark:text-[#FAF3F1] tracking-[-0.4px]">
+            <p className="text-[12px] text-[#B19A8B] dark:text-[#7A5848] mb-0.5">{todayLabel}</p>
+            <h1 className="text-[22px] font-bold text-[#2A1810] dark:text-[#FAF3F1] tracking-[-0.4px]">
               Hey, {profile.name} 👋
             </h1>
           </div>
-          <div className="w-10 h-10 rounded-full bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center border border-[#C2493A]/20 dark:border-[#E8675A]/20 flex-shrink-0">
-            <span className="text-[15px] font-bold text-[#C2493A] dark:text-[#E8675A]">
+          <div className="w-10 h-10 rounded-full bg-[#FCE3DC] dark:bg-[#3D1E18] flex items-center justify-center border border-[#D8513E]/20 dark:border-[#E8675A]/20 flex-shrink-0">
+            <span className="text-[15px] font-bold text-[#D8513E] dark:text-[#E8675A]">
               {profile.name?.[0]?.toUpperCase()}
             </span>
           </div>

@@ -92,10 +92,10 @@ export default function DailyConversationSection({
     return (
       <div className="animate-pulse">
         <div className="flex items-center justify-between mb-3">
-          <div className="h-5 rounded-full bg-[#3A2418] w-36" />
-          <div className="h-6 rounded-full bg-[#3A2418] w-14" />
+          <div className="h-5 rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] w-36" />
+          <div className="h-6 rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] w-14" />
         </div>
-        <div className="h-[130px] rounded-[22px] bg-[#2A1C18]" />
+        <div className="h-[130px] rounded-[22px] bg-white dark:bg-[#2A1C18]" />
       </div>
     )
   }
@@ -114,9 +114,9 @@ export default function DailyConversationSection({
           padding: '0 16px', pointerEvents: 'none',
         }}>
           <div style={{
-            background: '#3D1E18', color: '#FAF3F1', borderRadius: 12,
+            background: 'var(--v2-accentDim)', color: 'var(--v2-t1)', borderRadius: 12,
             padding: '10px 16px', fontSize: 13, fontWeight: 500,
-            border: '1px solid rgba(232,103,90,0.27)',
+            border: '1px solid rgba(var(--v2-accentRgb), 0.27)',
             maxWidth: 320, textAlign: 'center',
           }}>
             {toast}

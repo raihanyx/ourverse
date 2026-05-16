@@ -14,11 +14,11 @@ const EXPENSE_CATEGORIES = [
 ]
 
 const CAT_COLORS = {
-  food:          { bg: '#372510', fg: '#F0A840' },
-  transport:     { bg: '#1A2535', fg: '#7AB0D8' },
-  accommodation: { bg: '#271A36', fg: '#C084FC' },
-  shopping:      { bg: '#321624', fg: '#F472B6' },
-  other:         { bg: '#222222', fg: '#9CA3AF' },
+  food:          { bg: 'var(--cat-food-bg)',     fg: 'var(--cat-food-fg)' },
+  transport:     { bg: 'var(--cat-travel-bg)',   fg: 'var(--cat-travel-fg)' },
+  accommodation: { bg: 'var(--cat-movie-bg)',    fg: 'var(--cat-movie-fg)' },
+  shopping:      { bg: 'var(--cat-shopping-bg)', fg: 'var(--cat-shopping-fg)' },
+  other:         { bg: 'var(--cat-other-bg)',    fg: 'var(--cat-other-fg)' },
 }
 
 const inputStyle = {
@@ -26,10 +26,10 @@ const inputStyle = {
   height: 42,
   padding: '0 14px',
   borderRadius: 12,
-  border: '1px solid #3A2418',
-  background: '#221714',
+  border: '1px solid var(--v2-border)',
+  background: 'var(--v2-surface)',
   fontSize: 14,
-  color: '#FAF3F1',
+  color: 'var(--v2-t1)',
   fontFamily: 'inherit',
   outline: 'none',
   boxSizing: 'border-box',
@@ -40,7 +40,7 @@ const inputStyle = {
 const labelStyle = {
   fontSize: 11,
   fontWeight: 600,
-  color: '#C89080',
+  color: 'var(--v2-t2)',
   display: 'block',
   marginBottom: 6,
   textTransform: 'uppercase',
@@ -76,8 +76,8 @@ export default function AddExpenseForm({
       {state?.error && (
         <div
           style={{
-            fontSize: 13, color: '#F0907F',
-            background: '#3D1E18', border: '1px solid #5A2820',
+            fontSize: 13, color: 'var(--v2-accent)',
+            background: 'var(--v2-accentDim)', border: '1px solid rgba(var(--v2-accentRgb), 0.27)',
             padding: '10px 14px', borderRadius: 12, marginBottom: 14,
           }}
         >
@@ -93,7 +93,7 @@ export default function AddExpenseForm({
             name="name"
             type="text"
             placeholder="e.g. Dinner at Sushi Tei"
-            style={{ ...inputStyle, borderColor: e.name ? '#F0907F' : '#3A2418' }}
+            style={{ ...inputStyle, borderColor: e.name ? 'var(--v2-accent)' : 'var(--v2-border)' }}
           />
           <FieldError message={e.name} />
         </div>
@@ -108,7 +108,7 @@ export default function AddExpenseForm({
               min="0.01"
               step="any"
               placeholder="0"
-              style={{ ...inputStyle, borderColor: e.amount ? '#F0907F' : '#3A2418' }}
+              style={{ ...inputStyle, borderColor: e.amount ? 'var(--v2-accent)' : 'var(--v2-border)' }}
             />
             <FieldError message={e.amount} />
           </div>
@@ -117,7 +117,7 @@ export default function AddExpenseForm({
             <select
               value={selectedCurrency}
               onChange={e => setSelectedCurrency(e.target.value)}
-              style={{ ...inputStyle, paddingRight: 8, colorScheme: 'dark' }}
+              style={{ ...inputStyle, paddingRight: 8 }}
             >
               {SUPPORTED_CURRENCIES.map(c => (
                 <option key={c} value={c}>{c}</option>
@@ -141,9 +141,9 @@ export default function AddExpenseForm({
                   style={{
                     padding: '5px 11px',
                     borderRadius: 8,
-                    border: `1px solid ${active ? c.fg + '66' : '#3A2418'}`,
+                    border: `1px solid ${active ? `color-mix(in srgb, ${c.fg}, transparent 60%)` : 'var(--v2-border)'}`,
                     background: active ? c.bg : 'transparent',
-                    color: active ? c.fg : '#C89080',
+                    color: active ? c.fg : 'var(--v2-t2)',
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: 'pointer',
@@ -172,9 +172,9 @@ export default function AddExpenseForm({
                     flex: 1,
                     height: 42,
                     borderRadius: 11,
-                    border: `1px solid ${paidBy === val ? 'rgba(232,103,90,0.4)' : '#3A2418'}`,
-                    background: paidBy === val ? '#3D1E18' : 'transparent',
-                    color: paidBy === val ? '#E8675A' : '#C89080',
+                    border: `1px solid ${paidBy === val ? 'rgba(var(--v2-accentRgb), 0.4)' : 'var(--v2-border)'}`,
+                    background: paidBy === val ? 'var(--v2-accentDim)' : 'transparent',
+                    color: paidBy === val ? 'var(--v2-accent)' : 'var(--v2-t2)',
                     fontSize: 12,
                     fontWeight: 500,
                     cursor: 'pointer',
@@ -198,7 +198,7 @@ export default function AddExpenseForm({
               type="date"
               defaultValue={today}
               max={today}
-              style={{ ...inputStyle, colorScheme: 'dark', borderColor: e.date ? '#F0907F' : '#3A2418' }}
+              style={{ ...inputStyle, borderColor: e.date ? 'var(--v2-accent)' : 'var(--v2-border)' }}
             />
             <FieldError message={e.date} />
           </div>
@@ -208,7 +208,7 @@ export default function AddExpenseForm({
         <div>
           <label style={labelStyle}>
             Notes{' '}
-            <span style={{ color: '#7A5848', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
+            <span style={{ color: 'var(--v2-t3)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
               (optional)
             </span>
           </label>
@@ -234,7 +234,7 @@ export default function AddExpenseForm({
             height: 46,
             borderRadius: 13,
             border: 'none',
-            background: '#E8675A',
+            background: 'var(--v2-accent)',
             color: 'white',
             fontSize: 14.5,
             fontWeight: 600,

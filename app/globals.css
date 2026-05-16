@@ -1,8 +1,141 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  /* V2 design tokens — light defaults */
+  --v2-bg: #F8F2EB;
+  --v2-surface: #FFFFFF;
+  --v2-card: #FFFFFF;
+  --v2-cardHigh: #FFFAF4;
+  --v2-accent: #D8513E;
+  --v2-accentHover: #C04830;
+  --v2-accentDim: #FCE5DD;
+  --v2-accentGlow: rgba(216,81,62,0.10);
+  --v2-t1: #2A1810;
+  --v2-t2: #7A5C4E;
+  --v2-t3: #B19A8B;
+  --v2-border: #ECDFD2;
+  --v2-divider: #F2E8DF;
+  --v2-overlay: rgba(40,24,16,0.34);
+  --v2-overlayStrong: rgba(40,24,16,0.42);
+  --v2-overlayBase: 40,24,16;
+  --v2-accentRgb: 216,81,62;
+  --v2-tintOnCard: rgba(216,81,62,0.06);
+  --v2-dropShadow: 0 20px 60px rgba(80,40,28,0.16);
+  --v2-dropShadowSoft: 0 10px 30px rgba(80,40,28,0.12);
+  --v2-featGrad: linear-gradient(135deg, #FFEFE6 0%, #FFE0D2 60%, #FFEAE0 100%);
+  --v2-dcGrad: linear-gradient(135deg, #FFE9DC 0%, #FFDED2 60%, #FFE5D8 100%);
+  --v2-dcFullBg: radial-gradient(circle at 30% -10%, rgba(216,81,62,0.22) 0%, transparent 55%), linear-gradient(180deg, #FFE7DD 0%, #FFF1E8 55%, #FFFAF4 100%);
+  --v2-dcAnswerBorder: rgba(60,30,20,0.12);
+  --v2-dcAnswerTint: rgba(60,30,20,0.05);
+  --v2-dcAnswerDisabled: rgba(60,30,20,0.10);
+  --v2-blue: #2E6FA8;
+  --v2-blueBg: #DDE9F5;
+  --v2-green: #527C24;
+  --v2-orange: #9C5B0E;
+  --v2-pink: #C04D75;
+  --v2-pinkBg: #FCDDEA;
+  --v2-cardScrim: rgba(255,255,255,0.45);
+  --v2-cardScrimSel: rgba(255,255,255,0.55);
+  --v2-fabBg: rgba(42,24,16,0.92);
+  --v2-fabFg: #FFFFFF;
+
+  --cat-restaurant-bg: #FCE3DC; --cat-restaurant-fg: #B83820;
+  --cat-travel-bg: #DDE9F5;     --cat-travel-fg: #2E6FA8;
+  --cat-activity-bg: #DCEDC4;   --cat-activity-fg: #527C24;
+  --cat-movie-bg: #ECE0F8;      --cat-movie-fg: #6F3DAB;
+  --cat-food-bg: #FBE3C2;       --cat-food-fg: #9C5B0E;
+  --cat-shopping-bg: #FBDDEC;   --cat-shopping-fg: #B53672;
+  --cat-other-bg: #EEEEEE;      --cat-other-fg: #555555;
+
+  --auth-bg: #F8F2EB;
+  --auth-grad: linear-gradient(to bottom, #FFFAF4 0%, #FFFFFF 100%);
+  --auth-glow: radial-gradient(circle, rgba(216,81,62,0.14) 0%, transparent 70%);
+  --auth-card: #FFFFFF;
+  --auth-t1: #2A1810;
+  --auth-t2: #7A5C4E;
+  --auth-t3: #B19A8B;
+  --auth-accent: #D8513E;
+  --auth-accent-dim: #FCE5DD;
+  --auth-input-bg: #FFFFFF;
+  --auth-input-border: #ECDFD2;
+  --auth-error-bg: #FCE5DD;
+  --auth-error-fg: #B83820;
+  --auth-error-border: #F4C8BD;
+  --auth-ill-stroke1: #D8513E;
+  --auth-ill-stroke2: #C9788C;
+  --auth-ill-avatar1: #FFF1EA;
+  --auth-ill-avatar2: #FFEFE8;
+}
+
+.dark {
+  --v2-bg: #1A1210;
+  --v2-surface: #221714;
+  --v2-card: #2A1C18;
+  --v2-cardHigh: #321E1A;
+  --v2-accent: #E8675A;
+  --v2-accentHover: #D45849;
+  --v2-accentDim: #3D1E18;
+  --v2-accentGlow: rgba(232,103,90,0.12);
+  --v2-t1: #FAF3F1;
+  --v2-t2: #C89080;
+  --v2-t3: #7A5848;
+  --v2-border: #3A2418;
+  --v2-divider: #261812;
+  --v2-overlay: rgba(10,6,5,0.70);
+  --v2-overlayStrong: rgba(10,6,5,0.78);
+  --v2-overlayBase: 10,6,5;
+  --v2-accentRgb: 232,103,90;
+  --v2-tintOnCard: rgba(255,255,255,0.04);
+  --v2-dropShadow: 0 20px 60px rgba(0,0,0,0.60);
+  --v2-dropShadowSoft: 0 10px 30px rgba(0,0,0,0.55);
+  --v2-featGrad: linear-gradient(135deg, #2E201C 0%, #3A1E18 60%, #2A1810 100%);
+  --v2-dcGrad: linear-gradient(135deg, #2E1B22 0%, #3A1E18 60%, #2A1810 100%);
+  --v2-dcFullBg: radial-gradient(circle at 30% -10%, rgba(192,80,90,0.4) 0%, transparent 50%), linear-gradient(180deg, #2A1018 0%, #1A0810 60%, #14060B 100%);
+  --v2-dcAnswerBorder: rgba(255,255,255,0.12);
+  --v2-dcAnswerTint: rgba(255,255,255,0.06);
+  --v2-dcAnswerDisabled: rgba(255,255,255,0.12);
+  --v2-blue: #7AB0D8;
+  --v2-blueBg: #1A2535;
+  --v2-green: #8EC44C;
+  --v2-orange: #F0A840;
+  --v2-pink: #E89AAE;
+  --v2-pinkBg: #2E1F24;
+  --v2-cardScrim: rgba(0,0,0,0.22);
+  --v2-cardScrimSel: rgba(0,0,0,0.18);
+  --v2-fabBg: rgba(255,255,255,0.95);
+  --v2-fabFg: #1A0810;
+
+  --cat-restaurant-bg: #3D1E18; --cat-restaurant-fg: #F0907F;
+  --cat-travel-bg: #1A2535;     --cat-travel-fg: #7AB0D8;
+  --cat-activity-bg: #162404;   --cat-activity-fg: #8EC44C;
+  --cat-movie-bg: #271A36;      --cat-movie-fg: #C084FC;
+  --cat-food-bg: #372510;       --cat-food-fg: #F0A840;
+  --cat-shopping-bg: #321624;   --cat-shopping-fg: #F472B6;
+  --cat-other-bg: #222222;      --cat-other-fg: #9CA3AF;
+
+  --auth-bg: #1A1210;
+  --auth-grad: linear-gradient(to bottom, #221714 0%, #2A1C18 100%);
+  --auth-glow: radial-gradient(circle, rgba(232,103,90,0.12) 0%, transparent 70%);
+  --auth-card: #2A1C18;
+  --auth-t1: #FAF3F1;
+  --auth-t2: #C89080;
+  --auth-t3: #7A5848;
+  --auth-accent: #E8675A;
+  --auth-accent-dim: #3D1E18;
+  --auth-input-bg: #221714;
+  --auth-input-border: #3A2418;
+  --auth-error-bg: #3D1E18;
+  --auth-error-fg: #F0907F;
+  --auth-error-border: #5A2820;
+  --auth-ill-stroke1: #E8675A;
+  --auth-ill-stroke2: #E89AAE;
+  --auth-ill-avatar1: #2E201C;
+  --auth-ill-avatar2: #2E1F24;
+}
+
 body {
-  background: #FDF7F6;
+  background: #F8F2EB;
   font-family: var(--font-geist-sans), Arial, sans-serif;
 }
 
@@ -13,7 +146,7 @@ body {
 input,
 select,
 textarea {
-  color: #1C1210;
+  color: #2A1810;
 }
 
 .dark input,

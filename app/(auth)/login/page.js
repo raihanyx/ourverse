@@ -8,7 +8,7 @@ import PageTransition from '@/app/components/PageTransition'
 const labelStyle = {
   fontSize: 11,
   fontWeight: 700,
-  color: '#C89080',
+  color: 'var(--auth-t2)',
   display: 'block',
   marginBottom: 8,
   textTransform: 'uppercase',
@@ -20,10 +20,10 @@ const inputStyle = {
   height: 48,
   padding: '0 16px',
   borderRadius: 13,
-  border: '1px solid #3A2418',
-  background: '#221714',
+  border: '1px solid var(--auth-input-border)',
+  background: 'var(--auth-input-bg)',
   fontSize: 14,
-  color: '#FAF3F1',
+  color: 'var(--auth-t1)',
   fontFamily: 'inherit',
   outline: 'none',
   boxSizing: 'border-box',
@@ -34,10 +34,10 @@ export default function LoginPage() {
 
   return (
     <PageTransition>
-      <h2 style={{ fontSize: 20, fontWeight: 700, color: '#FAF3F1', marginBottom: 4, letterSpacing: '-0.3px' }}>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--auth-t1)', marginBottom: 4, letterSpacing: '-0.3px' }}>
         Welcome back
       </h2>
-      <p style={{ fontSize: 13, color: '#C89080', marginBottom: 24 }}>
+      <p style={{ fontSize: 13, color: 'var(--auth-t2)', marginBottom: 24 }}>
         Sign in to your couple space
       </p>
 
@@ -46,9 +46,9 @@ export default function LoginPage() {
           <div
             style={{
               fontSize: 13,
-              color: '#F0907F',
-              background: '#3D1E18',
-              border: '1px solid #5A2820',
+              color: 'var(--auth-error-fg)',
+              background: 'var(--auth-error-bg)',
+              border: '1px solid var(--auth-error-border)',
               padding: '10px 14px',
               borderRadius: 12,
               marginBottom: 16,
@@ -92,8 +92,8 @@ export default function LoginPage() {
             height: 50,
             borderRadius: 14,
             border: 'none',
-            background: isPending ? '#3D1E18' : '#E8675A',
-            color: isPending ? '#E8675A' : 'white',
+            background: isPending ? 'var(--auth-error-bg)' : 'var(--auth-accent)',
+            color: isPending ? 'var(--auth-accent)' : 'white',
             fontSize: 15,
             fontWeight: 600,
             fontFamily: 'inherit',
@@ -105,11 +105,11 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <p style={{ textAlign: 'center', fontSize: 13, color: '#C89080', marginTop: 20 }}>
+      <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--auth-t2)', marginTop: 20 }}>
         New here?{' '}
         <Link
           href="/signup"
-          style={{ color: '#E8675A', fontWeight: 600 }}
+          style={{ color: 'var(--auth-accent)', fontWeight: 600 }}
         >
           Create account
         </Link>

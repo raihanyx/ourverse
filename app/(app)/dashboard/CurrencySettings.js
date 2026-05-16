@@ -9,7 +9,7 @@ export default function CurrencySettings({ current }) {
 
   return (
     <form action={formAction} className="flex items-center justify-between gap-2 w-full">
-      <label className="text-[12px] font-medium text-[#A07060] dark:text-[#D4A090]">Base currency</label>
+      <label className="text-[12px] font-medium text-[#7A5C4E] dark:text-[#D4A090]">Base currency</label>
       <div className="flex items-center gap-2">
       <div className="relative inline-block">
         <select
@@ -17,7 +17,7 @@ export default function CurrencySettings({ current }) {
           name="base_currency"
           defaultValue={current}
           onChange={e => e.target.form.requestSubmit()}
-          className="text-[12px] font-medium text-[#1C1210] dark:text-[#FAF3F1] bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] cursor-pointer focus:outline-none transition-colors"
+          className="text-[12px] font-medium text-[#2A1810] dark:text-[#FAF3F1] bg-[#F8F2EB] dark:bg-[#1A1210] border border-[#ECDFD2] dark:border-[#3D2820] cursor-pointer focus:outline-none transition-colors"
           style={{
             appearance: 'none',
             WebkitAppearance: 'none',
@@ -36,7 +36,7 @@ export default function CurrencySettings({ current }) {
           ))}
         </select>
         <div
-          className="text-[#A07060] dark:text-[#D4A090]"
+          className="text-[#7A5C4E] dark:text-[#D4A090]"
           style={{
             position: 'absolute',
             right: '8px',
@@ -50,10 +50,10 @@ export default function CurrencySettings({ current }) {
         </div>
       </div>
       {isPending && (
-        <span className="text-[11px] text-[#C4A89E] dark:text-[#A07868]">Saving…</span>
+        <span className="text-[11px] text-[#B19A8B] dark:text-[#A07868]">Saving…</span>
       )}
       {state?.error && (
-        <span className="text-[11px] text-[#C2493A] dark:text-[#F0907F]">{state.error}</span>
+        <span className="text-[11px] text-[#D8513E] dark:text-[#F0907F]">{state.error}</span>
       )}
       </div>
     </form>
