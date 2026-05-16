@@ -3,49 +3,57 @@
 import { useActionState, useEffect } from 'react'
 import { markAsDone } from '@/app/actions/bucket'
 import { formatDate, todayISO } from '@/lib/currency'
+import { useTheme } from '@/app/ThemeProvider'
 
-const CATEGORY_COLORS = {
-  restaurant: 'bg-[#FDECEA] text-[#C2493A] dark:bg-[#3D1E18] dark:text-[#F0907F]',
-  travel:     'bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]',
-  activity:   'bg-[#EAF3DE] text-[#3B6D11] dark:bg-[#173404] dark:text-[#97C459]',
-  movie:      'bg-[#EDE9FE] text-[#5B21B6] dark:bg-[#2D1F3A] dark:text-[#C084FC]',
-  other:      'bg-[#F3F4F6] text-[#374151] dark:bg-[#252525] dark:text-[#9CA3AF]',
+const CAT_PALETTE = {
+  restaurant: { lightBg: '#FCE3DC', lightFg: '#B83820', darkBg: 'var(--v2-accentDim)', darkFg: 'var(--v2-accent)', label: 'Restaurant' },
+  travel:     { lightBg: '#DDE9F5', lightFg: '#2E6FA8', darkBg: 'var(--v2-blueBg)', darkFg: 'var(--v2-blue)', label: 'Travel'     },
+  activity:   { lightBg: '#DCEDC4', lightFg: '#527C24', darkBg: '#162404', darkFg: 'var(--v2-green)', label: 'Activity'   },
+  movie:      { lightBg: '#ECE0F8', lightFg: '#6F3DAB', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
+  other:      { lightBg: '#EEEEEE', lightFg: '#555555', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
 }
 
-const CATEGORY_LABELS = {
-  restaurant: 'Restaurant',
-  travel:     'Travel',
-  activity:   'Activity',
-  movie:      'Movie',
-  other:      'Other',
-}
+const inputClass = `w-full h-[46px] px-3.5 rounded-xl border text-[14px]
+  bg-[#F8F2EB] dark:bg-[#221714]
+  text-[#2A1810] dark:text-[#FAF3F1]
+  placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848]
+  focus:outline-none transition-colors
+  border-[#ECDFD2] dark:border-[#3A2418] focus:border-[#D8513E] dark:focus:border-[#E8675A]`
+
+const labelClass = `block text-[12px] font-semibold uppercase tracking-[0.06em]
+  text-[#7A5C4E] dark:text-[#C89080] mb-2`
 
 export default function MarkDoneSheet({ item, coupleId, calendarDate, onSuccess, onCancel }) {
   const [state, formAction, isPending] = useActionState(markAsDone, null)
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  const today = todayISO()
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state])
 
-  const today = todayISO()
+  const cat = CAT_PALETTE[item.category] ?? CAT_PALETTE.other
+  const fg = isDark ? cat.darkFg : cat.lightFg
+  const bg = isDark ? cat.darkBg : cat.lightBg
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        className="absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] animate-fade-in"
         onClick={onCancel}
       />
-      <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up">
-        <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
+      <div className="relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto animate-slide-up">
+        <div className="w-9 h-[3px] rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] mx-auto mb-[14px]" />
 
-        {/* Close button */}
-        <div className="flex justify-end mb-3">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[17px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">Mark as done</h2>
           <button
             onClick={onCancel}
-            className="w-7 h-7 flex items-center justify-center rounded-full text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] hover:bg-[#F5EDE9] dark:hover:bg-[#3D2820] transition-colors cursor-pointer"
+            className="p-1 text-[#B19A8B] dark:text-[#7A5848] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] cursor-pointer"
             aria-label="Close"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -53,104 +61,75 @@ export default function MarkDoneSheet({ item, coupleId, calendarDate, onSuccess,
         </div>
 
         {/* Item summary card */}
-        <div className="rounded-2xl bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] p-4 mb-4">
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <div className="w-5 h-5 rounded-full bg-[#C2493A] dark:bg-[#E8675A] flex items-center justify-center flex-shrink-0">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-            </div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#C2493A] dark:text-[#F0907F]">
-              You did it!
-            </span>
-          </div>
-          <p className="text-[17px] font-bold text-[#1C1210] dark:text-[#FAF3F1] leading-snug mb-2">
+        <div
+          className="rounded-[14px] px-3.5 pt-3.5 pb-4 mb-4"
+          style={{ background: bg, border: `1px solid ${fg}33` }}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: fg }}>
+            {cat.label}
+          </span>
+          <p className="text-[18px] font-bold leading-[1.25] mt-1.5 tracking-[-0.2px] text-[#2A1810] dark:text-[#FAF3F1]">
             {item.name}
           </p>
-          <span className={`inline-block text-[11px] px-2 py-0.5 rounded-md font-medium ${CATEGORY_COLORS[item.category] ?? CATEGORY_COLORS.other}`}>
-            {CATEGORY_LABELS[item.category] ?? item.category}
-          </span>
         </div>
 
         {/* Early date callout */}
         {calendarDate && calendarDate > today && (
-          <div className="flex items-start gap-2.5 bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-xl px-3.5 py-3 mb-4">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#A07060] dark:text-[#D4A090] flex-shrink-0 mt-[1px]" aria-hidden="true">
+          <div className="flex items-start gap-2.5 bg-[#F8F2EB] dark:bg-[#221714] border border-[#ECDFD2] dark:border-[#3A2418] rounded-xl px-3.5 py-3 mb-4">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#7A5C4E] dark:text-[#C89080] flex-shrink-0 mt-px" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
               <line x1="16" y1="2" x2="16" y2="6" />
               <line x1="8" y1="2" x2="8" y2="6" />
               <line x1="3" y1="10" x2="21" y2="10" />
             </svg>
-            <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] leading-relaxed">
-              You had this planned for{' '}
-              <span className="font-semibold text-[#1C1210] dark:text-[#FAF3F1]">{formatDate(calendarDate)}</span>
-              {' '}— you did it early! 🎉
+            <p className="text-[12px] text-[#7A5C4E] dark:text-[#C89080] leading-relaxed">
+              Planned for <span className="font-semibold text-[#2A1810] dark:text-[#FAF3F1]">{formatDate(calendarDate)}</span> — you did it early! 🎉
             </p>
           </div>
         )}
 
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
             {state.error}
           </div>
         )}
 
-        <form action={formAction} className="space-y-4">
+        <form action={formAction} className="flex flex-col gap-4">
           <input type="hidden" name="bucket_item_id" value={item.id} />
           <input type="hidden" name="name" value={item.name} />
           <input type="hidden" name="category" value={item.category} />
           <input type="hidden" name="couple_id" value={coupleId} />
 
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              When did you go?
-            </label>
+            <label className={labelClass}>When did you do it?</label>
             <input
               name="date"
               type="date"
               defaultValue={today}
               max={today}
-              className="w-full px-3 py-[10px] rounded-[10px] border text-sm
-                         border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
-                         text-[#1C1210] dark:text-[#FAF3F1]
-                         focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors"
+              className={inputClass}
+              style={{ colorScheme: isDark ? 'dark' : 'light' }}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              Add a note{' '}
-              <span className="text-[#C4A89E] dark:text-[#A07868] font-normal">(optional)</span>
+            <label className={labelClass}>
+              Note <span className="text-[#B19A8B] dark:text-[#7A5848] font-medium normal-case tracking-normal">(optional)</span>
             </label>
             <textarea
               name="note"
-              rows={3}
-              placeholder="How was it? Any memories..."
-              className="w-full px-3 py-[10px] rounded-[10px] border text-sm
-                         border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
-                         text-[#1C1210] dark:text-[#FAF3F1]
-                         focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                         placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868]
-                         resize-none"
+              placeholder="How was it? Anything to remember…"
+              className={`${inputClass} h-[72px] py-3 resize-none leading-[1.45]`}
             />
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isPending ? 'Saving…' : 'Save memory'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-[46px] rounded-[13px] bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] dark:hover:bg-[#D45849] text-white text-[14.5px] font-semibold cursor-pointer transition-colors disabled:opacity-70 mt-1"
+          >
+            {isPending ? 'Saving…' : 'Save memory'}
+          </button>
         </form>
       </div>
     </div>

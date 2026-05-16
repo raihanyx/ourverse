@@ -2,7 +2,14 @@
 
 import { useActionState, useEffect, useState } from 'react'
 import { addCalendarEntry } from '@/app/actions/calendar'
-import { formatDate } from '@/lib/currency'
+import { todayISO } from '@/lib/currency'
+
+const TYPE_OPTIONS = [
+  { key: 'couple',      label: 'Together',    dot: 'var(--v2-blue)' },
+  { key: 'personal',    label: 'Just me',     dot: 'var(--v2-green)' },
+  { key: 'memory',      label: 'Memory',      dot: 'var(--v2-accent)' },
+  { key: 'anniversary', label: 'Anniversary', dot: 'var(--v2-orange)' },
+]
 
 const CATEGORIES = [
   { value: 'restaurant', label: 'Restaurant' },
@@ -12,164 +19,213 @@ const CATEGORIES = [
   { value: 'other',      label: 'Other'      },
 ]
 
-export default function AddCalendarEntryForm({ date, coupleId, partnerName, onSuccess, onCancel }) {
+const CAT_FG = {
+  restaurant: 'var(--cat-restaurant-fg)',
+  travel:     'var(--cat-travel-fg)',
+  activity:   'var(--cat-activity-fg)',
+  movie:      'var(--cat-movie-fg)',
+  other:      'var(--cat-other-fg)',
+}
+
+export default function AddCalendarEntryForm({ date: defaultDate, coupleId, partnerName, onSuccess, onCancel }) {
   const [state, formAction, isPending] = useActionState(addCalendarEntry, null)
-  const [isPersonal, setIsPersonal] = useState(false)
+  const [type, setType] = useState('couple')
+  const [category, setCategory] = useState('other')
+  const today = todayISO()
+  const [rawDate, setRawDate] = useState(defaultDate || today)
+  const isMemory = type === 'memory'
+  // Derive clamped date so we never call setState in an effect.
+  const date = isMemory && rawDate > today ? today : rawDate
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state])
+
+  const showCategory = type !== 'anniversary'
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        className="absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.65)] animate-fade-in"
         onClick={onCancel}
       />
-      <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up">
-        <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
+      <div
+        className="relative rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up"
+        style={{ background: 'var(--v2-card)', color: 'var(--v2-t1)' }}
+      >
+        <div className="w-8 h-[3px] rounded-sm mx-auto mb-[14px]" style={{ background: 'var(--v2-border)' }} />
 
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Plan a date</h2>
+          <h2 className="text-[16px] font-semibold">Add event</h2>
           <button
             type="button"
             onClick={onCancel}
-            className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
+            className="text-[#B19A8B] dark:text-[#A07868] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
             aria-label="Close"
           >
             ×
           </button>
         </div>
 
-        {/* Selected date display */}
-        <div className="mb-4 px-3.5 py-2.5 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]">
-          <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-0.5">Date</p>
-          <p className="text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1]">{formatDate(date)}</p>
-        </div>
-
-        {/* Together / Just me toggle */}
-        <div className="mb-5 p-1 bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-xl flex">
-          <button
-            type="button"
-            onClick={() => setIsPersonal(false)}
-            className={`flex-1 py-2 rounded-[10px] text-sm font-medium transition-all cursor-pointer
-              ${!isPersonal
-                ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white shadow-sm'
-                : 'text-[#A07060] dark:text-[#D4A090]'
-              }`}
-          >
-            {partnerName ? `Together` : 'Couple'}
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsPersonal(true)}
-            className={`flex-1 py-2 rounded-[10px] text-sm font-medium transition-all cursor-pointer
-              ${isPersonal
-                ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white shadow-sm'
-                : 'text-[#A07060] dark:text-[#D4A090]'
-              }`}
-          >
-            Just me
-          </button>
-        </div>
-
-        {/* Subtext */}
-        <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mb-4 -mt-3">
-          {isPersonal
-            ? 'Your own plan — visible to both of you for coordination.'
-            : `Planned together${partnerName ? ` with ${partnerName}` : ''} — adds to your bucket list.`}
-        </p>
-
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#B83820] dark:text-[#F0907F] bg-[#FCE5DD] dark:bg-[#3D1E18] border border-[#F4C8BD] dark:border-[#5A2A20] px-4 py-3 rounded-xl mb-4">
             {state.error}
           </div>
         )}
 
         <form action={formAction} className="space-y-4">
-          <input type="hidden" name="couple_id"   value={coupleId} />
-          <input type="hidden" name="date"         value={date} />
-          <input type="hidden" name="is_personal"  value={String(isPersonal)} />
+          <input type="hidden" name="type"     value={type} />
+          <input type="hidden" name="category" value={category} />
+          <input type="hidden" name="date"     value={date} />
 
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              What are you planning?
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
+              Title
             </label>
             <input
               name="title"
               type="text"
-              placeholder={isPersonal ? 'e.g. Flight home, Doctor appointment…' : 'e.g. Dinner at Nobu, Trip to Bali…'}
-              className={`w-full h-11 px-3.5 rounded-[10px] border text-sm bg-white dark:bg-[#1A1210]
-                text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868]
-                ${state?.errors?.title ? 'border-red-300 focus:ring-red-300' : 'border-[#EDE0DC] dark:border-[#3D2820]'}`}
+              placeholder="e.g. Dinner at Sushi Tei, Bali trip…"
+              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848]"
+              style={{
+                background: 'var(--v2-bg)',
+                color: 'var(--v2-t1)',
+                borderColor: state?.errors?.title ? 'var(--v2-accent)' : 'var(--v2-border)',
+              }}
             />
-            {state?.errors?.title && (
-              <p className="text-xs text-red-500 mt-1">{state.errors.title}</p>
+            {state?.errors?.title && <p className="text-xs text-[#B83820] dark:text-[#F0907F] mt-1">{state.errors.title}</p>}
+          </div>
+
+          {/* Type pills */}
+          <div>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
+              Type
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {TYPE_OPTIONS.map(opt => {
+                const selected = type === opt.key
+                return (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setType(opt.key)}
+                    className="h-[38px] rounded-[10px] flex items-center justify-center gap-2 text-[13px] font-semibold cursor-pointer transition-colors"
+                    style={{
+                      background: selected ? `color-mix(in srgb, ${opt.dot}, transparent 78%)` : 'transparent',
+                      color: selected ? opt.dot : 'var(--v2-t3)',
+                      border: `1px solid ${selected ? `color-mix(in srgb, ${opt.dot}, transparent 34%)` : 'var(--v2-border)'}`,
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ background: opt.dot }} />
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+            {type === 'couple' && (
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
+                Adds a matching item to your bucket list{partnerName ? ` with ${partnerName}` : ''}.
+              </p>
+            )}
+            {type === 'personal' && (
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
+                Your own plan. Your partner can still see it.
+              </p>
+            )}
+            {type === 'memory' && (
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
+                Log a memory directly. Past dates only.
+              </p>
+            )}
+            {type === 'anniversary' && (
+              <p className="text-[11px] mt-2" style={{ color: 'var(--v2-t3)' }}>
+                Sets your couple anniversary date. Shows as a heart every year.
+              </p>
             )}
           </div>
 
-          {/* Category — only for couple entries */}
-          {!isPersonal && (
+          {/* Category pills */}
+          {showCategory && (
             <div>
-              <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
+              <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
                 Category
               </label>
-              <div className="relative">
-                <select
-                  name="category"
-                  defaultValue="other"
-                  className="w-full h-11 px-3.5 pr-9 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                    bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                    focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                    appearance-none cursor-pointer"
-                >
-                  {CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-                <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#A07060] dark:text-[#D4A090] text-xs select-none">
-                  ▾
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(c => {
+                  const selected = category === c.value
+                  const fg = CAT_FG[c.value]
+                  return (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setCategory(c.value)}
+                      className="h-8 px-3 rounded-[9px] text-[12px] font-semibold cursor-pointer transition-colors"
+                      style={{
+                        background: selected ? `color-mix(in srgb, ${fg}, transparent 80%)` : 'transparent',
+                        color: selected ? fg : 'var(--v2-t3)',
+                        border: `1px solid ${selected ? `color-mix(in srgb, ${fg}, transparent 47%)` : 'var(--v2-border)'}`,
+                      }}
+                    >
+                      {c.label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           )}
 
-          {/* Notes */}
+          {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              Notes{' '}
-              <span className="text-[#C4A89E] dark:text-[#A07868] font-normal">(optional)</span>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
+              Date
             </label>
-            <textarea
-              name="notes"
-              rows={3}
-              placeholder="Any details, reminders, or links…"
-              className="w-full px-3.5 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] resize-none"
+            <input
+              type="date"
+              value={date}
+              onChange={e => setRawDate(e.target.value)}
+              max={isMemory ? today : undefined}
+              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors"
+              style={{
+                background: 'var(--v2-bg)',
+                color: 'var(--v2-t1)',
+                borderColor: 'var(--v2-border)',
+                colorScheme: 'dark',
+              }}
             />
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isPending ? 'Saving…' : 'Save'}
-            </button>
+          {/* Notes */}
+          <div>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: 'var(--v2-t2)' }}>
+              Notes <span className="font-normal" style={{ color: 'var(--v2-t3)' }}>(optional)</span>
+            </label>
+            <textarea
+              name="notes"
+              rows={2}
+              placeholder="Any details, reminders, or links…"
+              className="w-full px-3.5 py-[10px] rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848] resize-none"
+              style={{
+                background: 'var(--v2-bg)',
+                color: 'var(--v2-t1)',
+                borderColor: 'var(--v2-border)',
+                height: 56,
+              }}
+            />
           </div>
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full rounded-[13px] font-semibold text-[13px] disabled:opacity-50 cursor-pointer transition-colors"
+            style={{
+              height: 46,
+              background: 'var(--v2-accent)',
+              color: 'white',
+            }}
+          >
+            {isPending ? 'Saving…' : 'Add event'}
+          </button>
         </form>
       </div>
     </div>

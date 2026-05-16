@@ -4,17 +4,17 @@ export default function ConfirmSheet({ message, confirmLabel = 'Delete', onConfi
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        className="absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.65)] animate-fade-in"
         onClick={onCancel}
       />
       <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 animate-slide-up">
         <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-4" />
-        <p className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">Are you sure?</p>
-        <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-5">{message}</p>
+        <p className="text-[15px] font-semibold text-[#2A1810] dark:text-[#FAF3F1] mb-1">Are you sure?</p>
+        <p className="text-sm text-[#7A5C4E] dark:text-[#D4A090] mb-5">{message}</p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 h-11 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] font-medium hover:bg-[#FDF7F6] dark:hover:bg-[#3D2820] transition-colors cursor-pointer"
+            className="flex-1 h-11 rounded-xl border border-[#ECDFD2] dark:border-[#3D2820] text-sm text-[#7A5C4E] dark:text-[#D4A090] font-medium hover:bg-[#F8F2EB] dark:hover:bg-[#3D2820] transition-colors cursor-pointer"
           >
             Cancel
           </button>

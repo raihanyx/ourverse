@@ -5,8 +5,8 @@ export default function manifest() {
     description: 'Your world, together.',
     start_url: '/dashboard',
     display: 'standalone',
-    background_color: '#FDF7F6',
-    theme_color: '#FDF7F6',
+    background_color: '#F8F2EB',
+    theme_color: '#F8F2EB',
     icons: [
       {
         src: '/icons/icon-192x192.png',

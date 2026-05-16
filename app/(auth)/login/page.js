@@ -5,64 +5,113 @@ import { login } from '@/app/actions/auth'
 import Link from 'next/link'
 import PageTransition from '@/app/components/PageTransition'
 
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: 'var(--auth-t2)',
+  display: 'block',
+  marginBottom: 8,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+}
+
+const inputStyle = {
+  width: '100%',
+  height: 48,
+  padding: '0 16px',
+  borderRadius: 13,
+  border: '1px solid var(--auth-input-border)',
+  background: 'var(--auth-input-bg)',
+  fontSize: 14,
+  color: 'var(--auth-t1)',
+  fontFamily: 'inherit',
+  outline: 'none',
+  boxSizing: 'border-box',
+}
+
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, null)
 
   return (
     <PageTransition>
-      <h2 className="text-lg font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-0.5">Welcome back</h2>
-      <p className="text-sm text-[#A07060] dark:text-[#D4A090] mb-5">Sign in to your couple space</p>
+      <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--auth-t1)', marginBottom: 4, letterSpacing: '-0.3px' }}>
+        Welcome back
+      </h2>
+      <p style={{ fontSize: 13, color: 'var(--auth-t2)', marginBottom: 24 }}>
+        Sign in to your couple space
+      </p>
 
-      <form action={formAction} className="space-y-4">
+      <form action={formAction}>
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+          <div
+            style={{
+              fontSize: 13,
+              color: 'var(--auth-error-fg)',
+              background: 'var(--auth-error-bg)',
+              border: '1px solid var(--auth-error-border)',
+              padding: '10px 14px',
+              borderRadius: 12,
+              marginBottom: 16,
+            }}
+          >
             {state.error}
           </div>
         )}
 
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-            Email
-          </label>
+        <div style={{ marginBottom: 14 }}>
+          <label htmlFor="email" style={labelStyle}>Email</label>
           <input
             id="email"
             name="email"
             type="email"
             autoComplete="email"
             required
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="you@example.com"
+            style={inputStyle}
           />
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-            Password
-          </label>
+        <div style={{ marginBottom: 20 }}>
+          <label htmlFor="password" style={labelStyle}>Password</label>
           <input
             id="password"
             name="password"
             type="password"
             autoComplete="current-password"
             required
-            className="w-full px-3 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-sm focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] transition-colors"
             placeholder="••••••••"
+            style={inputStyle}
           />
         </div>
 
         <button
           type="submit"
           disabled={isPending}
-          className="w-full py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#E8675A] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors mt-2"
+          style={{
+            width: '100%',
+            height: 50,
+            borderRadius: 14,
+            border: 'none',
+            background: isPending ? 'var(--auth-error-bg)' : 'var(--auth-accent)',
+            color: isPending ? 'var(--auth-accent)' : 'white',
+            fontSize: 15,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            transition: 'all 200ms',
+          }}
         >
           {isPending ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-[#A07060] dark:text-[#D4A090] mt-6">
+      <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--auth-t2)', marginTop: 20 }}>
         New here?{' '}
-        <Link href="/signup" className="text-[#C2493A] dark:text-[#F0907F] font-medium hover:underline">
-          Create an account
+        <Link
+          href="/signup"
+          style={{ color: 'var(--auth-accent)', fontWeight: 600 }}
+        >
+          Create account
         </Link>
       </p>
     </PageTransition>

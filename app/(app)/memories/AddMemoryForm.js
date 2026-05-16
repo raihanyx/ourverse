@@ -3,147 +3,146 @@
 import { useActionState, useEffect, useState } from 'react'
 import { addDirectMemory } from '@/app/actions/bucket'
 import { todayISO } from '@/lib/currency'
+import { useTheme } from '@/app/ThemeProvider'
 
-const CATEGORIES = [
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'travel',     label: 'Travel'     },
-  { value: 'activity',   label: 'Activity'   },
-  { value: 'movie',      label: 'Movie'      },
-  { value: 'other',      label: 'Other'      },
-]
+const CAT_PALETTE = {
+  restaurant: { lightBg: '#FCE3DC', lightFg: '#B83820', darkBg: 'var(--v2-accentDim)', darkFg: 'var(--v2-accent)', label: 'Restaurant' },
+  travel:     { lightBg: '#DDE9F5', lightFg: '#2E6FA8', darkBg: 'var(--v2-blueBg)', darkFg: 'var(--v2-blue)', label: 'Travel'     },
+  activity:   { lightBg: '#DCEDC4', lightFg: '#527C24', darkBg: '#162404', darkFg: 'var(--v2-green)', label: 'Activity'   },
+  movie:      { lightBg: '#ECE0F8', lightFg: '#6F3DAB', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
+  other:      { lightBg: '#EEEEEE', lightFg: '#555555', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
+}
+const CAT_KEYS = ['restaurant', 'travel', 'activity', 'movie', 'other']
+
+const inputClass = `w-full h-[42px] px-3.5 rounded-xl border text-[14px]
+  bg-[#F8F2EB] dark:bg-[#221714]
+  text-[#2A1810] dark:text-[#FAF3F1]
+  placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848]
+  focus:outline-none transition-colors`
+
+const labelClass = `block text-[11px] font-semibold uppercase tracking-[0.06em]
+  text-[#7A5C4E] dark:text-[#C89080] mb-1.5`
 
 export default function AddMemoryForm({ onSuccess, onCancel }) {
   const today = todayISO()
   const [state, formAction, isPending] = useActionState(addDirectMemory, null)
+  const [cat, setCat] = useState('other')
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state])
+
+  const e = state?.errors ?? {}
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        className="absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] animate-fade-in"
         onClick={onCancel}
       />
-      <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up">
-        <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
+      <div className="relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto animate-slide-up">
+        <div className="w-9 h-[3px] rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] mx-auto mb-[14px]" />
 
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Log a memory</h2>
-            <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">Saved to your memories and bucket list.</p>
-          </div>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-[17px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">Log a memory</h2>
           <button
             type="button"
             onClick={onCancel}
-            className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
+            className="p-1 text-[#B19A8B] dark:text-[#7A5848] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] cursor-pointer"
             aria-label="Close"
           >
-            ×
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
+        <p className="text-[12.5px] leading-[1.4] text-[#B19A8B] dark:text-[#7A5848] -mt-2 mb-4">
+          Saved to your memories and bucket list.
+        </p>
 
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
             {state.error}
           </div>
         )}
 
-        <form action={formAction} className="space-y-4">
-          {/* Name */}
+        <form action={formAction} className="flex flex-col gap-[11px]">
+          <input type="hidden" name="category" value={cat} />
+
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              What did you do?
-            </label>
+            <label className={labelClass}>What did you do?</label>
             <input
               name="name"
               type="text"
               placeholder="e.g. Dinner at Nobu, Trip to Bali…"
-              className={`w-full h-11 px-3.5 rounded-[10px] border text-sm bg-white dark:bg-[#1A1210]
-                text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868]
-                ${state?.errors?.name ? 'border-red-300 focus:ring-red-300' : 'border-[#EDE0DC] dark:border-[#3D2820]'}`}
+              className={`${inputClass} ${e.name
+                ? 'border-red-400 focus:border-red-400'
+                : 'border-[#ECDFD2] dark:border-[#3A2418] focus:border-[#D8513E] dark:focus:border-[#E8675A]'}`}
             />
-            {state?.errors?.name && (
-              <p className="text-xs text-red-500 mt-1">{state.errors.name}</p>
-            )}
+            {e.name && <p className="text-xs text-red-500 mt-1">{e.name}</p>}
           </div>
 
-          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              Category
-            </label>
-            <div className="relative">
-              <select
-                name="category"
-                defaultValue="other"
-                className="w-full h-11 px-3.5 pr-9 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                  bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                  focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                  appearance-none cursor-pointer"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#A07060] dark:text-[#D4A090] text-xs select-none">
-                ▾
-              </div>
+            <label className={labelClass}>Category</label>
+            <div className="flex flex-wrap gap-1.5">
+              {CAT_KEYS.map(key => {
+                const c = CAT_PALETTE[key]
+                const active = cat === key
+                const fg = isDark ? c.darkFg : c.lightFg
+                const bg = isDark ? c.darkBg : c.lightBg
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setCat(key)}
+                    className="px-[11px] py-[5px] rounded-lg border text-[12px] font-medium cursor-pointer transition-colors"
+                    style={{
+                      borderColor: active ? `${fg}66` : (isDark ? 'var(--v2-border)' : '#ECDFD2'),
+                      background: active ? bg : 'transparent',
+                      color: active ? fg : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
+                    }}
+                  >
+                    {c.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          {/* Date */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              When did you do it?
-            </label>
+            <label className={labelClass}>When did you do it?</label>
             <input
               name="date"
               type="date"
               defaultValue={today}
               max={today}
-              className="w-full h-11 px-3.5 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors"
+              className={`${inputClass} border-[#ECDFD2] dark:border-[#3A2418] focus:border-[#D8513E] dark:focus:border-[#E8675A]`}
+              style={{ colorScheme: isDark ? 'dark' : 'light' }}
             />
           </div>
 
-          {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              Note{' '}
-              <span className="text-[#C4A89E] dark:text-[#A07868] font-normal">(optional)</span>
+            <label className={labelClass}>
+              Note <span className="text-[#B19A8B] dark:text-[#7A5848] font-medium normal-case tracking-normal">(optional)</span>
             </label>
             <textarea
               name="note"
-              rows={3}
-              placeholder="How was it? Any details to remember…"
-              className="w-full px-3.5 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] resize-none"
+              placeholder="Anything to remember about it…"
+              className={`${inputClass} h-[56px] py-2.5 resize-none leading-[1.4]
+                border-[#ECDFD2] dark:border-[#3A2418] focus:border-[#D8513E] dark:focus:border-[#E8675A]`}
             />
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isPending ? 'Saving…' : 'Save memory'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full h-[46px] rounded-[13px] bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] dark:hover:bg-[#D45849] text-white text-[14.5px] font-semibold cursor-pointer transition-colors disabled:opacity-70 mt-1"
+          >
+            {isPending ? 'Saving…' : 'Log memory'}
+          </button>
         </form>
       </div>
     </div>

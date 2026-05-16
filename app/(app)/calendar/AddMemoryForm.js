@@ -1,8 +1,17 @@
 'use client'
 
-import { useActionState, useEffect } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { addDirectMemory } from '@/app/actions/bucket'
-import { formatDate } from '@/lib/currency'
+
+const V2 = {
+  bg:      'var(--v2-bg)',
+  surface: 'var(--v2-card)',
+  border:  'var(--v2-border)',
+  t1:      'var(--v2-t1)',
+  t2:      'var(--v2-t2)',
+  t3:      'var(--v2-t3)',
+  accent:  'var(--v2-accent)',
+}
 
 const CATEGORIES = [
   { value: 'restaurant', label: 'Restaurant' },
@@ -11,130 +20,124 @@ const CATEGORIES = [
   { value: 'movie',      label: 'Movie'      },
   { value: 'other',      label: 'Other'      },
 ]
+const CAT_FG = {
+  restaurant: 'var(--cat-restaurant-fg)',
+  travel:     'var(--cat-travel-fg)',
+  activity:   'var(--cat-activity-fg)',
+  movie:      'var(--cat-movie-fg)',
+  other:      'var(--cat-other-fg)',
+}
 
-export default function AddMemoryForm({ date, onSuccess, onCancel }) {
+export default function AddMemoryForm({ date: defaultDate, onSuccess, onCancel }) {
   const [state, formAction, isPending] = useActionState(addDirectMemory, null)
+  const [category, setCategory] = useState('other')
 
   useEffect(() => {
-    if (state?.success) onSuccess()
+    if (state?.success) onSuccess(state.data)
   }, [state])
 
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
+        className="absolute inset-0 animate-fade-in"
+        style={{ background: 'rgba(var(--v2-overlayBase), 0.65)' }}
         onClick={onCancel}
       />
-      <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up">
-        <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
+      <div
+        className="relative rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto animate-slide-up"
+        style={{ background: V2.surface, color: V2.t1 }}
+      >
+        <div className="w-8 h-[3px] rounded-sm mx-auto mb-[14px]" style={{ background: V2.border }} />
 
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Log a memory</h2>
-            <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">Saved to your memories and bucket list.</p>
+            <h2 className="text-[16px] font-semibold">Log a memory</h2>
+            <p className="text-[11px] mt-0.5" style={{ color: V2.t2 }}>Saved to your memories.</p>
           </div>
           <button
             type="button"
             onClick={onCancel}
-            className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
+            className="text-[#B19A8B] dark:text-[#A07868] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
             aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* Date display */}
-        <div className="mb-4 px-3.5 py-2.5 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]">
-          <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-0.5">Date</p>
-          <p className="text-sm font-medium text-[#1C1210] dark:text-[#FAF3F1]">{formatDate(date)}</p>
+          >×</button>
         </div>
 
         {state?.error && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl mb-4">
+          <div className="text-sm text-[#B83820] dark:text-[#F0907F] bg-[#FCE5DD] dark:bg-[#3D1E18] border border-[#F4C8BD] dark:border-[#5A2A20] px-4 py-3 rounded-xl mb-4">
             {state.error}
           </div>
         )}
 
         <form action={formAction} className="space-y-4">
-          <input type="hidden" name="date" value={date} />
+          <input type="hidden" name="date"     value={defaultDate} />
+          <input type="hidden" name="category" value={category} />
 
-          {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              What did you do?
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: V2.t2 }}>
+              Title
             </label>
             <input
               name="name"
               type="text"
-              placeholder="e.g. Dinner at Nobu, Trip to Bali…"
-              className={`w-full h-11 px-3.5 rounded-[10px] border text-sm bg-white dark:bg-[#1A1210]
-                text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868]
-                ${state?.errors?.name ? 'border-red-300 focus:ring-red-300' : 'border-[#EDE0DC] dark:border-[#3D2820]'}`}
+              placeholder="e.g. Coffee date, Bali trip…"
+              className="w-full h-11 px-3.5 rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848]"
+              style={{
+                background: V2.bg,
+                color: V2.t1,
+                borderColor: state?.errors?.name ? 'var(--v2-accent)' : V2.border,
+              }}
             />
-            {state?.errors?.name && (
-              <p className="text-xs text-red-500 mt-1">{state.errors.name}</p>
-            )}
+            {state?.errors?.name && <p className="text-xs text-[#B83820] dark:text-[#F0907F] mt-1">{state.errors.name}</p>}
           </div>
 
-          {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: V2.t2 }}>
               Category
             </label>
-            <div className="relative">
-              <select
-                name="category"
-                defaultValue="other"
-                className="w-full h-11 px-3.5 pr-9 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                  bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                  focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                  appearance-none cursor-pointer"
-              >
-                {CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[#A07060] dark:text-[#D4A090] text-xs select-none">
-                ▾
-              </div>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORIES.map(c => {
+                const selected = category === c.value
+                const fg = CAT_FG[c.value]
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setCategory(c.value)}
+                    className="h-8 px-3 rounded-[9px] text-[12px] font-semibold cursor-pointer transition-colors"
+                    style={{
+                      background: selected ? `color-mix(in srgb, ${fg}, transparent 80%)` : 'transparent',
+                      color: selected ? fg : V2.t3,
+                      border: `1px solid ${selected ? `color-mix(in srgb, ${fg}, transparent 47%)` : V2.border}`,
+                    }}
+                  >
+                    {c.label}
+                  </button>
+                )
+              })}
             </div>
           </div>
 
-          {/* Note */}
           <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              Note{' '}
-              <span className="text-[#C4A89E] dark:text-[#A07868] font-normal">(optional)</span>
+            <label className="block text-[12px] font-semibold mb-1.5" style={{ color: V2.t2 }}>
+              Note <span className="font-normal" style={{ color: V2.t3 }}>(optional)</span>
             </label>
             <textarea
               name="note"
-              rows={3}
+              rows={2}
               placeholder="How was it? Any details to remember…"
-              className="w-full px-3.5 py-[10px] rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820]
-                bg-white dark:bg-[#1A1210] text-sm text-[#1C1210] dark:text-[#FAF3F1]
-                focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors
-                placeholder:text-[#C4A89E] dark:placeholder:text-[#A07868] resize-none"
+              className="w-full px-3.5 py-[10px] rounded-[10px] border text-sm focus:outline-none transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#7A5848] resize-none"
+              style={{ background: V2.bg, color: V2.t1, borderColor: V2.border, height: 56 }}
             />
           </div>
 
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 py-3 bg-red-500 hover:bg-red-600 dark:bg-red-500 dark:hover:bg-red-600 text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {isPending ? 'Saving…' : 'Save memory'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full rounded-[13px] font-semibold text-[13px] disabled:opacity-50 cursor-pointer transition-colors"
+            style={{ height: 46, background: V2.accent, color: 'white' }}
+          >
+            {isPending ? 'Saving…' : 'Log memory'}
+          </button>
         </form>
       </div>
     </div>

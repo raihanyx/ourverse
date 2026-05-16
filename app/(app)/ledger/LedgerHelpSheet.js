@@ -2,27 +2,38 @@
 
 import { useState, useEffect } from 'react'
 
-const exampleAmounts = {
-  THB: { full: 'THB 400', half: 'THB 200' },
-  IDR: { full: 'IDR 200.000', half: 'IDR 100.000' },
-  AUD: { full: 'AUD 40',  half: 'AUD 20'  },
-  MMK: { full: 'MMK 20.000', half: 'MMK 10.000' },
+const SECTIONS = [
+  {
+    heading: 'Log what is owed, not the full bill',
+    body: 'Enter only the amount your partner owes you. If you split a cost, do the math first and log your partner’s share only. The two totals at the top show your running balance.',
+    callout: 'You paid THB 400 for dinner together. Split equally: each pays THB 200. Log THB 200 as what your partner owes.',
+  },
+  {
+    heading: 'Settling up',
+    body: 'Tap **Mark paid** when an expense is settled. It moves out of your active list so only open balances stay visible.',
+  },
+  {
+    heading: 'Bulk edit',
+    body: 'Tap the pencil to enter select mode. Pick multiple items, then delete, mark paid, or mark unpaid in one tap.',
+  },
+]
+
+function renderRich(text) {
+  if (!text) return null
+  const parts = String(text).split(/(\*\*[^*]+\*\*)/g)
+  return parts.map((p, i) => {
+    if (p.startsWith('**') && p.endsWith('**')) {
+      return (
+        <span key={i} className="text-[#D8513E] dark:text-[#E8675A] font-bold">
+          {p.slice(2, -2)}
+        </span>
+      )
+    }
+    return <span key={i}>{p}</span>
+  })
 }
 
-function Divider() {
-  return <div className="h-px bg-[#F5EDE9] dark:bg-[#3D2820] my-[10px]" />
-}
-
-function Section({ title, children }) {
-  return (
-    <div>
-      <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">{title}</p>
-      <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.6]">{children}</p>
-    </div>
-  )
-}
-
-export default function LedgerHelpSheet({ isOpen, onClose, baseCurrency }) {
+export default function LedgerHelpSheet({ isOpen, onClose }) {
   const [isClosing, setIsClosing] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -44,61 +55,55 @@ export default function LedgerHelpSheet({ isOpen, onClose, baseCurrency }) {
 
   if (!mounted) return null
 
-  const ex = exampleAmounts[baseCurrency] ?? exampleAmounts['IDR']
-  const accent = 'text-[#C2493A] dark:text-[#F0907F] font-semibold'
-
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
-      {/* Backdrop */}
       <div
-        className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+        className={`absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
         onClick={handleClose}
       />
+      <div className={`relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}>
+        <div className="w-9 h-[3px] rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] mx-auto mb-[14px]" />
 
-      {/* Sheet */}
-      <div className={`relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-4 max-h-[85vh] overflow-y-auto ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}>
-        {/* Handle */}
-        <div className="w-8 h-[3px] rounded-sm bg-[#EDE0DC] dark:bg-[#3D2820] mx-auto mb-[14px]" />
-
-        {/* Title */}
-        <p className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-[14px]">
-          How the ledger works
-        </p>
-
-        {/* Section 1 */}
-        <div>
-          <p className="text-[12px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] mb-1">
-            Log what is owed, not the full bill
-          </p>
-          <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.6]">
-            Enter only the amount your partner owes you. If you split a cost, do the math first and log your partner's share only.
-          </p>
-          {/* Example box */}
-          <div className="bg-[#FDF7F6] dark:bg-[#1A1210] border border-[#EDE0DC] dark:border-[#3D2820] rounded-lg px-[10px] py-2 mt-[6px]">
-            <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] leading-[1.7]">
-              You paid <span className={accent}>{ex.full}</span> for dinner together.<br />
-              Split equally: each pays <span className={accent}>{ex.half}</span>.<br />
-              Log <span className={accent}>{ex.half}</span> as what your partner owes.
-            </p>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[17px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">
+            How the ledger works
+          </h2>
+          <button
+            onClick={handleClose}
+            className="p-1 text-[#B19A8B] dark:text-[#7A5848] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] cursor-pointer"
+            aria-label="Close"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
         </div>
 
-        <Divider />
+        <div className="flex flex-col">
+          {SECTIONS.map((s, i) => (
+            <div
+              key={i}
+              className={`pb-4 ${i === 0 ? '' : 'pt-4'} ${i === SECTIONS.length - 1 ? '' : 'border-b border-[#F5EDE9] dark:border-[#261812]'}`}
+            >
+              <h3 className="text-[14.5px] font-bold text-[#2A1810] dark:text-[#FAF3F1] tracking-[-0.1px] mb-[7px]">
+                {s.heading}
+              </h3>
+              <p className="text-[13.5px] text-[#7A5C4E] dark:text-[#C89080] leading-[1.55]">
+                {renderRich(s.body)}
+              </p>
+              {s.callout && (
+                <div className="mt-2.5 px-[13px] py-[11px] rounded-xl border border-[#ECDFD2] dark:border-[#3A2418] bg-[#F8F2EB] dark:bg-[#221714] text-[13px] text-[#7A5C4E] dark:text-[#C89080] leading-[1.55] whitespace-pre-line">
+                  {renderRich(s.callout)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
 
-        <Section title="They owe me">
-          Expenses you paid that your partner owes you back. The total shows your running balance.
-        </Section>
-
-        <Divider />
-
-        <Section title="I owe them">
-          Expenses your partner paid that you owe them back.
-        </Section>
-
-        {/* Got it button */}
         <button
           onClick={handleClose}
-          className="w-full bg-[#C2493A] dark:bg-[#E8675A] text-white text-[13px] font-semibold rounded-[10px] py-[10px] mt-3 transition-colors hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] cursor-pointer"
+          className="w-full h-12 rounded-[14px] bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] dark:hover:bg-[#D45849] text-white text-[15px] font-semibold cursor-pointer transition-colors mt-2"
         >
           Got it
         </button>

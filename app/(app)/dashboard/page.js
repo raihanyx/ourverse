@@ -6,6 +6,8 @@ import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
 import TogetherCard from './TogetherCard'
 import InviteCodeBadge from './InviteCodeBadge'
+import RecentExpenses from './RecentExpenses'
+import DailyConversationSection from './DailyConversationSection'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
@@ -16,11 +18,15 @@ export default async function DashboardPage() {
   const { user, profile, partner } = await getAppSession()
   const supabase = await createClient()
 
-  // Fetch couple info + unpaid expenses + total count + live rates in parallel
+  const todayLabel = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', month: 'short', day: 'numeric',
+  })
+
   const [
     { data: couple },
     { data: unpaidExpenses },
     { count: totalExpenseCount },
+    { data: recentExpenses },
     ratesResult,
   ] = await Promise.all([
     supabase
@@ -37,6 +43,12 @@ export default async function DashboardPage() {
       .from('expenses')
       .select('id', { count: 'exact', head: true })
       .eq('couple_id', profile.couple_id),
+    supabase
+      .from('expenses')
+      .select('id, name, amount, currency, category, date, paid_by_user_id')
+      .eq('couple_id', profile.couple_id)
+      .order('created_at', { ascending: false })
+      .limit(3),
     fetchRates(),
   ])
 
@@ -45,7 +57,6 @@ export default async function DashboardPage() {
   const rates = ratesResult?.rates ?? null
   const baseCurrency = profile?.base_currency ?? 'IDR'
 
-  // Two-sided balance
   const theyOweMe = expenses.filter(e => e.paid_by_user_id === user.id)
   const iOweThem = expenses.filter(e => e.paid_by_user_id !== user.id)
 
@@ -55,7 +66,6 @@ export default async function DashboardPage() {
   const theyOweMeEntries = Object.entries(theyOweMeTotals).filter(([, v]) => v > 0)
   const iOweThemEntries = Object.entries(iOweThemTotals).filter(([, v]) => v > 0)
 
-  // Unified totals in base currency (null if rates unavailable)
   const theyOweMeUnified = computeUnifiedTotal(theyOweMeTotals, baseCurrency, rates)
   const iOweThemUnified = computeUnifiedTotal(iOweThemTotals, baseCurrency, rates)
 
@@ -63,68 +73,75 @@ export default async function DashboardPage() {
   const balanceSettled = hasAnyExpenses && theyOweMeEntries.length === 0 && iOweThemEntries.length === 0
   const noExpensesYet = !hasAnyExpenses
 
-  const memberSince = couple?.created_at
-    ? new Date(couple.created_at).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : null
-
   return (
     <PageTransition>
-    <div className="space-y-5">
-      <RealtimeRefresh coupleId={profile.couple_id} />
+      <div>
+        <RealtimeRefresh coupleId={profile.couple_id} />
 
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F]" aria-hidden="true">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-          </svg>
+        {/* Greeting bar */}
+        <div className="flex items-start justify-between pb-2">
+          <div>
+            <p className="text-[12px] text-[#B19A8B] dark:text-[#7A5848] mb-0.5">{todayLabel}</p>
+            <h1 className="text-[22px] font-bold text-[#2A1810] dark:text-[#FAF3F1] tracking-[-0.4px]">
+              Hey, {profile.name} 👋
+            </h1>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-[#FCE3DC] dark:bg-[#3D1E18] flex items-center justify-center border border-[#D8513E]/20 dark:border-[#E8675A]/20 flex-shrink-0">
+            <span className="text-[15px] font-bold text-[#D8513E] dark:text-[#E8675A]">
+              {profile.name?.[0]?.toUpperCase()}
+            </span>
+          </div>
         </div>
-        <div>
-          <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">
-            Hey, {profile.name}
-          </h1>
-          <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
-            {partner ? `Connected with ${partner.name}` : 'Your couple space'}
-          </p>
+
+        {/* Daily Conversation */}
+        <div className="mt-2">
+          <DailyConversationSection
+            coupleId={profile.couple_id}
+            userId={user.id}
+            partnerName={partnerName}
+            myInitial={profile.name?.[0]?.toUpperCase() ?? '?'}
+            partnerInitial={partner?.name?.[0]?.toUpperCase() ?? '?'}
+          />
         </div>
-      </div>
 
-      {/* Balance card */}
-      <BalanceCard
-        theyOweMeEntries={theyOweMeEntries}
-        iOweThemEntries={iOweThemEntries}
-        theyOweMeUnified={theyOweMeUnified}
-        iOweThemUnified={iOweThemUnified}
-        baseCurrency={baseCurrency}
-        partnerName={partnerName}
-        noExpensesYet={noExpensesYet}
-        balanceSettled={balanceSettled}
-      />
+        {/* Balance section */}
+        <div className="mt-4">
+          <BalanceCard
+            theyOweMeEntries={theyOweMeEntries}
+            iOweThemEntries={iOweThemEntries}
+            theyOweMeUnified={theyOweMeUnified}
+            iOweThemUnified={iOweThemUnified}
+            baseCurrency={baseCurrency}
+            partnerName={partnerName}
+            noExpensesYet={noExpensesYet}
+            balanceSettled={balanceSettled}
+          />
+        </div>
 
-      <TogetherCard
-        anniversaryDate={couple?.anniversary_date ?? null}
-        coupleId={profile.couple_id}
-      />
+        {/* Together hero */}
+        <div className="mt-6">
+          <TogetherCard
+            anniversaryDate={couple?.anniversary_date ?? null}
+            coupleId={profile.couple_id}
+          />
+        </div>
 
-      {/* Couple space card */}
-      <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] space-y-4 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-        <h2 className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider">
-          Your couple space
-        </h2>
+        {/* Recent expenses */}
+        {recentExpenses && recentExpenses.length > 0 && (
+          <div className="mt-6">
+            <RecentExpenses
+              expenses={recentExpenses}
+              userId={user.id}
+              partnerName={partnerName}
+            />
+          </div>
+        )}
 
-        <div>
-          <p className="text-xs text-[#A07060] dark:text-[#D4A090] mb-2">Invite code</p>
+        {/* Invite code */}
+        <div className="mt-6">
           <InviteCodeBadge code={couple?.invite_code} />
         </div>
-
-        {memberSince && (
-          <p className="text-xs text-[#C4A89E] dark:text-[#A07868]">On Ourverse since {memberSince}</p>
-        )}
       </div>
-    </div>
     </PageTransition>
   )
 }

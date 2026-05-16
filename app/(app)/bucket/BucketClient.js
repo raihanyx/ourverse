@@ -1,102 +1,169 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useTransition, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { bulkMarkDone, bulkDeleteBucketItems } from '@/app/actions/bucket'
-import { formatDate } from '@/lib/currency'
+import { bulkDeleteBucketItems } from '@/app/actions/bucket'
 import AddBucketForm from './AddBucketForm'
 import MarkDoneSheet from './MarkDoneSheet'
 import BucketHelpSheet from './BucketHelpSheet'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
-import { BUCKET_CATEGORY_COLORS as CATEGORY_COLORS, BUCKET_CATEGORY_LABELS as CATEGORY_LABELS } from '@/lib/constants'
+import { useTheme } from '@/app/ThemeProvider'
+
+// ── Category palette ─────────────────────────────────────────────────────────
+
+const CAT_PALETTE = {
+  restaurant: { lightBg: '#FCE3DC', lightFg: '#B83820', darkBg: 'var(--v2-accentDim)', darkFg: 'var(--v2-accent)', label: 'Restaurant' },
+  travel:     { lightBg: '#DDE9F5', lightFg: '#2E6FA8', darkBg: 'var(--v2-blueBg)', darkFg: 'var(--v2-blue)', label: 'Travel'     },
+  activity:   { lightBg: '#DCEDC4', lightFg: '#527C24', darkBg: '#162404', darkFg: 'var(--v2-green)', label: 'Activity'   },
+  movie:      { lightBg: '#ECE0F8', lightFg: '#6F3DAB', darkBg: '#271A36', darkFg: '#C084FC', label: 'Movie'      },
+  other:      { lightBg: '#EEEEEE', lightFg: '#555555', darkBg: '#222222', darkFg: '#9CA3AF', label: 'Other'      },
+}
+function catPair(key, isDark) {
+  const c = CAT_PALETTE[key] ?? CAT_PALETTE.other
+  return { bg: isDark ? c.darkBg : c.lightBg, fg: isDark ? c.darkFg : c.lightFg, label: c.label }
+}
 
 const FILTER_TABS = [
   { key: 'all',        label: 'All' },
-  { key: 'restaurant', label: 'Restaurants' },
+  { key: 'restaurant', label: 'Food' },
   { key: 'travel',     label: 'Travel' },
-  { key: 'activity',   label: 'Activities' },
-  { key: 'movie',      label: 'Movies' },
-  { key: 'other',      label: 'Other' },
-  { key: 'done',       label: 'Done' },
-]
-
-const PICKER_CATEGORIES = [
-  { key: 'all',        label: 'All' },
-  { key: 'restaurant', label: 'Restaurants' },
-  { key: 'travel',     label: 'Travel' },
-  { key: 'activity',   label: 'Activities' },
-  { key: 'movie',      label: 'Movies' },
+  { key: 'activity',   label: 'Activity' },
+  { key: 'movie',      label: 'Movie' },
   { key: 'other',      label: 'Other' },
 ]
 
-function CategoryBadge({ category }) {
-  return (
-    <span className={`text-[11px] px-1.5 py-0.5 rounded-md font-medium ${CATEGORY_COLORS[category] ?? CATEGORY_COLORS.other}`}>
-      {CATEGORY_LABELS[category] ?? category}
-    </span>
-  )
+function formatCalDate(dateString) {
+  const date = new Date(dateString + 'T00:00:00')
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
+// ── WishCard ─────────────────────────────────────────────────────────────────
 
-function BucketItemRow({ item, addedByName, calendarDate, onMarkDone, isSelecting, isSelected, onSelect, isPending }) {
-  const canSelect = isSelecting && !item.is_done
+function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onToggleSelect, isDark }) {
+  const c = catPair(item.category, isDark)
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
+  const innerBg = isDark
+    ? (isSelected ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.22)')
+    : (isSelected ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.4)')
 
   return (
     <div
-      onClick={canSelect ? () => onSelect(item.id) : undefined}
-      className={`flex items-center gap-3 py-3 border-b border-[#F5EDE9] dark:border-[#3D2820] last:border-0
-        ${item.is_done ? 'opacity-45' : ''}
-        ${canSelect ? 'cursor-pointer' : ''}
-        ${isSelected ? 'mx-[-18px] px-[18px] bg-[#FEF6F5] dark:bg-[#2A1510] first:rounded-t-2xl last:rounded-b-2xl' : ''}
-      `}
+      onClick={isSelecting ? () => onToggleSelect(item.id) : undefined}
+      className={`rounded-2xl p-1 flex flex-col overflow-hidden transition-colors duration-150 ${isSelecting ? 'cursor-pointer' : ''}`}
+      style={{
+        background: isSelected ? accentDim : c.bg,
+        border: `1px solid ${isSelected ? `${accent}88` : `${c.fg}22`}`,
+      }}
     >
-      {isSelecting && !item.is_done && (
-        <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 transition-all
-          ${isSelected
-            ? 'bg-[#C2493A] border-[#C2493A] dark:bg-[#F0907F] dark:border-[#F0907F]'
-            : 'border-[#D4C8C4] dark:border-[#5A3830]'
-          }`}
-        />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate ${item.is_done ? 'line-through text-[#A07060] dark:text-[#D4A090]' : 'text-[#1C1210] dark:text-[#FAF3F1]'}`}>
+      {/* Header strip */}
+      <div className="flex items-center gap-1.5 px-2.5 py-2">
+        {isSelecting ? (
+          <div
+            className="w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0 transition-all"
+            style={{
+              border: `1.5px solid ${isSelected ? accent : `${c.fg}88`}`,
+              background: isSelected ? accent : 'transparent',
+            }}
+          >
+            {isSelected && (
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            )}
+          </div>
+        ) : (
+          <span
+            className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+            style={{ background: c.fg }}
+          />
+        )}
+        <span
+          className="text-[9.5px] font-bold uppercase tracking-[0.08em] flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap"
+          style={{ color: c.fg }}
+        >
+          {c.label}
+        </span>
+        {calendarDate && (
+          <span
+            className="text-[10px] font-semibold inline-flex items-center gap-1 px-[7px] py-[2px] rounded-md whitespace-nowrap flex-shrink-0"
+            style={{ background: `${c.fg}1F`, color: c.fg }}
+          >
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+            {formatCalDate(calendarDate)}
+          </span>
+        )}
+      </div>
+
+      {/* Inset content panel */}
+      <div
+        className="rounded-xl px-3 pt-[11px] pb-3 flex flex-col gap-2.5"
+        style={{ background: innerBg, minHeight: 78 }}
+      >
+        <p className="text-[14px] font-semibold leading-[1.3] flex-1 text-[#2A1810] dark:text-[#FAF3F1]">
           {item.name}
         </p>
-        <div className="flex items-center gap-2 mt-1 flex-wrap">
-          <CategoryBadge category={item.category} />
-          {calendarDate && !item.is_done && (
-            <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium bg-[#DBEAFE] text-[#1E40AF] dark:bg-[#1E2A3A] dark:text-[#7AB0D8]">
-              {formatDate(calendarDate)}
+        {!isSelecting && (
+          calendarDate ? (
+            <span
+              className="self-start inline-flex items-center gap-1 text-[10.5px] italic font-medium"
+              style={{ color: c.fg, opacity: 0.7 }}
+            >
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              On calendar
             </span>
-          )}
-          {item.is_done && (
-            <span className="text-[11px] px-1.5 py-0.5 rounded-md font-medium bg-[#DCFCE7] text-[#166534] dark:bg-[#14532D] dark:text-[#86EFAC]">
-              memory
-            </span>
-          )}
-          <span className="text-[11px] text-[#C4A89E] dark:text-[#A07868]">
-            Added by {addedByName}
-          </span>
-        </div>
+          ) : (
+            <button
+              onClick={e => { e.stopPropagation(); onMarkDone(item) }}
+              className="self-start h-6 px-2.5 rounded-[7px] bg-transparent text-[10.5px] font-semibold cursor-pointer"
+              style={{ border: `1px solid ${c.fg}55`, color: c.fg }}
+            >
+              Done
+            </button>
+          )
+        )}
       </div>
-      {!isSelecting && !item.is_done && (
-        <button
-          onClick={() => onMarkDone(item)}
-          disabled={isPending}
-          className="flex-shrink-0 h-7 px-3 rounded-full border border-[#C2493A] dark:border-[#E8675A] text-[11px] font-medium text-[#C2493A] dark:text-[#E8675A] hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] disabled:opacity-40 transition-colors cursor-pointer"
-        >
-          Mark done
-        </button>
-      )}
     </div>
   )
 }
 
+// ── Small memory card (horizontal strip) ─────────────────────────────────────
+
+function MiniMemoryCard({ memory, isDark }) {
+  const c = catPair(memory.category, isDark)
+  return (
+    <div
+      className="w-[130px] flex-shrink-0 rounded-[14px] px-3 pt-2.5 pb-3 flex flex-col gap-2"
+      style={{ background: c.bg, border: `1px solid ${c.fg}22` }}
+    >
+      <span className="text-[9px] font-bold uppercase tracking-[0.08em]" style={{ color: c.fg }}>
+        {c.label}
+      </span>
+      <p className="text-[12.5px] font-semibold leading-[1.3] text-[#2A1810] dark:text-[#FAF3F1]">
+        {memory.name}
+      </p>
+    </div>
+  )
+}
+
+// ── Main ────────────────────────────────────────────────────────────────────
+
 export default function BucketClient({
   initialItems,
   initialCalendarDates,
+  initialRecentMemories,
   currentUserId,
   currentUserName,
   partnerId,
@@ -104,100 +171,121 @@ export default function BucketClient({
   coupleId,
   memoriesCount,
 }) {
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+
   const [items, setItems] = useState(initialItems)
   const [calendarDates, setCalendarDates] = useState(initialCalendarDates ?? {})
+  const [recentMemories, setRecentMemories] = useState(initialRecentMemories ?? [])
   const [localMemoriesCount, setLocalMemoriesCount] = useState(memoriesCount)
   const [activeFilter, setActiveFilter] = useState('all')
-  const [randomCategory, setRandomCategory] = useState('all')
-  const [pickedItem, setPickedItem] = useState(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [isClosingAdd, setIsClosingAdd] = useState(false)
   const [showDoneSheet, setShowDoneSheet] = useState(null)
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [isPending, startTransition] = useTransition()
-  const [isDeleting, startDeleteTransition] = useTransition()
+  const [, startDeleteTransition] = useTransition()
   const [showHelp, setShowHelp] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [bulkDoneIds, setBulkDoneIds] = useState(null)
   const [bulkError, setBulkError] = useState(null)
+  const [picked, setPicked] = useState(null)
+  const [rolling, setRolling] = useState(false)
+  const rollTimerRef = useRef(null)
+
+  // Refetch helpers
+  function refetchMemories() {
+    const supabase = createClient()
+    Promise.all([
+      supabase
+        .from('memories')
+        .select('id, name, category, date')
+        .eq('couple_id', coupleId)
+        .order('created_at', { ascending: false })
+        .limit(8),
+      supabase
+        .from('memories')
+        .select('id', { count: 'exact', head: true })
+        .eq('couple_id', coupleId),
+    ]).then(([{ data }, { count }]) => {
+      if (data) setRecentMemories(data)
+      if (count !== null) setLocalMemoriesCount(count)
+    })
+  }
+
+  function refetchCalendarDates() {
+    createClient()
+      .from('calendar_entries')
+      .select('bucket_item_id, date')
+      .eq('couple_id', coupleId)
+      .not('bucket_item_id', 'is', null)
+      .then(({ data }) => {
+        if (data) setCalendarDates(Object.fromEntries(data.map(e => [e.bucket_item_id, e.date])))
+      })
+  }
+
+  useEffect(() => {
+    refetchMemories()
+    refetchCalendarDates()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coupleId])
 
   // Realtime
   useEffect(() => {
     const supabase = createClient()
     const channel = supabase
       .channel('bucket-' + coupleId)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'bucket_items' },
-        (payload) => {
-          const row = payload.new ?? payload.old
-          if (row?.couple_id !== coupleId) return
-
-          if (payload.eventType === 'INSERT') {
-            setItems(prev =>
-              prev.some(i => i.id === payload.new.id) ? prev : [payload.new, ...prev]
-            )
-          } else if (payload.eventType === 'UPDATE') {
-            setItems(prev => prev.map(i => i.id === payload.new.id ? payload.new : i))
-          } else if (payload.eventType === 'DELETE') {
-            setItems(prev => prev.filter(i => i.id !== payload.old.id))
-          }
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'bucket_items' }, (payload) => {
+        const row = payload.new ?? payload.old
+        if (row?.couple_id !== coupleId) return
+        if (payload.eventType === 'INSERT') {
+          setItems(prev => prev.some(i => i.id === payload.new.id) ? prev : [payload.new, ...prev])
+        } else if (payload.eventType === 'UPDATE') {
+          setItems(prev => prev.map(i => i.id === payload.new.id ? payload.new : i))
+        } else if (payload.eventType === 'DELETE') {
+          setItems(prev => prev.filter(i => i.id !== payload.old.id))
         }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'calendar_entries' },
-        (payload) => {
-          const row = payload.new ?? payload.old
-          if (row?.couple_id !== coupleId) return
-
-          if (payload.eventType === 'INSERT' && payload.new.bucket_item_id) {
-            setCalendarDates(prev => ({ ...prev, [payload.new.bucket_item_id]: payload.new.date }))
-          } else if (payload.eventType === 'UPDATE' && payload.new.bucket_item_id) {
-            setCalendarDates(prev => ({ ...prev, [payload.new.bucket_item_id]: payload.new.date }))
-          } else if (payload.eventType === 'DELETE' && payload.old.bucket_item_id) {
-            setCalendarDates(prev => {
-              const next = { ...prev }
-              delete next[payload.old.bucket_item_id]
-              return next
-            })
-          }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'calendar_entries' }, (payload) => {
+        const row = payload.new ?? payload.old
+        if (row?.couple_id !== coupleId) return
+        if ((payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') && payload.new.bucket_item_id) {
+          setCalendarDates(prev => ({ ...prev, [payload.new.bucket_item_id]: payload.new.date }))
+        } else if (payload.eventType === 'DELETE' && payload.old.bucket_item_id) {
+          setCalendarDates(prev => { const next = { ...prev }; delete next[payload.old.bucket_item_id]; return next })
         }
-      )
+      })
       .subscribe()
-
     return () => { supabase.removeChannel(channel) }
   }, [coupleId])
 
-  function getUserName(userId) {
-    if (userId === currentUserId) return currentUserName
-    if (userId === partnerId) return partnerName ?? 'Partner'
-    return 'Unknown'
-  }
+  // Cleanup pick interval on unmount
+  useEffect(() => () => { if (rollTimerRef.current) clearInterval(rollTimerRef.current) }, [])
 
-  const filteredItems = activeFilter === 'done'
-    ? items.filter(i => i.is_done)
-    : activeFilter === 'all'
-    ? items.filter(i => !i.is_done)
-    : items.filter(i => !i.is_done && i.category === activeFilter)
+  // Derived
+  const undoneItems = items.filter(i => !i.is_done)
+  const doneItems = items.filter(i => i.is_done)
+  const filteredWishlist = activeFilter === 'all'
+    ? undoneItems
+    : undoneItems.filter(i => i.category === activeFilter)
 
-  function getPickerPool() {
-    const undone = items.filter(i => !i.is_done && !calendarDates[i.id])
-    if (randomCategory === 'all') return undone
-    return undone.filter(i => i.category === randomCategory)
-  }
-
-  function handlePick() {
-    const pool = getPickerPool()
-    setPickedItem(pool[Math.floor(Math.random() * pool.length)])
-  }
-
-  function handlePickAgain() {
-    const pool = getPickerPool()
-    const others = pool.filter(i => i.id !== pickedItem?.id)
-    const source = others.length > 0 ? others : pool
-    setPickedItem(source[Math.floor(Math.random() * source.length)])
+  // Handlers
+  function pickRandom() {
+    const pool = filteredWishlist
+    if (pool.length === 0) return
+    setRolling(true)
+    let n = 0
+    const total = 8
+    if (rollTimerRef.current) clearInterval(rollTimerRef.current)
+    rollTimerRef.current = setInterval(() => {
+      const i = pool[Math.floor(Math.random() * pool.length)]
+      setPicked(i)
+      n += 1
+      if (n >= total) {
+        clearInterval(rollTimerRef.current)
+        rollTimerRef.current = null
+        setRolling(false)
+      }
+    }, 65)
   }
 
   function handleCloseAdd() {
@@ -205,17 +293,22 @@ export default function BucketClient({
     setTimeout(() => { setShowAddForm(false); setIsClosingAdd(false) }, 220)
   }
 
-  function handleAddSuccess() {
+  function handleAddSuccess(row) {
+    if (row) setItems(prev => prev.some(i => i.id === row.id) ? prev : [row, ...prev])
     handleCloseAdd()
   }
 
-  function handleMarkDoneSuccess() {
+  function handleMarkDoneSuccess(memoryRow) {
     if (showDoneSheet) {
       setItems(prev => prev.map(i => i.id === showDoneSheet.id ? { ...i, is_done: true } : i))
       setLocalMemoriesCount(prev => prev + 1)
+      const memCard = memoryRow
+        ? { id: memoryRow.id, name: memoryRow.name, category: memoryRow.category, date: memoryRow.date }
+        : { id: 'opt-' + showDoneSheet.id, name: showDoneSheet.name, category: showDoneSheet.category, date: null }
+      setRecentMemories(prev => [memCard, ...prev.filter(m => m.id !== memCard.id)].slice(0, 8))
     }
     setShowDoneSheet(null)
-    setPickedItem(null)
+    setPicked(null)
   }
 
   function handleSelect(id) {
@@ -226,28 +319,19 @@ export default function BucketClient({
     })
   }
 
-  function handleCancelSelecting() {
+  function exitSelectMode() {
     setIsSelecting(false)
     setSelectedIds(new Set())
   }
 
-  function handleBulkDelete() {
-    if (selectedIds.size === 0) return
-    setShowDeleteConfirm(true)
-  }
-
   function handleConfirmDelete() {
-    const ids = filteredItems
-      .filter(i => selectedIds.has(i.id))
-      .map(i => i.id)
+    const ids = [...selectedIds]
     if (ids.length === 0) return
     setBulkError(null)
     const removed = items.filter(i => ids.includes(i.id))
     setShowDeleteConfirm(false)
     setItems(prev => prev.filter(i => !ids.includes(i.id)))
-    setIsSelecting(false)
-    setSelectedIds(new Set())
-    setPickedItem(null)
+    exitSelectMode()
     startDeleteTransition(async () => {
       const result = await bulkDeleteBucketItems(ids)
       if (result?.error) {
@@ -257,300 +341,251 @@ export default function BucketClient({
     })
   }
 
-  function handleBulkMarkDone() {
-    const ids = filteredItems
-      .filter(i => selectedIds.has(i.id) && !i.is_done)
-      .map(i => i.id)
-    if (ids.length === 0) return
-    setBulkDoneIds(ids)
-  }
-
-  function handleConfirmBulkDone(date) {
-    const ids = bulkDoneIds
-    setBulkError(null)
-    setBulkDoneIds(null)
-    setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: true } : i))
-    setLocalMemoriesCount(prev => prev + ids.length)
-    setIsSelecting(false)
-    setSelectedIds(new Set())
-    setPickedItem(null)
-    startTransition(async () => {
-      const result = await bulkMarkDone(ids, date)
-      if (result?.error) {
-        setItems(prev => prev.map(i => ids.includes(i.id) ? { ...i, is_done: false } : i))
-        setLocalMemoriesCount(prev => prev - ids.length)
-        setBulkError('Something went wrong. Please try again.')
-      }
-    })
-  }
-
-  const undoneItems = items.filter(i => !i.is_done)
-  const pickerPool = getPickerPool()
-  const eligibleSelectedCount = filteredItems.filter(i => selectedIds.has(i.id) && !i.is_done).length
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
 
   return (
     <>
-      <div className="space-y-5">
-        {/* Page header */}
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C2493A" className="dark:stroke-[#F0907F]" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <line x1="11" y1="5" x2="22" y2="5" />
-                <line x1="11" y1="12" x2="22" y2="12" />
-                <line x1="11" y1="19" x2="22" y2="19" />
-                <polyline points="3 5 5 7 8 3" />
-                <polyline points="3 12 5 14 8 10" />
-                <polyline points="3 19 5 21 8 17" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-[18px] font-semibold text-[#1C1210] dark:text-[#FAF3F1] leading-snug">Bucket list</h1>
-              <p className="text-[12px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
-                {undoneItems.length > 0
-                  ? `${undoneItems.length} thing${undoneItems.length === 1 ? '' : 's'} to explore`
-                  : 'Start adding things to do'}
-              </p>
-            </div>
+      <div>
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-[24px] font-bold leading-tight tracking-[-0.4px] text-[#2A1810] dark:text-[#FAF3F1]">
+              Bucket List
+            </h1>
+            <p className="text-[13px] mt-[3px] text-[#B19A8B] dark:text-[#7A5848]">
+              {undoneItems.length} left · {localMemoriesCount} done
+            </p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-              {isSelecting ? (
-                <button
-                  onClick={handleCancelSelecting}
-                  className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
-                >
-                  Cancel
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => setShowHelp(true)}
-                    className="w-8 h-8 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] flex items-center justify-center text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
-                    aria-label="Bucket list tips"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                  </button>
-                  {undoneItems.length > 0 && (
-                    <button
-                      onClick={() => { setIsSelecting(true); setSelectedIds(new Set()) }}
-                      className="h-8 px-3.5 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210] text-xs font-medium text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] hover:text-[#C2493A] dark:hover:border-[#F0907F] dark:hover:text-[#F0907F] transition-colors duration-200 cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowAddForm(true)}
-                    className="flex items-center gap-1.5 h-8 px-3 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-[13px] font-semibold hover:bg-[#A83D30] dark:hover:bg-[#D85A4E] transition-colors cursor-pointer"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Add
-                  </button>
-                </>
-              )}
+          <div className="flex items-center gap-1.5 mt-1 flex-shrink-0">
+            <IconBtn onClick={() => setShowHelp(true)} ariaLabel="Bucket list tips" active={false} isDark={isDark}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </IconBtn>
+            <IconBtn
+              onClick={() => isSelecting ? exitSelectMode() : setIsSelecting(true)}
+              ariaLabel={isSelecting ? 'Exit select mode' : 'Select items'}
+              active={isSelecting}
+              isDark={isDark}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
+              </svg>
+            </IconBtn>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#D8513E] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add
+            </button>
           </div>
         </div>
 
         {bulkError && (
-          <div className="text-sm text-[#C2493A] dark:text-[#F0907F] bg-[#FDECEA] dark:bg-[#3D1E18] border border-[#EDE0DC] dark:border-[#3D2820] px-4 py-3 rounded-xl">
+          <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3A2418] px-4 py-3 rounded-xl mb-4">
             {bulkError}
           </div>
         )}
 
-        {/* Memories link card */}
-        <Link href="/memories" className="block">
-          <div className="bg-white dark:bg-[#2E201C] rounded-[14px] border border-[#EDE0DC] dark:border-[#3D2820] flex items-center justify-between px-4 py-[13px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none hover:border-[#C2493A] dark:hover:border-[#F0907F] transition-colors">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-[#FDECEA] dark:bg-[#3D1E18] flex items-center justify-center flex-shrink-0">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="#C2493A" className="dark:fill-[#F0907F]" aria-hidden="true">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-[14px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Memories</p>
-                <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mt-0.5">
-                  {localMemoriesCount === 0 ? 'Nothing done together yet' : `${localMemoriesCount} things you've done together`}
-                </p>
-              </div>
+        {/* ── Filter pills ───────────────────────────────────────────── */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1 mb-5 -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
+          {FILTER_TABS.map(f => {
+            const active = activeFilter === f.key
+            return (
+              <button
+                key={f.key}
+                onClick={() => setActiveFilter(f.key)}
+                className="flex-shrink-0 h-[30px] px-3.5 rounded-full text-[12px] font-medium border cursor-pointer transition-colors"
+                style={{
+                  background: active ? accent : (isDark ? 'var(--v2-surface)' : '#F8F2EB'),
+                  color: active ? 'white' : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
+                  borderColor: active ? accent : (isDark ? 'var(--v2-border)' : '#ECDFD2'),
+                }}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ── Memories link card ─────────────────────────────────────── */}
+        <Link href="/memories" className="block mb-5">
+          <div className="rounded-[14px] border border-[#ECDFD2] dark:border-[#3A2418] bg-white dark:bg-[#221714] px-3.5 py-3 flex items-center gap-3 cursor-pointer transition-colors hover:border-[#D8513E] dark:hover:border-[#E8675A]">
+            <div
+              className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center flex-shrink-0"
+              style={{ background: accentDim }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill={accent} aria-hidden="true">
+                <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+              </svg>
             </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#C2493A] dark:text-[#F0907F] flex-shrink-0" aria-hidden="true">
+            <div className="flex-1 min-w-0">
+              <p className="text-[13.5px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">
+                {localMemoriesCount} {localMemoriesCount === 1 ? 'Memory' : 'Memories'}
+              </p>
+              <p className="text-[11.5px] mt-0.5 text-[#B19A8B] dark:text-[#7A5848]">
+                Things you’ve done together
+              </p>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#B19A8B] dark:text-[#7A5848] flex-shrink-0" aria-hidden="true">
               <polyline points="9 18 15 12 9 6" />
             </svg>
           </div>
         </Link>
 
-        {/* Random picker card */}
-        <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-          <p className="text-[10px] font-semibold text-[#A07060] dark:text-[#D4A090] uppercase tracking-wider mb-3">
-            Pick something random
-          </p>
-          <div className="flex gap-[6px] overflow-x-auto pb-1 mb-3 scrollbar-none" style={{ flexWrap: 'nowrap' }}>
-            {PICKER_CATEGORIES.map(cat => (
-              <button
-                key={cat.key}
-                onClick={() => setRandomCategory(cat.key)}
-                className={`flex-shrink-0 text-[12px] font-medium px-3 py-1 rounded-full border transition-colors cursor-pointer
-                  ${randomCategory === cat.key
-                    ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
-                    : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
-                  }`}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+        {/* ── Section header + Pick for us ──────────────────────────── */}
+        <div className="flex items-center gap-2.5 mb-3.5">
+          <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#B19A8B] dark:text-[#7A5848] flex-shrink-0">
+            Bucket list · {filteredWishlist.length}
+          </span>
+          <div className="flex-1 h-px bg-[#ECDFD2] dark:bg-[#3A2418]" />
           <button
-            onClick={handlePick}
-            disabled={pickerPool.length === 0}
-            className="w-full h-10 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30] disabled:opacity-40 transition-colors cursor-pointer"
+            onClick={pickRandom}
+            disabled={filteredWishlist.length === 0 || rolling}
+            className="flex items-center gap-[5px] h-[26px] px-2.5 rounded-[9px] text-[11.5px] font-semibold flex-shrink-0 cursor-pointer transition-opacity"
+            style={{
+              border: `1px solid ${accent}66`,
+              background: accentDim,
+              color: accent,
+              opacity: filteredWishlist.length === 0 ? 0.5 : 1,
+              cursor: filteredWishlist.length === 0 ? 'default' : 'pointer',
+            }}
           >
-            {pickerPool.length === 0 ? 'Nothing in this category yet' : 'Pick for us'}
+            <span
+              className="text-[12px] inline-block transition-transform duration-[250ms]"
+              style={{ transform: rolling ? 'rotate(180deg)' : 'rotate(0)' }}
+            >🎲</span>
+            Pick for us
           </button>
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {FILTER_TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveFilter(tab.key)}
-              className={`flex-shrink-0 h-8 px-3 rounded-full text-[12px] font-medium border transition-colors cursor-pointer
-                ${activeFilter === tab.key
-                  ? 'bg-[#C2493A] dark:bg-[#E8675A] text-white border-[#C2493A] dark:border-[#E8675A]'
-                  : 'border-[#EDE0DC] dark:border-[#3D2820] text-[#A07060] dark:text-[#D4A090] hover:border-[#C2493A] dark:hover:border-[#F0907F]'
-                }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Picked item result card */}
-        {pickedItem && !isSelecting && (
-          <div className="rounded-[14px] border border-[#C2493A] dark:border-[#F0907F] p-[14px] bg-[#FDECEA] dark:bg-[#3D1E18]">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[#C2493A] dark:text-[#F0907F] mb-1">
-              Tonight, go here
-            </p>
-            <p className="text-[16px] font-bold text-[#C2493A] dark:text-[#F0907F] mb-1">
-              {pickedItem.name}
-            </p>
-            <p className="text-[11px] text-[#A07060] dark:text-[#D4A090] mb-3 capitalize">
-              {CATEGORY_LABELS[pickedItem.category] ?? pickedItem.category} · Added by {getUserName(pickedItem.added_by_user_id)}
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowDoneSheet(pickedItem)}
-                className="flex-1 h-9 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] transition-colors cursor-pointer"
-              >
-                Mark as done
-              </button>
-              <button
-                onClick={handlePickAgain}
-                className="flex-1 h-9 rounded-xl border border-[#C2493A] dark:border-[#F0907F] text-[#C2493A] dark:text-[#F0907F] text-sm font-medium hover:bg-[#FDECEA] dark:hover:bg-[#3D1E18] transition-colors"
-              >
-                Pick again
-              </button>
-            </div>
-            <button
-              onClick={() => setPickedItem(null)}
-              style={{ fontSize: '11px', fontWeight: 500, textAlign: 'center', display: 'block', width: '100%', padding: '6px 0', marginTop: '6px', marginBottom: '-8px', cursor: 'pointer', border: 'none', background: 'transparent' }}
-              className="text-[#A07060] dark:text-[#D4A090]"
-            >
-              Dismiss
-            </button>
-          </div>
-        )}
-
-        {/* Item list */}
-        {filteredItems.length === 0 ? (
-          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] py-10 text-center space-y-2 shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto text-[#D4C8C4] dark:text-[#5A3830]" aria-hidden="true">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-            </svg>
-            <p className="text-[#C4A89E] dark:text-[#A07868] text-sm">
-              {activeFilter === 'done' ? 'Nothing done together yet' : 'Nothing here yet'}
-            </p>
-            {activeFilter !== 'done' && (
-              <p className="text-xs text-[#D4C8C4] dark:text-[#5A3830]">Tap Add to put something on the list</p>
-            )}
+        {/* ── Bucket grid ───────────────────────────────────────────── */}
+        {filteredWishlist.length === 0 ? (
+          <div className="py-[30px] text-center">
+            <p className="text-[14px] text-[#B19A8B] dark:text-[#7A5848]">Nothing in this category yet</p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] px-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none">
-            {filteredItems.map(item => (
-              <BucketItemRow
+          <div className="grid grid-cols-2 gap-2.5">
+            {filteredWishlist.map(item => (
+              <WishCard
                 key={item.id}
                 item={item}
-                addedByName={getUserName(item.added_by_user_id)}
                 calendarDate={calendarDates[item.id] ?? null}
                 onMarkDone={setShowDoneSheet}
                 isSelecting={isSelecting}
                 isSelected={selectedIds.has(item.id)}
-                onSelect={handleSelect}
-                isPending={isPending}
+                onToggleSelect={handleSelect}
+                isDark={isDark}
               />
             ))}
+          </div>
+        )}
+
+        {/* ── Memories strip ─────────────────────────────────────────── */}
+        {localMemoriesCount > 0 && recentMemories.length > 0 && (
+          <div className="mt-6">
+            <div className="flex items-center gap-2.5 mb-3.5">
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#B19A8B] dark:text-[#7A5848] flex-shrink-0">
+                Memories · {localMemoriesCount}
+              </span>
+              <div className="flex-1 h-px bg-[#ECDFD2] dark:bg-[#3A2418]" />
+            </div>
+            <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
+              {recentMemories.map(m => (
+                <MiniMemoryCard key={m.id} memory={m} isDark={isDark} />
+              ))}
+            </div>
           </div>
         )}
 
         <div className="h-4" />
       </div>
 
-      {/* Bulk action bar */}
+      {/* ── Floating bulk-action bar ───────────────────────────────── */}
       {isSelecting && typeof document !== 'undefined' && createPortal(
         <div
-          className="fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-[#2E201C] border-t border-[#EDE0DC] dark:border-[#3D2820]"
-          style={{ animation: 'fadeIn 150ms ease-out', paddingBottom: 'env(safe-area-inset-bottom)' }}
+          style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 30,
+            paddingBottom: 'env(safe-area-inset-bottom)',
+          }}
         >
-          <div className="max-w-lg mx-auto px-4 h-16 flex items-center justify-between gap-3">
-            {selectedIds.size === 0 ? (
-              <span className="text-sm text-[#C4A89E] dark:text-[#8A6A60]">Tap items to select</span>
+          <div className="max-w-lg mx-auto" style={{ padding: '0 12px 80px' }}>
+            {selectedIds.size > 0 ? (
+              <div
+                style={{
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
+                  borderRadius: 16, padding: '8px 8px 8px 14px',
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+                }}
+              >
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--v2-t1)', flex: 1 }}>
+                  {selectedIds.size} selected
+                </span>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  style={{
+                    height: 32, padding: '0 14px', borderRadius: 9, border: 'none',
+                    background: 'var(--v2-accent)', color: 'white',
+                    fontSize: 12.5, fontWeight: 600,
+                    fontFamily: 'inherit', cursor: 'pointer',
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             ) : (
-              <span className="text-sm text-[#A07060] dark:text-[#D4A090]">{selectedIds.size} selected</span>
+              <div
+                style={{
+                  background: 'var(--v2-cardHigh)', border: '1px solid var(--v2-border)',
+                  borderRadius: 16, padding: '10px 14px',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.55)',
+                }}
+              >
+                <span style={{ fontSize: 13, color: 'var(--v2-t2)', flex: 1 }}>Tap items to select</span>
+                <button
+                  onClick={exitSelectMode}
+                  style={{
+                    height: 28, padding: '0 12px', borderRadius: 8,
+                    border: '1px solid var(--v2-border)', background: 'transparent',
+                    color: 'var(--v2-t2)', fontSize: 12, fontWeight: 600,
+                    fontFamily: 'inherit', cursor: 'pointer',
+                  }}
+                >
+                  Done
+                </button>
+              </div>
             )}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleBulkDelete}
-                disabled={isDeleting || selectedIds.size === 0}
-                className="h-9 px-4 rounded-xl border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-40 transition-colors cursor-pointer"
-              >
-                {isDeleting ? 'Deleting…' : 'Delete'}
-              </button>
-              <button
-                onClick={handleBulkMarkDone}
-                disabled={isPending || eligibleSelectedCount === 0}
-                className="h-9 px-4 bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl text-sm font-medium hover:bg-[#A83D30] dark:hover:bg-[#D45A4A] disabled:opacity-40 transition-colors"
-              >
-                {isPending ? 'Saving…' : 'Mark done'}
-              </button>
-            </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* Add form slide-up */}
+      {/* ── Add form ─────────────────────────────────────────────────── */}
       {showAddForm && (
         <div className="fixed inset-0 z-30 flex flex-col justify-end">
           <div
-            className={`absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
+            className={`absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
             onClick={handleCloseAdd}
           />
-          <div className={`relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 max-h-[92vh] overflow-y-auto ${isClosingAdd ? 'animate-slide-down' : 'animate-slide-up'}`}>
-            <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Add to bucket list</h2>
-              <button
-                onClick={handleCloseAdd}
-                className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors"
-                aria-label="Close"
-              >
-                ×
+          <div className={`relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto ${isClosingAdd ? 'animate-slide-down' : 'animate-slide-up'}`}>
+            <div className="w-9 h-[3px] rounded-full bg-[#ECDFD2] dark:bg-[#3A2418] mx-auto mb-[14px]" />
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[17px] font-semibold text-[#2A1810] dark:text-[#FAF3F1]">Add to bucket list</h2>
+              <button onClick={handleCloseAdd} className="p-1 text-[#B19A8B] dark:text-[#7A5848] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] cursor-pointer" aria-label="Close">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
               </button>
             </div>
             <AddBucketForm
@@ -563,7 +598,7 @@ export default function BucketClient({
         </div>
       )}
 
-      {/* Mark as done sheet */}
+      {/* ── Mark done sheet ──────────────────────────────────────────── */}
       {showDoneSheet && typeof document !== 'undefined' && createPortal(
         <MarkDoneSheet
           item={showDoneSheet}
@@ -575,13 +610,10 @@ export default function BucketClient({
         document.body
       )}
 
-      {/* Help sheet */}
-      <BucketHelpSheet
-        isOpen={showHelp}
-        onClose={() => setShowHelp(false)}
-      />
+      {/* ── Help sheet ───────────────────────────────────────────────── */}
+      <BucketHelpSheet isOpen={showHelp} onClose={() => setShowHelp(false)} />
 
-      {/* Delete confirmation */}
+      {/* ── Delete confirm ───────────────────────────────────────────── */}
       {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
         <ConfirmSheet
           message={`Delete ${selectedIds.size} item${selectedIds.size === 1 ? '' : 's'}? This can't be undone.`}
@@ -592,12 +624,14 @@ export default function BucketClient({
         document.body
       )}
 
-      {/* Bulk mark done date picker */}
-      {bulkDoneIds && typeof document !== 'undefined' && createPortal(
-        <BulkMarkDoneSheet
-          count={bulkDoneIds.length}
-          onConfirm={handleConfirmBulkDone}
-          onCancel={() => setBulkDoneIds(null)}
+      {/* ── Pick-for-us modal ─────────────────────────────────────── */}
+      {picked && typeof document !== 'undefined' && createPortal(
+        <PickModal
+          item={picked}
+          rolling={rolling}
+          onPickAgain={pickRandom}
+          onClose={() => { if (!rolling) setPicked(null) }}
+          isDark={isDark}
         />,
         document.body
       )}
@@ -605,62 +639,85 @@ export default function BucketClient({
   )
 }
 
-function BulkMarkDoneSheet({ count, onConfirm, onCancel }) {
-  const today = todayISO()
-  const [date, setDate] = useState(today)
+// ── IconBtn ──────────────────────────────────────────────────────────────────
 
+function IconBtn({ onClick, active, ariaLabel, isDark, children }) {
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
   return (
-    <div className="fixed inset-0 z-30 flex flex-col justify-end">
+    <button
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center cursor-pointer transition-all flex-shrink-0"
+      style={{
+        border: `1px solid ${active ? `${accent}66` : (isDark ? 'var(--v2-border)' : '#ECDFD2')}`,
+        background: active ? accentDim : (isDark ? 'var(--v2-surface)' : '#F8F2EB'),
+        color: active ? accent : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ── PickModal ────────────────────────────────────────────────────────────────
+
+function PickModal({ item, rolling, onPickAgain, onClose, isDark }) {
+  const c = catPair(item.category, isDark)
+  const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-center justify-center p-5"
+      style={{ background: 'rgba(var(--v2-overlayBase), 0.72)', transition: 'opacity 200ms', opacity: rolling ? 0.95 : 1 }}
+      onClick={onClose}
+    >
       <div
-        className="absolute inset-0 bg-[rgba(28,18,16,0.55)] dark:bg-[rgba(10,6,5,0.65)] animate-fade-in"
-        onClick={onCancel}
-      />
-      <div className="relative bg-white dark:bg-[#2E201C] rounded-t-2xl p-5 animate-slide-up">
-        <div className="w-8 h-[3px] rounded-sm bg-[#F5EDE9] dark:bg-[#3D2820] mx-auto mb-[14px]" />
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-[15px] font-semibold text-[#1C1210] dark:text-[#FAF3F1]">Mark {count} item{count === 1 ? '' : 's'} as done</h2>
-          <button
-            onClick={onCancel}
-            className="text-[#A07060] dark:text-[#D4A090] hover:text-[#1C1210] dark:hover:text-[#FAF3F1] text-xl leading-none transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            ×
-          </button>
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-[300px] rounded-[22px] px-5 pt-5 pb-4 transition-transform duration-[80ms]"
+        style={{
+          background: isDark ? 'var(--v2-card)' : '#FFFFFF',
+          border: `1px solid ${isDark ? 'var(--v2-border)' : '#ECDFD2'}`,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+          transform: rolling ? 'rotate(-1deg) scale(0.98)' : 'rotate(0) scale(1)',
+        }}
+      >
+        <p
+          className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3 text-center text-[#B19A8B] dark:text-[#7A5848]"
+        >
+          {rolling ? 'Rolling…' : 'Tonight’s pick 🎲'}
+        </p>
+        <div
+          className="rounded-[14px] px-3.5 pt-3.5 pb-4 mb-3.5"
+          style={{ background: c.bg, border: `1px solid ${c.fg}33` }}
+        >
+          <span className="text-[10px] font-bold uppercase tracking-[0.08em]" style={{ color: c.fg }}>
+            {c.label}
+          </span>
+          <p className="text-[18px] font-bold leading-[1.25] mt-1.5 tracking-[-0.2px] text-[#2A1810] dark:text-[#FAF3F1]">
+            {item.name}
+          </p>
         </div>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-[#1C1210] dark:text-[#D4A090] mb-1.5">
-              When did you do {count === 1 ? 'it' : 'these'}?
-            </label>
-            <input
-              type="date"
-              value={date}
-              max={today}
-              onChange={e => setDate(e.target.value)}
-              className="w-full px-3 py-[10px] rounded-[10px] border text-sm
-                         border-[#EDE0DC] dark:border-[#3D2820] bg-[#FDF7F6] dark:bg-[#1A1210]
-                         text-[#1C1210] dark:text-[#FAF3F1]
-                         focus:outline-none focus:border-[#C2493A] dark:focus:border-[#F0907F] transition-colors"
-            />
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="flex-1 py-3 rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] hover:bg-[#FDF7F6] dark:hover:bg-[#1A1210] transition-colors cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => onConfirm(date)}
-              className="flex-1 py-3 bg-[#C2493A] dark:bg-[#E8675A] hover:bg-[#A83D30] text-white rounded-xl font-semibold text-sm transition-colors cursor-pointer"
-            >
-              Save memories
-            </button>
-          </div>
+        <div className="flex gap-2">
+          <button
+            onClick={onPickAgain}
+            disabled={rolling}
+            className="flex-1 h-10 rounded-[11px] bg-transparent text-[13px] font-semibold cursor-pointer transition-opacity"
+            style={{
+              border: `1px solid ${isDark ? 'var(--v2-border)' : '#ECDFD2'}`,
+              color: isDark ? 'var(--v2-t1)' : '#2A1810',
+              opacity: rolling ? 0.6 : 1,
+            }}
+          >
+            Pick again
+          </button>
+          <button
+            onClick={onClose}
+            disabled={rolling}
+            className="flex-1 h-10 rounded-[11px] text-white text-[13px] font-semibold cursor-pointer transition-opacity"
+            style={{ background: accent, opacity: rolling ? 0.6 : 1 }}
+          >
+            Let’s do it
+          </button>
         </div>
       </div>
     </div>

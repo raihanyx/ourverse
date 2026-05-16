@@ -68,7 +68,7 @@ export default function NavLinks() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-20 bg-[#FDF7F6] dark:bg-[#1A1210] border-t border-[#EDE0DC] dark:border-[#2E1E1A]"
+      className="fixed bottom-0 left-0 right-0 z-20 bg-[#F8F2EB] dark:bg-[#1A1210] border-t border-[#ECDFD2] dark:border-[#2E1E1A]"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="max-w-lg mx-auto flex items-center justify-around h-16 px-2">
@@ -83,12 +83,12 @@ export default function NavLinks() {
                           ${disabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : ''}`}
             >
               {active && (
-                <span className="absolute inset-0 rounded-xl bg-[#C2493A]/10 dark:bg-[#E8675A]/10" aria-hidden="true" />
+                <span className="absolute inset-0 rounded-xl bg-[#D8513E]/10 dark:bg-[#E8675A]/10" aria-hidden="true" />
               )}
-              <span className={`relative transition-colors duration-200 ${active ? 'text-[#C2493A] dark:text-[#E8675A]' : 'text-[#A07060] dark:text-[#C49080]'}`}>
+              <span className={`relative transition-colors duration-200 ${active ? 'text-[#D8513E] dark:text-[#E8675A]' : 'text-[#7A5C4E] dark:text-[#C49080]'}`}>
                 <Icon />
               </span>
-              <span className={`relative text-[10px] font-medium tracking-wide transition-colors duration-200 ${active ? 'text-[#C2493A] dark:text-[#E8675A]' : 'text-[#A07060] dark:text-[#C49080]'}`}>
+              <span className={`relative text-[10px] font-medium tracking-wide transition-colors duration-200 ${active ? 'text-[#D8513E] dark:text-[#E8675A]' : 'text-[#7A5C4E] dark:text-[#C49080]'}`}>
                 {label}
               </span>
             </Link>
