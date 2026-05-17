@@ -46,7 +46,8 @@ export default function AddCalendarEntryForm({ date: defaultDate, coupleId, part
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className="absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.65)] animate-fade-in"
+        className="absolute inset-0 animate-fade-in"
+        style={{ background: 'rgba(var(--v2-overlayBase), 0.65)' }}
         onClick={onCancel}
       />
       <div

@@ -95,17 +95,20 @@ function ChevRight() {
 }
 
 // ─── IconBtn ───────────────────────────────────────────────────
-function IconBtn({ onClick, ariaLabel, children }) {
+function IconBtn({ onClick, ariaLabel, disabled, children }) {
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className="rounded-[9px] flex items-center justify-center cursor-pointer transition-colors"
+      disabled={disabled}
+      className="rounded-[9px] flex items-center justify-center transition-colors"
       style={{
         width: 30, height: 30,
         border: `1px solid ${V2.border}`,
         background: V2.bg,
         color: V2.t2,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
       }}
     >
       {children}
@@ -353,12 +356,13 @@ export default function CalendarClient({
             Calendar
           </h1>
           <div className="flex items-center" style={{ gap: 6 }}>
-            <IconBtn onClick={() => setShowHelp(true)} ariaLabel="Calendar tips">
+            <IconBtn onClick={() => setShowHelp(true)} ariaLabel="Calendar tips" disabled={showAddForm}>
               <InfoIcon />
             </IconBtn>
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center cursor-pointer"
+              disabled={showHelp}
+              className="flex items-center"
               style={{
                 height: 30,
                 padding: '0 11px 0 9px',
@@ -368,6 +372,8 @@ export default function CalendarClient({
                 color: 'white',
                 fontSize: 12.5,
                 fontWeight: 600,
+                cursor: showHelp ? 'not-allowed' : 'pointer',
+                opacity: showHelp ? 0.4 : 1,
               }}
             >
               <PlusIcon />

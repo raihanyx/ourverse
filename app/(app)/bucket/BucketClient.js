@@ -358,7 +358,13 @@ export default function BucketClient({
             </p>
           </div>
           <div className="flex items-center gap-1.5 mt-1 flex-shrink-0">
-            <IconBtn onClick={() => setShowHelp(true)} ariaLabel="Bucket list tips" active={false} isDark={isDark}>
+            <IconBtn
+              onClick={() => setShowHelp(true)}
+              ariaLabel="Bucket list tips"
+              active={false}
+              isDark={isDark}
+              disabled={isSelecting || showAddForm}
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="16" x2="12" y2="12" />
@@ -370,6 +376,7 @@ export default function BucketClient({
               ariaLabel={isSelecting ? 'Exit select mode' : 'Select items'}
               active={isSelecting}
               isDark={isDark}
+              disabled={showHelp || showAddForm}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 20h9" />
@@ -378,7 +385,8 @@ export default function BucketClient({
             </IconBtn>
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#D8513E] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0"
+              disabled={isSelecting || showHelp}
+              className="flex items-center gap-[5px] h-[30px] pl-[9px] pr-[11px] rounded-[9px] bg-[#D8513E] dark:bg-[#E8675A] text-white text-[12.5px] font-semibold cursor-pointer flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
                 <line x1="12" y1="5" x2="12" y2="19" />
@@ -574,7 +582,8 @@ export default function BucketClient({
       {showAddForm && (
         <div className="fixed inset-0 z-30 flex flex-col justify-end">
           <div
-            className={`absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
+            className={`absolute inset-0 ${isClosingAdd ? 'animate-fade-out' : 'animate-fade-in'}`}
+            style={{ background: isDark ? 'rgba(var(--v2-overlayBase), 0.7)' : 'rgba(var(--v2-overlayBase), 0.55)' }}
             onClick={handleCloseAdd}
           />
           <div className={`relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto ${isClosingAdd ? 'animate-slide-down' : 'animate-slide-up'}`}>
@@ -641,18 +650,21 @@ export default function BucketClient({
 
 // ── IconBtn ──────────────────────────────────────────────────────────────────
 
-function IconBtn({ onClick, active, ariaLabel, isDark, children }) {
+function IconBtn({ onClick, active, ariaLabel, isDark, disabled, children }) {
   const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
   const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
   return (
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center cursor-pointer transition-all flex-shrink-0"
+      disabled={disabled}
+      className="w-[30px] h-[30px] rounded-[9px] flex items-center justify-center transition-all flex-shrink-0"
       style={{
         border: `1px solid ${active ? `${accent}66` : (isDark ? 'var(--v2-border)' : '#ECDFD2')}`,
         background: active ? accentDim : (isDark ? 'var(--v2-surface)' : '#F8F2EB'),
         color: active ? accent : (isDark ? 'var(--v2-t2)' : '#7A5C4E'),
+        opacity: disabled ? 0.4 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
       }}
     >
       {children}
