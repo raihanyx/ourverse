@@ -6,7 +6,7 @@ import MemoriesClient from './MemoriesClient'
 export const dynamic = 'force-dynamic'
 
 export default async function MemoriesPage() {
-  const { profile } = await getAppSession()
+  const { profile, partner } = await getAppSession()
   const supabase = await createClient()
 
   const { data: memories } = await supabase
@@ -17,7 +17,13 @@ export default async function MemoriesPage() {
 
   return (
     <PageTransition>
-      <MemoriesClient initialMemories={memories ?? []} coupleId={profile.couple_id} />
+      <MemoriesClient
+        initialMemories={memories ?? []}
+        coupleId={profile.couple_id}
+        currentUserId={profile.id}
+        currentUserName={profile.name}
+        partnerName={partner?.name ?? null}
+      />
     </PageTransition>
   )
 }

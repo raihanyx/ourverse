@@ -17,6 +17,7 @@ const V2 = {
   t3:        'var(--v2-t3)',
   accent:    'var(--v2-accent)',
   accentDim: 'var(--v2-accentDim)',
+  pink:      'var(--v2-pink)',
 }
 
 // ─── Type meta ─────────────────────────────────────────────────
@@ -122,6 +123,7 @@ export default function CalendarClient({
   initialMemories,
   anniversaryDate,
   currentUserId,
+  currentUserName,
   coupleId,
   partnerName,
   initialYear,
@@ -580,6 +582,7 @@ export default function CalendarClient({
                 item={item}
                 partnerName={partnerName}
                 currentUserId={currentUserId}
+                currentUserName={currentUserName}
                 onMarkDone={() => setMarkDoneTarget(item.raw)}
               />
             ))}
@@ -646,11 +649,19 @@ function EmptyDay({ isPast, onAdd }) {
 }
 
 // ─── EntryRow ──────────────────────────────────────────────────
-function EntryRow({ item, partnerName, currentUserId, onMarkDone }) {
+function EntryRow({ item, partnerName, currentUserId, currentUserName, onMarkDone }) {
   const typeMeta = TYPE_META[item.type]
   const catFg    = CAT_FG[item.category] ?? CAT_FG.other
   const catLabel = CAT_LABEL[item.category] ?? item.category
   const canMarkDone = item.type === 'couple' || item.type === 'personal'
+
+  // Attribution for calendar entries (not memories or anniversary)
+  const hasAuthor = item.kind === 'entry' && item.user_id
+  const addedByMe = hasAuthor && item.user_id === currentUserId
+  const addedByName = hasAuthor
+    ? (addedByMe ? (currentUserName || 'You') : (partnerName || 'Partner'))
+    : null
+  const authorColor = addedByMe ? V2.accent : V2.pink
 
   return (
     <div
@@ -676,10 +687,24 @@ function EntryRow({ item, partnerName, currentUserId, onMarkDone }) {
         <p style={{ fontSize: 14, fontWeight: 600, color: V2.t1, lineHeight: 1.3 }}>
           {item.title}
         </p>
-        <div className="flex items-center" style={{ gap: 6, marginTop: 6, fontSize: 11 }}>
+        <div className="flex items-center" style={{ gap: 6, marginTop: 6, fontSize: 11, flexWrap: 'wrap' }}>
           <span style={{ color: typeMeta.color, fontWeight: 600 }}>{typeMeta.label}</span>
           <span style={{ color: V2.t3, opacity: 0.5 }}>·</span>
           <span style={{ color: catFg, fontWeight: 600 }}>{catLabel}</span>
+          {addedByName && (
+            <>
+              <span style={{ color: V2.t3, opacity: 0.5 }}>·</span>
+              <span
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  color: authorColor, fontWeight: 600,
+                }}
+              >
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: authorColor, flexShrink: 0 }} />
+                {addedByName}
+              </span>
+            </>
+          )}
         </div>
         {item.note && (
           <p style={{ fontSize: 11, color: V2.t2, fontStyle: 'italic', marginTop: 6, lineHeight: 1.5 }}>

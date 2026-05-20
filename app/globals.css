@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@layer base {
 :root {
   /* V2 design tokens — light defaults */
   --v2-bg: #F8F2EB;
@@ -49,7 +50,7 @@
   --cat-other-bg: #EEEEEE;      --cat-other-fg: #555555;
 
   --auth-bg: #F8F2EB;
-  --auth-grad: linear-gradient(to bottom, #FFFAF4 0%, #FFFFFF 100%);
+  --auth-grad: linear-gradient(to bottom, #FFFAF4 0%, #FBF0E6 100%);
   --auth-glow: radial-gradient(circle, rgba(216,81,62,0.14) 0%, transparent 70%);
   --auth-card: #FFFFFF;
   --auth-t1: #2A1810;
@@ -115,7 +116,7 @@
   --cat-other-bg: #222222;      --cat-other-fg: #9CA3AF;
 
   --auth-bg: #1A1210;
-  --auth-grad: linear-gradient(to bottom, #221714 0%, #2A1C18 100%);
+  --auth-grad: linear-gradient(to bottom, #221714 0%, #1A1210 100%);
   --auth-glow: radial-gradient(circle, rgba(232,103,90,0.12) 0%, transparent 70%);
   --auth-card: #2A1C18;
   --auth-t1: #FAF3F1;
@@ -132,6 +133,7 @@
   --auth-ill-stroke2: #E89AAE;
   --auth-ill-avatar1: #2E201C;
   --auth-ill-avatar2: #2E1F24;
+}
 }
 
 body {

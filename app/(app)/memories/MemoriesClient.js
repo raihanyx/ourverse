@@ -31,7 +31,27 @@ function formatMemoryDate(iso) {
 
 // ── MemoryCard ───────────────────────────────────────────────────────────────
 
-function MemoryCard({ memory, isSelecting, isSelected, onToggleSelect, isDark }) {
+function AuthorChip({ name, isMe }) {
+  const color = isMe ? 'var(--v2-accent)' : 'var(--v2-pink)'
+  return (
+    <span
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 10, fontWeight: 600, color,
+        whiteSpace: 'nowrap', minWidth: 0,
+        overflow: 'hidden', textOverflow: 'ellipsis',
+      }}
+    >
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color, flexShrink: 0 }} />
+      {name}
+    </span>
+  )
+}
+
+function MemoryCard({ memory, isSelecting, isSelected, onToggleSelect, isDark, currentUserId, currentUserName, partnerName }) {
+  const hasAuthor = !!memory.added_by_user_id
+  const isMe = hasAuthor && memory.added_by_user_id === currentUserId
+  const authorName = hasAuthor ? (isMe ? (currentUserName || 'You') : (partnerName || 'Partner')) : null
   const c = catPair(memory.category, isDark)
   const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
   const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
@@ -90,17 +110,19 @@ function MemoryCard({ memory, isSelecting, isSelected, onToggleSelect, isDark })
           </p>
         )}
         <div
-          className="flex items-center gap-1 self-end text-[10px] font-semibold tabular-nums"
-          style={{
-            color: c.fg,
-            opacity: 0.7,
-            marginTop: memory.note ? 2 : 'auto',
-          }}
+          className="flex items-center justify-between gap-1.5"
+          style={{ marginTop: memory.note ? 2 : 'auto' }}
         >
-          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-          {formatMemoryDate(memory.date)}
+          {authorName ? <AuthorChip name={authorName} isMe={isMe} /> : <span />}
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-semibold tabular-nums flex-shrink-0"
+            style={{ color: c.fg, opacity: 0.7 }}
+          >
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            {formatMemoryDate(memory.date)}
+          </span>
         </div>
       </div>
     </div>
@@ -133,7 +155,7 @@ function IconBtn({ onClick, active, ariaLabel, isDark, disabled, children }) {
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
-export default function MemoriesClient({ initialMemories, coupleId }) {
+export default function MemoriesClient({ initialMemories, coupleId, currentUserId, currentUserName, partnerName }) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -230,17 +252,30 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
   return (
     <>
       <div>
-        {/* ── Header ─────────────────────────────────────────────────── */}
-        <div className="flex items-start gap-2.5 mb-5">
+        {/* ── Back pill ──────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 14 }}>
           <Link
             href="/bucket"
-            aria-label="Back to bucket list"
-            className="w-9 h-9 rounded-[10px] border border-[#ECDFD2] dark:border-[#3A2418] bg-[#F8F2EB] dark:bg-[#221714] text-[#7A5C4E] dark:text-[#C89080] flex items-center justify-center cursor-pointer flex-shrink-0 mt-0.5"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              height: 28, padding: '0 11px 0 6px',
+              borderRadius: 9999,
+              background: 'var(--v2-surface)',
+              border: '1px solid var(--v2-border)',
+              color: 'var(--v2-t2)',
+              fontSize: 12.5, fontWeight: 500,
+              textDecoration: 'none',
+            }}
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="15 18 9 12 15 6" />
             </svg>
+            Bucket list
           </Link>
+        </div>
+
+        {/* ── Header ─────────────────────────────────────────────────── */}
+        <div className="flex items-start gap-2.5 mb-5">
           <div className="flex-1 min-w-0">
             <h1 className="text-[24px] font-bold leading-tight tracking-[-0.4px] text-[#2A1810] dark:text-[#FAF3F1]">
               Memories
@@ -323,6 +358,9 @@ export default function MemoriesClient({ initialMemories, coupleId }) {
                 isSelected={selectedIds.has(m.id)}
                 onToggleSelect={handleSelect}
                 isDark={isDark}
+                currentUserId={currentUserId}
+                currentUserName={currentUserName}
+                partnerName={partnerName}
               />
             ))}
           </div>

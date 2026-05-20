@@ -42,14 +42,15 @@ export async function addCalendarEntry(prevState, formData) {
     if (date > today) return { error: 'Memory must be on today or a past date.' }
 
     const { data: memory, error: memErr } = await supabase.from('memories').insert({
-      couple_id:      coupleId,
-      bucket_item_id: null,
-      name:           title,
+      couple_id:        coupleId,
+      bucket_item_id:   null,
+      added_by_user_id: user.id,
+      name:             title,
       category,
       date,
-      note:           notes,
-      origin:         'direct',
-      original_date:  null,
+      note:             notes,
+      origin:           'direct',
+      original_date:    null,
     }).select('*').single()
 
     if (memErr) return { error: 'Could not save memory. Please try again.' }
@@ -97,7 +98,7 @@ export async function addCalendarEntry(prevState, formData) {
 export async function markCalendarEntryDone(prevState, formData) {
   const ctx = await getActionContext()
   if (ctx.error) return { error: ctx.error }
-  const { supabase, coupleId } = ctx
+  const { supabase, user, coupleId } = ctx
 
   const calendarEntryId = formData.get('calendar_entry_id')
   const date            = formData.get('date')
@@ -136,6 +137,7 @@ export async function markCalendarEntryDone(prevState, formData) {
     couple_id:         entry.couple_id,
     bucket_item_id:    entry.bucket_item_id,
     calendar_entry_id: entry.id,
+    added_by_user_id:  user.id,
     name:              entry.title,
     category:          entry.category,
     date,

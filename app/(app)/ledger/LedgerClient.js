@@ -640,21 +640,53 @@ export default function LedgerClient({
                     </div>
                   ))}
 
-                  {hasMorePaid && (
-                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--v2-divider)' }}>
-                      <Link
-                        href={`/ledger/paid?tab=${activeTab}`}
-                        style={{ fontSize: 13, color: 'var(--v2-accent)', textDecoration: 'none' }}
-                      >
-                        See all {paidSorted.length} paid expenses →
-                      </Link>
-                    </div>
-                  )}
                 </>
               )}
             </>
           )}
         </div>
+
+        {/* Settled-up CTA — entry to PaidExpensesScreen */}
+        {!isSelecting && paidSorted.length > 0 && (
+          <div style={{ paddingTop: 12 }}>
+            <Link
+              href={`/ledger/paid?tab=${activeTab}`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                width: '100%',
+                background: 'var(--v2-surface)',
+                border: '1px solid var(--v2-border)',
+                borderRadius: 14,
+                padding: '12px 14px',
+                textDecoration: 'none',
+              }}
+            >
+              <div
+                style={{
+                  width: 34, height: 34, borderRadius: 10,
+                  background: 'rgba(74, 167, 87, 0.18)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--v2-green)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--v2-t1)' }}>
+                  Settled up · {paidSorted.length}
+                </p>
+                <p style={{ fontSize: 11.5, color: 'var(--v2-t3)', marginTop: 2 }}>
+                  Expenses you’ve marked paid
+                </p>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--v2-t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </Link>
+          </div>
+        )}
 
       </div>
 

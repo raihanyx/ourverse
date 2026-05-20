@@ -27,8 +27,8 @@ export default function AuthLayout({ children }) {
         {/* Illustration SVG */}
         <svg
           viewBox="0 0 280 280"
-          width="200"
-          height="200"
+          width="220"
+          height="220"
           style={{ display: 'block', position: 'relative' }}
           aria-hidden="true"
         >

@@ -3,6 +3,97 @@
 import { useActionState, useState } from 'react'
 import { createCouple, joinCouple } from '@/app/actions/couple'
 import Link from 'next/link'
+import PageTransition from '@/app/components/PageTransition'
+
+const labelStyle = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: 'var(--auth-t2)',
+  display: 'block',
+  marginBottom: 8,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+}
+
+const inputStyle = {
+  width: '100%',
+  height: 48,
+  padding: '0 16px',
+  borderRadius: 13,
+  border: '1px solid var(--auth-input-border)',
+  background: 'var(--auth-input-bg)',
+  fontSize: 14,
+  color: 'var(--auth-t1)',
+  fontFamily: 'inherit',
+  outline: 'none',
+  boxSizing: 'border-box',
+}
+
+const primaryButton = (isPending) => ({
+  width: '100%',
+  height: 50,
+  borderRadius: 14,
+  border: 'none',
+  background: isPending ? 'var(--auth-error-bg)' : 'var(--auth-accent)',
+  color: isPending ? 'var(--auth-accent)' : 'white',
+  fontSize: 15,
+  fontWeight: 600,
+  fontFamily: 'inherit',
+  cursor: isPending ? 'not-allowed' : 'pointer',
+  transition: 'all 200ms',
+})
+
+const secondaryButton = {
+  width: '100%',
+  height: 50,
+  borderRadius: 14,
+  border: '1px solid var(--auth-input-border)',
+  background: 'var(--auth-input-bg)',
+  color: 'var(--auth-t1)',
+  fontSize: 15,
+  fontWeight: 600,
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  transition: 'all 200ms',
+}
+
+const headingStyle = {
+  fontSize: 20,
+  fontWeight: 700,
+  color: 'var(--auth-t1)',
+  marginBottom: 4,
+  letterSpacing: '-0.3px',
+}
+
+const subheadingStyle = {
+  fontSize: 13,
+  color: 'var(--auth-t2)',
+  marginBottom: 24,
+}
+
+const errorStyle = {
+  fontSize: 13,
+  color: 'var(--auth-error-fg)',
+  background: 'var(--auth-error-bg)',
+  border: '1px solid var(--auth-error-border)',
+  padding: '10px 14px',
+  borderRadius: 12,
+  marginBottom: 16,
+}
+
+const backButton = {
+  background: 'none',
+  border: 'none',
+  color: 'var(--auth-t2)',
+  fontSize: 13,
+  fontFamily: 'inherit',
+  padding: 0,
+  marginBottom: 14,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 4,
+}
 
 function CopyButton({ text }) {
   const [copied, setCopied] = useState(false)
@@ -16,7 +107,16 @@ function CopyButton({ text }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-sm text-[#D8513E] dark:text-[#F0907F] font-medium hover:underline"
+      style={{
+        background: 'none',
+        border: 'none',
+        color: 'var(--auth-accent)',
+        fontSize: 13,
+        fontWeight: 600,
+        fontFamily: 'inherit',
+        cursor: 'pointer',
+        padding: 0,
+      }}
     >
       {copied ? 'Copied!' : 'Copy code'}
     </button>
@@ -24,151 +124,136 @@ function CopyButton({ text }) {
 }
 
 export default function OnboardingClient({ userName }) {
-  const [mode, setMode] = useState(null) // null | 'create' | 'join'
+  const [mode, setMode] = useState(null)
   const [createState, createAction, createPending] = useActionState(createCouple, null)
   const [joinState, joinAction, joinPending] = useActionState(joinCouple, null)
 
-  // After creating — show the invite code
+  // Invite code created
   if (createState?.inviteCode) {
     return (
-      <div className="text-center space-y-6">
-        <div>
-          <p className="text-sm text-[#7A5C4E] dark:text-[#D4A090] mb-2">Your couple space is ready!</p>
-          <p className="text-sm text-[#7A5C4E] dark:text-[#D4A090]">
-            Share this code with your partner so they can join:
-          </p>
-        </div>
+      <PageTransition>
+        <h2 style={headingStyle}>Your space is ready</h2>
+        <p style={subheadingStyle}>Share this code with your partner</p>
 
-        <div className="bg-[#FCE3DC] dark:bg-[#3D1E18] border-2 border-[#ECDFD2] dark:border-[#3D2820] rounded-2xl py-6 px-8">
-          <p className="text-4xl font-bold tracking-[0.25em] text-[#D8513E] dark:text-[#F0907F] font-mono">
+        <div
+          style={{
+            background: 'var(--auth-error-bg)',
+            border: '1px solid var(--auth-input-border)',
+            borderRadius: 16,
+            padding: '22px 16px',
+            textAlign: 'center',
+            marginBottom: 16,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 30,
+              fontWeight: 700,
+              letterSpacing: '0.25em',
+              color: 'var(--auth-accent)',
+              fontFamily: 'var(--font-geist-mono), monospace',
+            }}
+          >
             {createState.inviteCode}
           </p>
         </div>
 
-        <CopyButton text={createState.inviteCode} />
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <CopyButton text={createState.inviteCode} />
+        </div>
 
-        <Link
-          href="/dashboard"
-          className="block w-full py-3 bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] text-white rounded-xl font-semibold text-sm text-center transition-colors"
-        >
+        <Link href="/dashboard" style={{ ...primaryButton(false), display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
           Continue to dashboard
         </Link>
-      </div>
+      </PageTransition>
     )
   }
 
   // Mode picker
   if (!mode) {
     return (
-      <div className="space-y-4">
-        <div className="text-center mb-6">
-          <p className="text-[#7A5C4E] dark:text-[#D4A090] text-sm">
-            Hi {userName ? <strong className="text-[#2A1810] dark:text-[#FAF3F1]">{userName}</strong> : 'there'}, let&apos;s connect you with your partner.
-          </p>
-        </div>
+      <PageTransition>
+        <h2 style={headingStyle}>
+          {userName ? `Hi ${userName}` : 'Welcome'}
+        </h2>
+        <p style={subheadingStyle}>Connect with your partner to begin</p>
 
         <button
           onClick={() => setMode('create')}
-          className="w-full py-4 bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] text-white rounded-xl font-medium text-sm text-left px-5 flex items-center gap-3 transition-colors"
+          style={{ ...primaryButton(false), marginBottom: 12 }}
         >
-          <span className="text-2xl">✦</span>
-          <div>
-            <div className="font-semibold">Create a couple space</div>
-            <div className="text-white/70 text-xs font-normal">Get an invite code to share</div>
-          </div>
+          Create a couple space
         </button>
 
         <button
           onClick={() => setMode('join')}
-          className="w-full py-4 bg-white dark:bg-[#2E201C] border-2 border-[#ECDFD2] dark:border-[#3D2820] text-[#2A1810] dark:text-[#FAF3F1] rounded-xl font-medium text-sm text-left px-5 flex items-center gap-3 hover:border-[#D8513E] dark:hover:border-[#F0907F] transition-colors"
+          style={secondaryButton}
         >
-          <span className="text-2xl">♡</span>
-          <div>
-            <div className="font-semibold">Join with a code</div>
-            <div className="text-[#7A5C4E] dark:text-[#D4A090] text-xs font-normal">Enter your partner&apos;s invite code</div>
-          </div>
+          Join with a code
         </button>
-      </div>
+      </PageTransition>
     )
   }
 
-  // Create mode — just a confirm button (code is generated server-side)
+  // Create confirm
   if (mode === 'create') {
     return (
-      <div className="space-y-4">
-        <button
-          onClick={() => setMode(null)}
-          className="text-sm text-[#7A5C4E] dark:text-[#D4A090] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] flex items-center gap-1 transition-colors"
-        >
-          ← Back
-        </button>
+      <PageTransition>
+        <button onClick={() => setMode(null)} style={backButton}>← Back</button>
+        <h2 style={headingStyle}>Create your space</h2>
+        <p style={subheadingStyle}>
+          We&apos;ll generate a 6-character code you can share with your partner.
+        </p>
 
-        <div className="text-center py-4">
-          <p className="text-[#7A5C4E] dark:text-[#D4A090] text-sm">
-            We&apos;ll generate a unique 6-character code you can share with your partner.
-          </p>
-        </div>
-
-        {createState?.error && (
-          <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3D2820] px-4 py-3 rounded-xl">
-            {createState.error}
-          </div>
-        )}
+        {createState?.error && <div style={errorStyle}>{createState.error}</div>}
 
         <form action={createAction}>
-          <button
-            type="submit"
-            disabled={createPending}
-            className="w-full py-3 bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors"
-          >
+          <button type="submit" disabled={createPending} style={primaryButton(createPending)}>
             {createPending ? 'Creating…' : 'Create our space'}
           </button>
         </form>
-      </div>
+      </PageTransition>
     )
   }
 
-  // Join mode
+  // Join
   return (
-    <div className="space-y-4">
-      <button
-        onClick={() => setMode(null)}
-        className="text-sm text-[#7A5C4E] dark:text-[#D4A090] hover:text-[#2A1810] dark:hover:text-[#FAF3F1] flex items-center gap-1 transition-colors"
-      >
-        ← Back
-      </button>
+    <PageTransition>
+      <button onClick={() => setMode(null)} style={backButton}>← Back</button>
+      <h2 style={headingStyle}>Join a space</h2>
+      <p style={subheadingStyle}>Enter the 6-character code from your partner.</p>
 
-      <div className="text-center py-2">
-        <p className="text-[#7A5C4E] dark:text-[#D4A090] text-sm">
-          Enter the 6-character code from your partner&apos;s invite.
-        </p>
-      </div>
+      {joinState?.error && <div style={errorStyle}>{joinState.error}</div>}
 
-      {joinState?.error && (
-        <div className="text-sm text-[#D8513E] dark:text-[#F0907F] bg-[#FCE3DC] dark:bg-[#3D1E18] border border-[#ECDFD2] dark:border-[#3D2820] px-4 py-3 rounded-xl">
-          {joinState.error}
+      <form action={joinAction}>
+        <div style={{ marginBottom: 20 }}>
+          <label htmlFor="inviteCode" style={labelStyle}>Invite code</label>
+          <input
+            id="inviteCode"
+            name="inviteCode"
+            type="text"
+            required
+            maxLength={6}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            placeholder="ABC123"
+            style={{
+              ...inputStyle,
+              height: 56,
+              textAlign: 'center',
+              fontSize: 22,
+              fontWeight: 700,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-geist-mono), monospace',
+            }}
+          />
         </div>
-      )}
 
-      <form action={joinAction} className="space-y-4">
-        <input
-          name="inviteCode"
-          type="text"
-          required
-          maxLength={6}
-          autoCapitalize="characters"
-          autoCorrect="off"
-          className="w-full py-4 px-4 rounded-xl border-2 border-[#ECDFD2] dark:border-[#3D2820] bg-[#F8F2EB] dark:bg-[#1A1210] text-center text-2xl font-bold tracking-[0.3em] font-mono uppercase focus:outline-none focus:border-[#D8513E] dark:focus:border-[#F0907F] transition-colors placeholder:text-[#B19A8B] dark:placeholder:text-[#A07868] placeholder:tracking-normal placeholder:text-base placeholder:font-normal"
-          placeholder="ABC123"
-        />
-        <button
-          type="submit"
-          disabled={joinPending}
-          className="w-full py-3 bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] text-white rounded-xl font-semibold text-sm disabled:opacity-50 transition-colors"
-        >
+        <button type="submit" disabled={joinPending} style={primaryButton(joinPending)}>
           {joinPending ? 'Joining…' : 'Join our space'}
         </button>
       </form>
-    </div>
+    </PageTransition>
   )
 }

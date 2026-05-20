@@ -34,7 +34,7 @@ export async function addBucketItem(prevState, formData) {
 export async function markAsDone(prevState, formData) {
   const ctx = await getActionContext()
   if (ctx.error) return { error: ctx.error }
-  const { supabase, coupleId } = ctx
+  const { supabase, user, coupleId } = ctx
 
   const bucketItemId = formData.get('bucket_item_id')
   const date = formData.get('date')
@@ -73,14 +73,15 @@ export async function markAsDone(prevState, formData) {
   if (updateError) return { error: 'Could not update item. Please try again.' }
 
   const { data: insertedMemory, error: memoryError } = await supabase.from('memories').insert({
-    couple_id:      coupleId,
-    bucket_item_id: bucketItemId,
-    name:           bucketItem.name,
-    category:       bucketItem.category,
+    couple_id:        coupleId,
+    bucket_item_id:   bucketItemId,
+    added_by_user_id: user.id,
+    name:             bucketItem.name,
+    category:         bucketItem.category,
     date,
     note,
-    origin:         'bucket_item',
-    original_date:  null,
+    origin:           'bucket_item',
+    original_date:    null,
   }).select('*').single()
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }
@@ -178,7 +179,7 @@ export async function bulkDeleteBucketItems(ids) {
 export async function addDirectMemory(prevState, formData) {
   const ctx = await getActionContext()
   if (ctx.error) return { error: ctx.error }
-  const { supabase, coupleId } = ctx
+  const { supabase, user, coupleId } = ctx
 
   const name     = formData.get('name')?.trim()
   const category = formData.get('category')
@@ -193,14 +194,15 @@ export async function addDirectMemory(prevState, formData) {
   if (note && note.length > 2000) return { error: 'Note must be 2000 characters or fewer.' }
 
   const { data: insertedMemory, error: memoryError } = await supabase.from('memories').insert({
-    couple_id:      coupleId,
-    bucket_item_id: null,
+    couple_id:        coupleId,
+    bucket_item_id:   null,
+    added_by_user_id: user.id,
     name,
     category,
     date,
     note,
-    origin:         'direct',
-    original_date:  null,
+    origin:           'direct',
+    original_date:    null,
   }).select('*').single()
 
   if (memoryError) return { error: 'Could not save memory. Please try again.' }

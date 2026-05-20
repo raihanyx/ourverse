@@ -48,6 +48,7 @@ export default async function CalendarPage() {
         initialMemories={memories ?? []}
         anniversaryDate={couple?.anniversary_date ?? null}
         currentUserId={profile.id}
+        currentUserName={profile.name}
         coupleId={profile.couple_id}
         partnerName={partner?.name ?? null}
         initialYear={year}

@@ -41,7 +41,24 @@ function formatCalDate(dateString) {
 
 // ── WishCard ─────────────────────────────────────────────────────────────────
 
-function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onToggleSelect, isDark }) {
+function AddedByLabel({ name, isMe, isDark }) {
+  const color = isMe
+    ? (isDark ? 'var(--v2-accent)' : '#D8513E')
+    : 'var(--v2-pink)'
+  return (
+    <span
+      className="inline-flex items-center gap-1 text-[10.5px] font-semibold whitespace-nowrap overflow-hidden text-ellipsis min-w-0"
+      style={{ color }}
+    >
+      <span className="w-[5px] h-[5px] rounded-full flex-shrink-0" style={{ background: color }} />
+      {name}
+    </span>
+  )
+}
+
+function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onToggleSelect, isDark, currentUserId, currentUserName, partnerName }) {
+  const addedByMe = item.added_by_user_id === currentUserId
+  const addedByName = addedByMe ? (currentUserName || 'You') : (partnerName || 'Partner')
   const c = catPair(item.category, isDark)
   const accent = isDark ? 'var(--v2-accent)' : '#D8513E'
   const accentDim = isDark ? 'var(--v2-accentDim)' : '#FCE3DC'
@@ -111,28 +128,34 @@ function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onT
           {item.name}
         </p>
         {!isSelecting && (
-          calendarDate ? (
-            <span
-              className="self-start inline-flex items-center gap-1 text-[10.5px] italic font-medium"
-              style={{ color: c.fg, opacity: 0.7 }}
-            >
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              On calendar
-            </span>
-          ) : (
-            <button
-              onClick={e => { e.stopPropagation(); onMarkDone(item) }}
-              className="self-start h-6 px-2.5 rounded-[7px] bg-transparent text-[10.5px] font-semibold cursor-pointer"
-              style={{ border: `1px solid ${c.fg}55`, color: c.fg }}
-            >
-              Done
-            </button>
-          )
+          <div className="flex items-center justify-between gap-2">
+            <AddedByLabel name={addedByName} isMe={addedByMe} isDark={isDark} />
+            {calendarDate ? (
+              <span
+                className="inline-flex items-center gap-1 text-[10px] italic font-semibold flex-shrink-0"
+                style={{ color: c.fg, opacity: 0.7 }}
+              >
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                </svg>
+                On calendar
+              </span>
+            ) : (
+              <button
+                onClick={e => { e.stopPropagation(); onMarkDone(item) }}
+                className="h-6 px-2.5 rounded-[7px] bg-transparent text-[10.5px] font-semibold cursor-pointer flex-shrink-0"
+                style={{ border: `1px solid ${c.fg}55`, color: c.fg }}
+              >
+                Done
+              </button>
+            )}
+          </div>
+        )}
+        {isSelecting && (
+          <AddedByLabel name={addedByName} isMe={addedByMe} isDark={isDark} />
         )}
       </div>
     </div>
@@ -141,8 +164,11 @@ function WishCard({ item, calendarDate, onMarkDone, isSelecting, isSelected, onT
 
 // ── Small memory card (horizontal strip) ─────────────────────────────────────
 
-function MiniMemoryCard({ memory, isDark }) {
+function MiniMemoryCard({ memory, isDark, currentUserId, currentUserName, partnerName }) {
   const c = catPair(memory.category, isDark)
+  const hasAuthor = !!memory.added_by_user_id
+  const isMe = hasAuthor && memory.added_by_user_id === currentUserId
+  const authorName = hasAuthor ? (isMe ? (currentUserName || 'You') : (partnerName || 'Partner')) : null
   return (
     <div
       className="w-[130px] flex-shrink-0 rounded-[14px] px-3 pt-2.5 pb-3 flex flex-col gap-2"
@@ -154,6 +180,9 @@ function MiniMemoryCard({ memory, isDark }) {
       <p className="text-[12.5px] font-semibold leading-[1.3] text-[#2A1810] dark:text-[#FAF3F1]">
         {memory.name}
       </p>
+      {authorName && (
+        <AddedByLabel name={authorName} isMe={isMe} isDark={isDark} />
+      )}
     </div>
   )
 }
@@ -198,7 +227,7 @@ export default function BucketClient({
     Promise.all([
       supabase
         .from('memories')
-        .select('id, name, category, date')
+        .select('id, name, category, date, added_by_user_id')
         .eq('couple_id', coupleId)
         .order('created_at', { ascending: false })
         .limit(8),
@@ -303,8 +332,8 @@ export default function BucketClient({
       setItems(prev => prev.map(i => i.id === showDoneSheet.id ? { ...i, is_done: true } : i))
       setLocalMemoriesCount(prev => prev + 1)
       const memCard = memoryRow
-        ? { id: memoryRow.id, name: memoryRow.name, category: memoryRow.category, date: memoryRow.date }
-        : { id: 'opt-' + showDoneSheet.id, name: showDoneSheet.name, category: showDoneSheet.category, date: null }
+        ? { id: memoryRow.id, name: memoryRow.name, category: memoryRow.category, date: memoryRow.date, added_by_user_id: memoryRow.added_by_user_id }
+        : { id: 'opt-' + showDoneSheet.id, name: showDoneSheet.name, category: showDoneSheet.category, date: null, added_by_user_id: currentUserId }
       setRecentMemories(prev => [memCard, ...prev.filter(m => m.id !== memCard.id)].slice(0, 8))
     }
     setShowDoneSheet(null)
@@ -492,6 +521,9 @@ export default function BucketClient({
                 isSelected={selectedIds.has(item.id)}
                 onToggleSelect={handleSelect}
                 isDark={isDark}
+                currentUserId={currentUserId}
+                currentUserName={currentUserName}
+                partnerName={partnerName}
               />
             ))}
           </div>
@@ -508,7 +540,14 @@ export default function BucketClient({
             </div>
             <div className="flex gap-2.5 overflow-x-auto pb-2 -mx-4 px-4" style={{ scrollbarWidth: 'none' }}>
               {recentMemories.map(m => (
-                <MiniMemoryCard key={m.id} memory={m} isDark={isDark} />
+                <MiniMemoryCard
+                  key={m.id}
+                  memory={m}
+                  isDark={isDark}
+                  currentUserId={currentUserId}
+                  currentUserName={currentUserName}
+                  partnerName={partnerName}
+                />
               ))}
             </div>
           </div>

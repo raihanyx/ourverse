@@ -211,12 +211,18 @@ export default function PaidExpensesClient({
     <div style={{ paddingBottom: isSelecting ? 150 : 24 }}>
 
       {/* Back link */}
-      <div style={{ marginBottom: 20, visibility: isSelecting ? 'hidden' : 'visible' }}>
+      <div style={{ marginBottom: 14, visibility: isSelecting ? 'hidden' : 'visible' }}>
         <Link
           href="/ledger"
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 6,
-            fontSize: 13, color: 'var(--v2-t2)', textDecoration: 'none',
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            height: 28, padding: '0 11px 0 6px',
+            borderRadius: 9999,
+            background: 'var(--v2-surface)',
+            border: '1px solid var(--v2-border)',
+            color: 'var(--v2-t2)',
+            fontSize: 12.5, fontWeight: 500,
+            textDecoration: 'none',
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

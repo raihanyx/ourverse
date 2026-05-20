@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getAppSession } from '@/lib/data/getAppSession'
 import { sumByCurrency } from '@/lib/currency'
 import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
+import { getOrCreateDailyConversation } from '@/app/actions/daily'
 import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
 import TogetherCard from './TogetherCard'
@@ -21,6 +22,7 @@ export default async function DashboardPage() {
   const todayLabel = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'short', day: 'numeric',
   })
+  const serverLocalDate = new Date().toLocaleDateString('en-CA')
 
   const [
     { data: couple },
@@ -28,6 +30,7 @@ export default async function DashboardPage() {
     { count: totalExpenseCount },
     { data: recentExpenses },
     ratesResult,
+    dailyInitial,
   ] = await Promise.all([
     supabase
       .from('couples')
@@ -50,6 +53,10 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(3),
     fetchRates(),
+    getOrCreateDailyConversation(serverLocalDate).catch(err => {
+      console.error('[Dashboard] daily prefetch failed:', err)
+      return null
+    }),
   ])
 
   const expenses = unpaidExpenses ?? []
@@ -101,6 +108,8 @@ export default async function DashboardPage() {
             partnerName={partnerName}
             myInitial={profile.name?.[0]?.toUpperCase() ?? '?'}
             partnerInitial={partner?.name?.[0]?.toUpperCase() ?? '?'}
+            initialData={dailyInitial && !dailyInitial.error ? dailyInitial : null}
+            initialDate={serverLocalDate}
           />
         </div>
 

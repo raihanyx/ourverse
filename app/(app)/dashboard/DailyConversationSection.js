@@ -13,9 +13,11 @@ export default function DailyConversationSection({
   partnerName,
   myInitial,
   partnerInitial,
+  initialData = null,
+  initialDate = null,
 }) {
-  const [dcData, setDcData] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [dcData, setDcData] = useState(initialData)
+  const [loading, setLoading] = useState(!initialData)
   const [showAnswer, setShowAnswer] = useState(false)
   const [showResults, setShowResults] = useState(false)
   const [toast, setToast] = useState(null)
@@ -24,6 +26,23 @@ export default function DailyConversationSection({
   useEffect(() => {
     const localDate = new Date().toLocaleDateString('en-CA')
 
+    const showStreakToast = data => {
+      if (data.streakBroke && data.previousStreak > 0) {
+        const key = `dc_broke_${localDate}`
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, '1')
+          setToast(`Streak ended at ${data.previousStreak} 🔥. Start a new one today!`)
+          setTimeout(() => setToast(null), 5000)
+        }
+      }
+    }
+
+    if (initialData && initialDate === localDate) {
+      showStreakToast(initialData)
+      return
+    }
+
+    setLoading(true)
     getOrCreateDailyConversation(localDate)
     .then(data => {
       if (!data || data.error) {
@@ -33,21 +52,13 @@ export default function DailyConversationSection({
       }
       setDcData(data)
       setLoading(false)
-
-      if (data.streakBroke && data.previousStreak > 0) {
-        const key = `dc_broke_${localDate}`
-        if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, '1')
-          setToast(`Streak ended at ${data.previousStreak} 🔥. Start a new one today!`)
-          setTimeout(() => setToast(null), 5000)
-        }
-      }
+      showStreakToast(data)
     })
     .catch(err => {
       console.error('[DailyConversation] server action threw:', err)
       setLoading(false)
     })
-  }, [])
+  }, [initialData, initialDate])
 
   // Realtime: listen for partner's answer and update local state
   useEffect(() => {

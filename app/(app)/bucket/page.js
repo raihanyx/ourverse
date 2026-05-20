@@ -26,7 +26,7 @@ export default async function BucketPage() {
       .not('bucket_item_id', 'is', null),
     supabase
       .from('memories')
-      .select('id, name, category, date')
+      .select('id, name, category, date, added_by_user_id')
       .eq('couple_id', profile.couple_id)
       .order('created_at', { ascending: false })
       .limit(3),
