@@ -438,11 +438,13 @@ export default function LedgerClient({
             <button
               onClick={() => setShowHelp(true)}
               aria-label="Ledger tips"
+              disabled={isSelecting || showForm}
               style={{
                 width: 30, height: 30, borderRadius: 9,
                 border: '1px solid var(--v2-border)',
                 background: 'var(--v2-surface)',
-                cursor: 'pointer',
+                cursor: (isSelecting || showForm) ? 'not-allowed' : 'pointer',
+                opacity: (isSelecting || showForm) ? 0.4 : 1,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}
@@ -458,11 +460,13 @@ export default function LedgerClient({
               <button
                 onClick={isSelecting ? handleCancelSelecting : handleStartSelecting}
                 aria-label={isSelecting ? 'Cancel selection' : 'Select items'}
+                disabled={showHelp || showForm}
                 style={{
                   width: 30, height: 30, borderRadius: 9,
                   border: `1px solid ${isSelecting ? 'rgba(var(--v2-accentRgb), 0.4)' : 'var(--v2-border)'}`,
                   background: isSelecting ? 'var(--v2-accentDim)' : 'var(--v2-surface)',
-                  cursor: 'pointer',
+                  cursor: (showHelp || showForm) ? 'not-allowed' : 'pointer',
+                  opacity: (showHelp || showForm) ? 0.4 : 1,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                   transition: 'all 150ms',
@@ -477,13 +481,17 @@ export default function LedgerClient({
             {/* Add button */}
             <button
               onClick={() => setShowForm(true)}
+              disabled={isSelecting || showHelp}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 height: 30, padding: '0 11px 0 9px',
                 background: 'var(--v2-accent)', color: 'white',
                 borderRadius: 9, border: 'none',
                 fontSize: 12.5, fontWeight: 600,
-                fontFamily: 'inherit', cursor: 'pointer', flexShrink: 0,
+                fontFamily: 'inherit',
+                cursor: (isSelecting || showHelp) ? 'not-allowed' : 'pointer',
+                opacity: (isSelecting || showHelp) ? 0.4 : 1,
+                flexShrink: 0,
               }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">

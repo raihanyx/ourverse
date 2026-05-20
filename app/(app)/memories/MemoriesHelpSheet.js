@@ -50,7 +50,8 @@ export default function MemoriesHelpSheet({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-30 flex flex-col justify-end">
       <div
-        className={`absolute inset-0 bg-[rgba(var(--v2-overlayBase), 0.55)] dark:bg-[rgba(var(--v2-overlayBase), 0.7)] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+        className={`absolute inset-0 ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`}
+        style={{ background: 'rgba(var(--v2-overlayBase), 0.65)' }}
         onClick={handleClose}
       />
       <div className={`relative bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto ${isClosing ? 'animate-slide-down' : 'animate-slide-up'}`}>

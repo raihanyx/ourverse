@@ -115,6 +115,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
           onChange={e => setText(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit() } }}
           placeholder="Write your answer"
+          disabled={submitting}
           style={{
             flex: 1, minHeight: 40, padding: '10px 14px',
             borderRadius: 12, border: '1px solid var(--v2-dcAnswerBorder)',
@@ -122,24 +123,38 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
             color: 'var(--v2-t1)', fontSize: 14, fontFamily: 'inherit',
             outline: 'none', resize: 'none', lineHeight: 1.4,
             boxSizing: 'border-box',
+            opacity: submitting ? 0.6 : 1,
           }}
         />
         <button
           onClick={handleSubmit}
           disabled={!canSend}
-          aria-label="Send"
+          aria-label={submitting ? 'Sending' : 'Send'}
           style={{
             width: 40, height: 40, borderRadius: '50%',
-            background: canSend ? 'var(--v2-accent)' : 'var(--v2-dcAnswerDisabled)',
+            background: submitting ? 'var(--v2-accent)' : (canSend ? 'var(--v2-accent)' : 'var(--v2-dcAnswerDisabled)'),
             border: 'none', cursor: canSend ? 'pointer' : 'default',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0, padding: 0, transition: 'background 150ms',
           }}
         >
-          <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-            <line x1={12} y1={19} x2={12} y2={5} />
-            <polyline points="5 12 12 5 19 12" />
-          </svg>
+          {submitting ? (
+            <>
+              <style>{`@keyframes dcSpin { to { transform: rotate(360deg); } }`}</style>
+              <svg
+                width={18} height={18} viewBox="0 0 24 24" fill="none"
+                stroke="white" strokeWidth={2.5} strokeLinecap="round"
+                style={{ animation: 'dcSpin 700ms linear infinite' }}
+              >
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+            </>
+          ) : (
+            <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <line x1={12} y1={19} x2={12} y2={5} />
+              <polyline points="5 12 12 5 19 12" />
+            </svg>
+          )}
         </button>
       </div>
 
@@ -150,9 +165,11 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
             position: 'absolute', inset: 0, zIndex: 50,
             background: 'rgba(var(--v2-overlayBase), 0.7)',
             display: 'flex', alignItems: 'flex-end',
+            animation: 'dcFadeIn 200ms ease-out',
           }}
           onClick={() => setShowInfo(false)}
         >
+          <style>{`@keyframes dcFadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes dcSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }`}</style>
           <div
             onClick={e => e.stopPropagation()}
             style={{
@@ -160,6 +177,7 @@ export default function DailyConversationAnswer({ dc, onBack, onSubmit }) {
               borderRadius: '24px 24px 0 0',
               paddingTop: 10, paddingLeft: 20, paddingRight: 20,
               paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 26px)',
+              animation: 'dcSheetUp 280ms cubic-bezier(0.32,0.72,0,1)',
             }}
           >
             <div style={{ width: 36, height: 3, borderRadius: 9999, background: 'var(--v2-border)', margin: '0 auto 14px' }} />

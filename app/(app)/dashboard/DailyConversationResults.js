@@ -10,14 +10,25 @@ export default function DailyConversationResults({
   myInitial,
   partnerInitial,
 }) {
-  const [visible, setVisible] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [entered, setEntered] = useState(false)
 
   useEffect(() => {
-    if (open) setVisible(true)
-    else setTimeout(() => setVisible(false), 220)
+    if (open) {
+      setMounted(true)
+      const r1 = requestAnimationFrame(() => {
+        const r2 = requestAnimationFrame(() => setEntered(true))
+        return () => cancelAnimationFrame(r2)
+      })
+      return () => cancelAnimationFrame(r1)
+    } else {
+      setEntered(false)
+      const t = setTimeout(() => setMounted(false), 280)
+      return () => clearTimeout(t)
+    }
   }, [open])
 
-  if (!visible && !open) return null
+  if (!mounted) return null
 
   const bothAnswered = !!dc.myAnswer && !!dc.partnerAnswer
 
@@ -26,7 +37,7 @@ export default function DailyConversationResults({
       style={{
         position: 'fixed', inset: 0, zIndex: 30,
         background: 'rgba(var(--v2-overlayBase), 0.7)',
-        opacity: open ? 1 : 0,
+        opacity: entered ? 1 : 0,
         transition: 'opacity 200ms',
         display: 'flex', alignItems: 'flex-end',
       }}
@@ -39,7 +50,7 @@ export default function DailyConversationResults({
           borderRadius: '24px 24px 0 0',
           paddingTop: 10, paddingLeft: 20, paddingRight: 20,
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 26px)',
-          transform: open ? 'translateY(0)' : 'translateY(100%)',
+          transform: entered ? 'translateY(0)' : 'translateY(100%)',
           transition: 'transform 280ms cubic-bezier(0.32,0.72,0,1)',
           maxHeight: '92vh', overflowY: 'auto',
         }}
