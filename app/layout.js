@@ -50,6 +50,7 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         {[
           { w: 1290, h: 2796, dw: 430, dh: 932, dpr: 3 },
+          { w: 1284, h: 2778, dw: 428, dh: 926, dpr: 3 },
           { w: 1179, h: 2556, dw: 393, dh: 852, dpr: 3 },
           { w: 1170, h: 2532, dw: 390, dh: 844, dpr: 3 },
           { w: 1125, h: 2436, dw: 375, dh: 812, dpr: 3 },
