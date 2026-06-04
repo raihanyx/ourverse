@@ -3,6 +3,7 @@
 import { getActionContext } from '@/lib/data/getActionContext'
 import { revalidatePath } from 'next/cache'
 import { pickQuestion } from '@/lib/questions'
+import { sendPushToUser } from '@/lib/push/send'
 
 function yesterdayOf(dateStr) {
   const d = new Date(dateStr + 'T12:00:00')
@@ -147,6 +148,29 @@ export async function submitAnswer(conversationId, text, localDate) {
       .from('couples')
       .update({ last_any_answer_date: localDate })
       .eq('id', coupleId)
+  }
+
+  // Notify partner (fire-and-forget; never block the answer)
+  try {
+    const { data: members } = await supabase
+      .from('users')
+      .select('id, name')
+      .eq('couple_id', coupleId)
+
+    const me = members?.find(m => m.id === user.id)
+    const partner = members?.find(m => m.id !== user.id)
+
+    if (partner?.id) {
+      const senderName = me?.name?.trim() || 'Your partner'
+      await sendPushToUser(supabase, partner.id, {
+        title: 'Ourverse',
+        body: `${senderName} answered today's daily conversation`,
+        url: '/dashboard',
+        tag: `daily-${conversationId}`,
+      })
+    }
+  } catch (err) {
+    console.warn('[daily] push notify failed', err?.message)
   }
 
   revalidatePath('/dashboard')

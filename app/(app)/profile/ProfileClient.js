@@ -5,6 +5,14 @@ import { createPortal } from 'react-dom'
 import { updateName } from '@/app/actions/profile'
 import { updateBaseCurrency } from '@/app/actions/couple'
 import { logout } from '@/app/actions/auth'
+import { savePushSubscription, deletePushSubscription } from '@/app/actions/push'
+import {
+  isPushSupported,
+  getCurrentSubscription,
+  subscribeToPush,
+  unsubscribeFromPush,
+  serializeSubscription,
+} from '@/lib/push/client'
 import { useTheme } from '@/app/ThemeProvider'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 
@@ -109,6 +117,54 @@ export default function ProfileClient({ name, email, partnerName, inviteCode, du
 
   const [nameState, nameAction, namePending] = useActionState(updateName, null)
   const [currencyPending, startCurrencyTransition] = useTransition()
+
+  // Push notifications
+  const [pushSupported, setPushSupported] = useState(false)
+  const [pushEnabled, setPushEnabled] = useState(false)
+  const [pushPermission, setPushPermission] = useState('default')
+  const [pushBusy, setPushBusy] = useState(false)
+  const [pushError, setPushError] = useState(null)
+
+  useEffect(() => {
+    if (!isPushSupported()) {
+      setPushSupported(false)
+      return
+    }
+    setPushSupported(true)
+    setPushPermission(Notification.permission)
+    getCurrentSubscription()
+      .then(sub => setPushEnabled(!!sub))
+      .catch(() => {})
+  }, [])
+
+  async function handlePushToggle() {
+    if (pushBusy) return
+    setPushError(null)
+    setPushBusy(true)
+    try {
+      if (pushEnabled) {
+        const endpoint = await unsubscribeFromPush()
+        if (endpoint) await deletePushSubscription(endpoint)
+        setPushEnabled(false)
+      } else {
+        const sub = await subscribeToPush()
+        const payload = serializeSubscription(sub)
+        const res = await savePushSubscription(payload)
+        if (res?.error) {
+          await unsubscribeFromPush().catch(() => {})
+          throw new Error(res.error)
+        }
+        setPushEnabled(true)
+        setPushPermission('granted')
+      }
+    } catch (err) {
+      const msg = err?.message || 'Could not update notifications'
+      setPushError(msg)
+      if (typeof Notification !== 'undefined') setPushPermission(Notification.permission)
+    } finally {
+      setPushBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (nameState?.success) {
@@ -293,6 +349,36 @@ export default function ProfileClient({ name, email, partnerName, inviteCode, du
             </button>
           }
         />
+        {pushSupported && (
+          <ProfileRow
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="stroke-[#7A5C4E] dark:stroke-[#C89080]">
+                <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 01-3.46 0" />
+              </svg>
+            }
+            label="Notifications"
+            value={
+              pushPermission === 'denied'
+                ? 'Blocked — enable in browser settings'
+                : pushError
+                ? pushError
+                : pushEnabled ? 'On' : 'Off'
+            }
+            right={
+              <button
+                onClick={(e) => { e.stopPropagation(); handlePushToggle() }}
+                disabled={pushBusy || pushPermission === 'denied'}
+                className="cursor-pointer border-0 bg-transparent p-0 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Toggle notifications"
+              >
+                <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${pushEnabled ? 'bg-[#D8513E] dark:bg-[#E8675A]' : 'bg-[#ECDFD2] dark:bg-[#3D2820]'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 ${pushEnabled ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </div>
+              </button>
+            }
+          />
+        )}
       </div>
 
       {/* Account section */}
