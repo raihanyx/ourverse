@@ -1,7 +1,9 @@
 'use server'
 
-import { SUPPORTED_CURRENCIES } from '@/lib/currency'
+import { after } from 'next/server'
+import { SUPPORTED_CURRENCIES, formatAmount } from '@/lib/currency'
 import { getActionContext } from '@/lib/data/getActionContext'
+import { notifyPartner } from '@/lib/push/send'
 
 const VALID_CURRENCIES = SUPPORTED_CURRENCIES
 const VALID_CATEGORIES = ['food', 'transport', 'accommodation', 'shopping', 'other']
@@ -61,7 +63,100 @@ export async function addExpense(prevState, formData) {
 
   if (insertError) return { error: 'Could not save expense. Please try again.' }
 
+  // Notify the partner only — runs after the response so the row still appears instantly
+  after(() =>
+    notifyPartner(supabase, user.id, coupleId, (actorName) => ({
+      title: 'Ourverse',
+      body: `${actorName} added ${name} · ${formatAmount(amount, currency)}`,
+      url: '/ledger',
+      tag: `expense-${inserted.id}`,
+    }))
+  )
+
   return { success: true, data: inserted }
+}
+
+export async function updateExpense(prevState, formData) {
+  const ctx = await getActionContext()
+  if (ctx.error) return { error: ctx.error }
+  const { supabase, user, coupleId } = ctx
+
+  const id = formData.get('id')
+  if (!id) return { error: 'Missing expense.' }
+
+  const name = formData.get('name')?.trim()
+  const amount = parseFloat(formData.get('amount'))
+  const currency = formData.get('currency')
+  const category = formData.get('category')
+  const date = formData.get('date')
+  const notes = formData.get('notes')?.trim() || null
+  const whoPaid = formData.get('who_paid') // 'me' | 'partner'
+
+  // Load the current row first — settled expenses keep their amount/currency locked
+  const { data: existing, error: loadError } = await supabase
+    .from('expenses')
+    .select('id, is_paid')
+    .eq('id', id)
+    .eq('couple_id', coupleId)
+    .single()
+
+  if (loadError || !existing) return { error: 'Expense not found.' }
+
+  const errors = {}
+  if (!name) errors.name = 'Please enter a name for this expense.'
+  else if (name.length > 200) errors.name = 'Name must be 200 characters or fewer.'
+  if (!existing.is_paid) {
+    if (!formData.get('amount') || formData.get('amount') === '') errors.amount = 'Please enter an amount.'
+    else if (isNaN(amount) || amount <= 0) errors.amount = 'Amount must be greater than zero.'
+  }
+  if (!date) errors.date = 'Please select a date.'
+  else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
+  else if (isNaN(new Date(date + 'T00:00:00').getTime())) errors.date = 'Please enter a valid date.'
+  else if (date > new Date().toISOString().slice(0, 10)) errors.date = 'Date cannot be in the future.'
+  if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
+  if (Object.keys(errors).length > 0) return { errors }
+
+  if (!VALID_CATEGORIES.includes(category)) return { error: 'Please select a valid category.' }
+  if (!existing.is_paid && !VALID_CURRENCIES.includes(currency)) {
+    return { error: 'Please select a valid currency.' }
+  }
+
+  // Look up the real partner from DB — never trust an id from the client
+  let paidByUserId = user.id
+  if (whoPaid === 'partner') {
+    const { data: partnerProfile } = await supabase
+      .from('users')
+      .select('id')
+      .eq('couple_id', coupleId)
+      .neq('id', user.id)
+      .single()
+    if (partnerProfile?.id) paidByUserId = partnerProfile.id
+  }
+
+  const patch = {
+    name,
+    category,
+    date,
+    notes,
+    paid_by_user_id: paidByUserId,
+  }
+  // Amount and currency are frozen once an expense is settled
+  if (!existing.is_paid) {
+    patch.amount = amount
+    patch.currency = currency
+  }
+
+  const { data: updated, error: updateError } = await supabase
+    .from('expenses')
+    .update(patch)
+    .eq('id', id)
+    .eq('couple_id', coupleId)
+    .select('*')
+    .single()
+
+  if (updateError) return { error: 'Could not save changes. Please try again.' }
+
+  return { success: true, data: updated }
 }
 
 export async function bulkSetPaid(ids, isPaid) {

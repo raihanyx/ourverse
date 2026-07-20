@@ -2,7 +2,9 @@
 
 import { getActionContext } from '@/lib/data/getActionContext'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { pickQuestion } from '@/lib/questions'
+import { notifyPartner } from '@/lib/push/send'
 
 function yesterdayOf(dateStr) {
   const d = new Date(dateStr + 'T12:00:00')
@@ -148,6 +150,16 @@ export async function submitAnswer(conversationId, text, localDate) {
       .update({ last_any_answer_date: localDate })
       .eq('id', coupleId)
   }
+
+  // Notify the partner only — runs after the response so it never delays the answer
+  after(() =>
+    notifyPartner(supabase, user.id, coupleId, (actorName) => ({
+      title: 'Ourverse',
+      body: `${actorName} answered today's daily conversation`,
+      url: '/dashboard',
+      tag: `daily-${conversationId}`,
+    }))
+  )
 
   revalidatePath('/dashboard')
 
