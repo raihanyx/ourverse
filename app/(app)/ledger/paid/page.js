@@ -27,6 +27,7 @@ export default async function PaidExpensesPage({ searchParams }) {
       <PaidExpensesClient
         expenses={expenses ?? []}
         currentUserId={user.id}
+        currentUserName={profile.name}
         partnerId={partner?.id ?? null}
         partnerName={partner?.name ?? 'your partner'}
         coupleId={profile.couple_id}

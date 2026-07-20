@@ -2,8 +2,9 @@
 
 import { getActionContext } from '@/lib/data/getActionContext'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { pickQuestion } from '@/lib/questions'
-import { sendPushToUser } from '@/lib/push/send'
+import { notifyPartner } from '@/lib/push/send'
 
 function yesterdayOf(dateStr) {
   const d = new Date(dateStr + 'T12:00:00')
@@ -150,28 +151,15 @@ export async function submitAnswer(conversationId, text, localDate) {
       .eq('id', coupleId)
   }
 
-  // Notify partner (fire-and-forget; never block the answer)
-  try {
-    const { data: members } = await supabase
-      .from('users')
-      .select('id, name')
-      .eq('couple_id', coupleId)
-
-    const me = members?.find(m => m.id === user.id)
-    const partner = members?.find(m => m.id !== user.id)
-
-    if (partner?.id) {
-      const senderName = me?.name?.trim() || 'Your partner'
-      await sendPushToUser(supabase, partner.id, {
-        title: 'Ourverse',
-        body: `${senderName} answered today's daily conversation`,
-        url: '/dashboard',
-        tag: `daily-${conversationId}`,
-      })
-    }
-  } catch (err) {
-    console.warn('[daily] push notify failed', err?.message)
-  }
+  // Notify the partner only — runs after the response so it never delays the answer
+  after(() =>
+    notifyPartner(supabase, user.id, coupleId, (actorName) => ({
+      title: 'Ourverse',
+      body: `${actorName} answered today's daily conversation`,
+      url: '/dashboard',
+      tag: `daily-${conversationId}`,
+    }))
+  )
 
   revalidatePath('/dashboard')
 

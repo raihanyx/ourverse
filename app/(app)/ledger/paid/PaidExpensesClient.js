@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { bulkSetPaid, togglePaid, bulkDeleteExpenses } from '@/app/actions/expenses'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
+import ExpenseSheet from '../ExpenseSheet'
+import ExpenseDetailSheet from '../ExpenseDetailSheet'
+import EditExpenseForm from '../EditExpenseForm'
 import { formatAmount } from '@/lib/currency'
 
 // Category box colors for expense categories
@@ -84,6 +87,7 @@ function groupByDate(expenses) {
 export default function PaidExpensesClient({
   expenses,
   currentUserId,
+  currentUserName,
   partnerId,
   partnerName,
   coupleId,
@@ -124,8 +128,13 @@ export default function PaidExpensesClient({
   const [isDeleting, startDeleteTransition] = useTransition()
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteIds, setDeleteIds] = useState(null)
   const [bulkError, setBulkError] = useState(null)
+
+  // Detail / edit sheets hold an id — the row is read live from `localExpenses`
+  const [detailId, setDetailId] = useState(null)
+  const [editId, setEditId] = useState(null)
+  const [isSheetClosing, setIsSheetClosing] = useState(false)
 
   const theyOweMe = localExpenses.filter(e => e.paid_by_user_id === currentUserId)
   const iOweThem = localExpenses.filter(e => e.paid_by_user_id === partnerId)
@@ -136,6 +145,9 @@ export default function PaidExpensesClient({
   )
 
   const groups = groupByDate(sorted)
+
+  const detailExpense = detailId ? localExpenses.find(e => e.id === detailId) : null
+  const editExpense = editId ? localExpenses.find(e => e.id === editId) : null
 
   const summaryLabel = activeTab === 'owe_me'
     ? `${partnerName} has paid you back ✓`
@@ -189,13 +201,56 @@ export default function PaidExpensesClient({
     })
   }
 
-  function handleBulkDelete() { if (selectedIds.size > 0) setShowDeleteConfirm(true) }
+  function handleOpenDetail(id) { setDetailId(id); setIsSheetClosing(false) }
+
+  function closeSheets() {
+    setIsSheetClosing(true)
+    setTimeout(() => {
+      setDetailId(null)
+      setEditId(null)
+      setIsSheetClosing(false)
+    }, 220)
+  }
+
+  function handleEditFromDetail() {
+    setEditId(detailId)
+    setDetailId(null)
+  }
+
+  function handleEditSuccess(row) {
+    if (row) setLocalExpenses(prev => prev.map(e => e.id === row.id ? row : e))
+    closeSheets()
+  }
+
+  function handleStartEditSelected() {
+    const [id] = [...selectedIds]
+    if (!id) return
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+    setIsSheetClosing(false)
+    setEditId(id)
+  }
+
+  function handleUndoFromDetail() {
+    const id = detailId
+    // Undoing removes the row from this page — close the sheet with it
+    setDetailId(null)
+    handleUndo(id)
+  }
+
+  function handleDeleteFromDetail() {
+    const id = detailId
+    setDetailId(null)
+    setDeleteIds([id])
+  }
+
+  function handleBulkDelete() { if (selectedIds.size > 0) setDeleteIds([...selectedIds]) }
 
   function handleConfirmDelete() {
-    const ids = [...selectedIds]
+    const ids = deleteIds ?? []
     setBulkError(null)
     const removed = localExpenses.filter(e => ids.includes(e.id))
-    setShowDeleteConfirm(false)
+    setDeleteIds(null)
     setLocalExpenses(prev => prev.filter(e => !ids.includes(e.id)))
     setIsSelecting(false); setSelectedIds(new Set())
     startDeleteTransition(async () => {
@@ -372,7 +427,7 @@ export default function PaidExpensesClient({
               return (
                 <div key={expense.id}>
                   <div
-                    onClick={isSelecting ? () => handleSelect(expense.id) : undefined}
+                    onClick={isSelecting ? () => handleSelect(expense.id) : () => handleOpenDetail(expense.id)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12,
                       padding: isSelecting ? '10px 10px' : '10px 0',
@@ -380,7 +435,7 @@ export default function PaidExpensesClient({
                       borderRadius: isSelecting ? 12 : 0,
                       background: isSelected ? 'var(--v2-accentDim)' : 'transparent',
                       opacity: isSelected ? 1 : 0.55,
-                      cursor: isSelecting ? 'pointer' : 'default',
+                      cursor: 'pointer',
                       transition: 'background 150ms, opacity 250ms',
                     }}
                   >
@@ -412,7 +467,7 @@ export default function PaidExpensesClient({
                         </p>
                         {!isSelecting && (
                           <button
-                            onClick={() => handleUndo(expense.id)}
+                            onClick={(ev) => { ev.stopPropagation(); handleUndo(expense.id) }}
                             disabled={isPending}
                             style={{
                               height: 24, padding: '0 10px', borderRadius: 7,
@@ -487,6 +542,19 @@ export default function PaidExpensesClient({
                 >
                   {isDeleting ? 'Deleting…' : 'Delete'}
                 </button>
+                {selectedIds.size === 1 && (
+                  <button
+                    onClick={handleStartEditSelected}
+                    style={{
+                      height: 32, padding: '0 12px', borderRadius: 9,
+                      border: '1px solid var(--v2-border)', background: 'transparent',
+                      color: 'var(--v2-t1)', fontSize: 12.5, fontWeight: 600,
+                      fontFamily: 'inherit', cursor: 'pointer',
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
                 <button
                   onClick={handleBulkUndo}
                   disabled={isPending}
@@ -528,14 +596,42 @@ export default function PaidExpensesClient({
         document.body
       )}
 
-      {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
+      {deleteIds && typeof document !== 'undefined' && createPortal(
         <ConfirmSheet
-          message={`Delete ${selectedIds.size} expense${selectedIds.size === 1 ? '' : 's'}? This can't be undone.`}
+          message={`Delete ${deleteIds.length} expense${deleteIds.length === 1 ? '' : 's'}? This can't be undone.`}
           confirmLabel="Delete"
           onConfirm={handleConfirmDelete}
-          onCancel={() => setShowDeleteConfirm(false)}
+          onCancel={() => setDeleteIds(null)}
         />,
         document.body
+      )}
+
+      {/* Expense detail sheet */}
+      {detailExpense && (
+        <ExpenseDetailSheet
+          expense={detailExpense}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          partnerName={partnerName}
+          isClosing={isSheetClosing}
+          onClose={closeSheets}
+          onEdit={handleEditFromDetail}
+          onToggle={handleUndoFromDetail}
+          onDelete={handleDeleteFromDetail}
+        />
+      )}
+
+      {/* Edit expense sheet */}
+      {editExpense && (
+        <ExpenseSheet title="Edit expense" isClosing={isSheetClosing} onClose={closeSheets}>
+          <EditExpenseForm
+            expense={editExpense}
+            currentUserId={currentUserId}
+            currentUserName={currentUserName}
+            partnerName={partnerName}
+            onSuccess={handleEditSuccess}
+          />
+        </ExpenseSheet>
       )}
     </div>
   )

@@ -65,22 +65,32 @@ app/
     layout.js             Auth guard + sticky top header (logo only) + renders NavLinks
     NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Calendar, Profile)
     dashboard/
-      page.js             Server component — balance summary + couple info + together card
+      page.js             Server component — balance summary + couple info + together card + daily conversation
       BalanceCard.js      Client component — balance amounts + base currency selector
       CurrencySettings.js Client component — per-user base currency dropdown (used inside BalanceCard)
       InviteCodeBadge.js  Client component — displays + copies invite code
       TogetherCard.js     Client component — relationship duration counter or date picker empty state
+      RecentExpenses.js   Recent expense strip with category-tinted boxes
+      DailyConversationSection.js  Client wrapper — orchestrates card / answer / results states
+      DailyConversationCard.js     Question card + streak + countdown to next local midnight
+      DailyConversationAnswer.js   Answer composer (partner's answer stays hidden until both submit)
+      DailyConversationResults.js  Both answers revealed side by side
       RealtimeRefresh.js  Client component — router.refresh() on expenses/couples realtime + tab focus
       loading.js          Dashboard loading skeleton
     ledger/
       page.js             Server component — fetches expenses + rates
-      LedgerClient.js     Client component — tabs, realtime, header Add button, select mode
+      LedgerClient.js     Client component — tabs, realtime, header Add button, select mode, detail/edit sheets
       AddExpenseForm.js   Slide-up add expense form (with StyledSelect helper for custom arrows)
+      EditExpenseForm.js  Slide-up edit form — prefilled; amount + currency disabled once is_paid
+      ExpenseSheet.js     Reusable slide-up sheet shell (grabber, title row, close X) for detail/edit
+      ExpenseDetailSheet.js  Read-only detail popup — amount hero, status/paid-by/category/date rows,
+                             full notes, actions (Delete · Mark paid|Undo · Edit)
       LedgerHelpSheet.js  Slide-up help sheet explaining ledger rules (opened via Tip button)
       loading.js          Ledger loading skeleton
       paid/
         page.js           Server component — fetches paid expenses
-        PaidExpensesClient.js  Client component — paid list, undo, select mode, bulk delete, back link to /ledger
+        PaidExpensesClient.js  Client component — paid list, undo, select mode, bulk delete, back link to /ledger,
+                               same detail/edit sheets as the ledger
         loading.js        Paid expenses loading skeleton
     bucket/
       page.js             Server component — fetches bucket items + memories count + recent memories + linked calendar dates
@@ -117,18 +127,22 @@ app/
   actions/                Server Actions ('use server')
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
-    expenses.js           addExpense, togglePaid (uses `toggle_expense_paid` Postgres RPC — atomic single round-trip), bulkSetPaid, bulkDeleteExpenses
+    expenses.js           addExpense, updateExpense, togglePaid (uses `toggle_expense_paid` Postgres RPC — atomic single round-trip), bulkSetPaid, bulkDeleteExpenses
+    daily.js              getOrCreateDailyConversation, submitAnswer (streak bookkeeping + partner push)
+    push.js               savePushSubscription, deletePushSubscription
     bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, addDirectMemory, bulkDeleteMemories
     calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry (personal entries may only be deleted by their creator; couple entries by either partner)
     profile.js            updateName
   components/
     PageTransition.js     Fade-in wrapper used on all protected pages
+    PullToRefresh.js      Pull-to-refresh gesture — mounted once in the root layout
     ConfirmSheet.js       Reusable slide-up confirmation dialog (message, confirmLabel, onConfirm, onCancel) — used for bulk deletes across ledger, paid expenses, bucket, memories
     FieldError.js         Reusable inline field error — renders `<p>` in accent red if message is set, null otherwise
     StyledSelect.js       Reusable custom select wrapper — `appearance: none` + absolute `▾` arrow div; use instead of inline select workarounds
   ThemeProvider.js        Client context — dark/light theme, persisted to localStorage
   icon.tsx                Custom favicon — "O" lettermark via next/og ImageResponse
-  layout.js               Root layout (Geist fonts, metadata, ThemeProvider)
+  manifest.js             PWA manifest route — standalone display, start_url /dashboard, icons
+  layout.js               Root layout (Geist fonts, metadata, ThemeProvider, PullToRefresh)
   loading.js              Root loading state — full-screen centered spinner shown while navigating to protected routes
   page.js                 Root redirect → /dashboard or /login
   globals.css             Tailwind import + base styles + dark mode date picker icon fix
@@ -142,7 +156,15 @@ lib/
   constants.js            Shared category color + label maps — EXPENSE_CATEGORY_COLORS, EXPENSE_CATEGORY_LABELS, BUCKET_CATEGORY_COLORS, BUCKET_CATEGORY_LABELS
   currency.js             formatAmount, sumByCurrency, formatDate, todayISO, SUPPORTED_CURRENCIES
   exchangeRates.js        fetchRates, convertAmount, computeUnifiedTotal, getRateLines
+  questions.js            Daily conversation question bank + pickQuestion(coupleId, date) — deterministic per couple/day
+  push/
+    client.js             Browser helpers — isPushSupported, subscribeToPush, unsubscribeFromPush, serializeSubscription
+    send.js               Server helpers — sendPushToUser, notifyPartner (partner-only fan-out)
 proxy.js                  Session refresh + route protection
+public/sw.js              Service worker — push + notificationclick handlers (focus existing tab or open payload.url)
+migrations/               Hand-run SQL — apply in the Supabase SQL editor
+  push_subscriptions.sql        Table + RLS policies
+docs/audits/              Point-in-time audit write-ups (security, performance, ledger, bugs)
 ```
 
 ---
@@ -164,6 +186,9 @@ proxy.js                  Session refresh + route protection
 | id | uuid PK | |
 | invite_code | text unique | 6-char alphanumeric |
 | anniversary_date | date | nullable — relationship start date, set by either partner |
+| streak | integer | Consecutive days both partners answered the daily conversation |
+| last_completed_date | date | nullable — last date *both* answered; drives streak continuation |
+| last_any_answer_date | date | nullable — last date *either* answered |
 | creator_id | uuid FK | References auth.users |
 | created_at | timestamptz | |
 
@@ -221,6 +246,43 @@ proxy.js                  Session refresh + route protection
 | is_personal | boolean | Default false — personal entries visible to creator only |
 | created_at | timestamptz | |
 
+### `public.daily_conversations`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| couple_id | uuid FK | References couples.id |
+| date | date | Unique together with couple_id — one question per couple per day |
+| question | text | Snapshot of the picked question text |
+| created_at | timestamptz | |
+
+Created via upsert with `onConflict: 'couple_id,date', ignoreDuplicates: true` so both partners can open the dashboard simultaneously without racing.
+
+### `public.daily_answers`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| conversation_id | uuid FK | References daily_conversations.id |
+| couple_id | uuid FK | References couples.id |
+| user_id | uuid FK | References auth.users |
+| text | text | |
+| answered_at | timestamptz | |
+
+One answer per user per conversation — `submitAnswer` checks for an existing row and returns `{ error: 'Already answered' }`.
+
+### `public.push_subscriptions`
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid PK | |
+| user_id | uuid FK | References auth.users, on delete cascade |
+| couple_id | uuid FK | References couples.id — required for the partner-read policy |
+| endpoint | text unique | Push service endpoint; upserted `onConflict: 'endpoint'` |
+| p256dh | text | |
+| auth | text | |
+| user_agent | text | nullable |
+| created_at | timestamptz | |
+
+One row per device/browser. RLS: select allowed for own rows *and* same-couple rows (partners must read each other's endpoints to send); insert/update/delete restricted to `user_id = auth.uid()`.
+
 All tables have RLS enabled. Policies use `get_my_couple_id()` (a `SECURITY DEFINER` function) to avoid infinite recursion when querying `public.users` inside policies.
 
 ---
@@ -267,6 +329,19 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Listens to both `expenses` table and `couples` table (UPDATE) — so TogetherCard refreshes live when partner sets the anniversary date
 - Also call `router.refresh()` on `visibilitychange` as fallback when realtime misses events
 - `router.refresh()` re-runs the server component without a full page reload
+
+### Push Notifications
+
+- **Env vars**: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. If any is missing, `lib/push/send.js` logs `[push] VAPID env vars missing; skipping send` and no-ops — sends *look* fine but nothing is delivered.
+- **Always notify via `notifyPartner(supabase, actorUserId, coupleId, buildPayload)`** — it resolves the couple's other member and hard-guards against pushing to the actor. Never call `sendPushToUser` directly for couple events; that's the low-level primitive.
+- **Send inside `after()` from `next/server`**, not inline. A web-push round-trip is ~200–500ms; awaiting it inside a server action puts that latency in front of the mutation's response, which breaks the "mutations appear instantly" rule above. `after()` runs the send once the response is flushed. Cookie reads are available inside `after` in Server Functions, and `lib/supabase/server.js` try/catches `setAll`, so reusing the request's Supabase client is safe.
+- **`notifyPartner` never throws** — the whole body is try/caught, so a push failure can't fail the mutation that triggered it.
+- **Current triggers** (both partner-only):
+  - `addExpense` → `"{actor} added {name} · {amount}"`, deep-links `/ledger`
+  - `submitAnswer` → `"{actor} answered today's daily conversation"`, deep-links `/dashboard`
+- **Stale endpoint pruning** goes through the `prune_push_subscriptions(uuid[])` RPC, *not* a direct delete. The sender is not the owner of the recipient's rows and the delete policy is `user_id = auth.uid()`, so a direct delete silently no-ops. The RPC is `SECURITY DEFINER`, pinned `search_path`, scoped to `couple_id = get_my_couple_id()`, execute revoked from `anon`. It lives only in the database — there is no migration file for it, so read the definition from Supabase before changing it.
+- **Subscriptions are origin-scoped** — a `localhost:3000` subscription is unreachable from production and vice versa. Each device must re-subscribe per origin.
+- **iOS requires the PWA to be installed** to the home screen; push in a plain Safari tab is silently dropped even when the toggle succeeds.
 
 ### Exchange Rates
 - Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never call client-side
@@ -382,6 +457,25 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Realtime sync — partner's entries appear live via Supabase channel
 - Personal entries visible only to the creator (RLS-enforced)
 
+### ✅ Phase 4.8 — Daily Conversations
+- One shared question per couple per day, picked deterministically from `lib/questions.js` by `(coupleId, date)`
+- Partner's answer stays hidden until both have answered, then both reveal together
+- Streak counter on `couples` — increments when both answer on consecutive days
+- Countdown to next local midnight on the dashboard card
+
+### ✅ Phase 4.9 — PWA & Push Notifications
+- Installable PWA (`app/manifest.js`, standalone display, iOS splash assets)
+- Pull-to-refresh gesture mounted in the root layout
+- Web push via VAPID — per-device subscriptions in `push_subscriptions`, toggle in /profile
+- Partner-only notifications on new expenses and daily conversation answers
+- Service worker (`public/sw.js`) handles push display + notification click routing
+
+### ✅ Phase 4.95 — Ledger Item Detail & Edit
+- Tap any ledger or settled row to open a detail sheet (surfaces notes, which had no other UI)
+- Edit from the detail sheet, or from select mode when exactly one item is selected
+- Amount and currency freeze once an expense is settled — enforced server-side, not just disabled in the UI
+- Same flows on both /ledger and /ledger/paid
+
 ### Phase 5 — Trips
 - Create a trip with dates and destination
 - Tag expenses to a trip
@@ -392,4 +486,3 @@ const [state, formAction, isPending] = useActionState(action, null)
 - Export ledger to CSV
 - Anniversary reminders
 - Monthly spending summary
-- PWA setup (installable on iOS and Android home screen)

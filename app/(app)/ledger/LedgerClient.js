@@ -7,6 +7,9 @@ import { togglePaid, bulkSetPaid, bulkDeleteExpenses } from '@/app/actions/expen
 import { formatAmount, sumByCurrency, formatDate } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
 import AddExpenseForm from './AddExpenseForm'
+import EditExpenseForm from './EditExpenseForm'
+import ExpenseSheet from './ExpenseSheet'
+import ExpenseDetailSheet from './ExpenseDetailSheet'
 import LedgerHelpSheet from './LedgerHelpSheet'
 import ConfirmSheet from '@/app/components/ConfirmSheet'
 import Link from 'next/link'
@@ -150,13 +153,13 @@ function formatDateLabel(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onSelect }) {
+function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onSelect, onOpen }) {
   const isPaid = expense.is_paid
   const muted = isPaid && !isSelected
 
   return (
     <div
-      onClick={isSelecting ? () => onSelect(expense.id) : undefined}
+      onClick={isSelecting ? () => onSelect(expense.id) : () => onOpen(expense.id)}
       className="expense-row-transition"
       style={{
         display: 'flex',
@@ -167,7 +170,7 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
         borderRadius: isSelecting ? 12 : 0,
         background: isSelected ? 'var(--v2-accentDim)' : 'transparent',
         opacity: muted ? 0.45 : 1,
-        cursor: isSelecting ? 'pointer' : 'default',
+        cursor: 'pointer',
       }}
     >
       <CatBox category={expense.category} />
@@ -274,9 +277,14 @@ export default function LedgerClient({
 
   const [isSelecting, setIsSelecting] = useState(false)
   const [selectedIds, setSelectedIds] = useState(new Set())
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteIds, setDeleteIds] = useState(null)
   const [isDeleting, startDeleteTransition] = useTransition()
   const [bulkError, setBulkError] = useState(null)
+
+  // Detail / edit sheets hold an id — the row is read live from `expenses`
+  const [detailId, setDetailId] = useState(null)
+  const [editId, setEditId] = useState(null)
+  const [isSheetClosing, setIsSheetClosing] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -370,13 +378,53 @@ export default function LedgerClient({
     })
   }
 
-  function handleBulkDelete() { if (selectedIds.size > 0) setShowDeleteConfirm(true) }
+  function handleOpenDetail(id) { setDetailId(id); setIsSheetClosing(false) }
+
+  function closeSheets() {
+    setIsSheetClosing(true)
+    setTimeout(() => {
+      setDetailId(null)
+      setEditId(null)
+      setIsSheetClosing(false)
+    }, 220)
+  }
+
+  function handleEditFromDetail() {
+    setEditId(detailId)
+    setDetailId(null)
+  }
+
+  function handleEditSuccess(row) {
+    if (row) setExpenses(prev => prev.map(e => e.id === row.id ? row : e))
+    closeSheets()
+  }
+
+  function handleStartEditSelected() {
+    const [id] = [...selectedIds]
+    if (!id) return
+    setIsSelecting(false)
+    setSelectedIds(new Set())
+    setIsSheetClosing(false)
+    setEditId(id)
+  }
+
+  function handleDeleteFromDetail() {
+    const id = detailId
+    setDetailId(null)
+    setDeleteIds([id])
+  }
+
+  function handleToggleFromDetail() {
+    handleToggle(detailId)
+  }
+
+  function handleBulkDelete() { if (selectedIds.size > 0) setDeleteIds([...selectedIds]) }
 
   function handleConfirmDelete() {
-    const ids = [...selectedIds]
+    const ids = deleteIds ?? []
     setBulkError(null)
     const removed = expenses.filter(e => ids.includes(e.id))
-    setShowDeleteConfirm(false)
+    setDeleteIds(null)
     setExpenses(prev => prev.filter(e => !ids.includes(e.id)))
     setIsSelecting(false); setSelectedIds(new Set())
     startDeleteTransition(async () => {
@@ -408,6 +456,9 @@ export default function LedgerClient({
   const hasSelectedUnpaid = visibleExpenses.some(e => selectedIds.has(e.id) && !e.is_paid)
   const hasSelectedPaid = visibleExpenses.some(e => selectedIds.has(e.id) && e.is_paid)
   const unpaidCount = expenses.filter(e => !e.is_paid).length
+
+  const detailExpense = detailId ? expenses.find(e => e.id === detailId) : null
+  const editExpense = editId ? expenses.find(e => e.id === editId) : null
 
   // Group visible expenses by date for rendering
   const unpaidGroups = groupByDate(unpaidSorted)
@@ -599,6 +650,7 @@ export default function LedgerClient({
                         isSelecting={isSelecting}
                         isSelected={selectedIds.has(expense.id)}
                         onSelect={handleSelect}
+                        onOpen={handleOpenDetail}
                       />
                       {!isSelecting && i < group.items.length - 1 && (
                         <div style={{ height: 1, background: 'var(--v2-divider)', margin: '0' }} />
@@ -631,6 +683,7 @@ export default function LedgerClient({
                             isSelecting={isSelecting}
                             isSelected={selectedIds.has(expense.id)}
                             onSelect={handleSelect}
+                            onOpen={handleOpenDetail}
                           />
                           {!isSelecting && i < group.items.length - 1 && (
                             <div style={{ height: 1, background: 'var(--v2-divider)' }} />
@@ -732,6 +785,19 @@ export default function LedgerClient({
                 >
                   {isDeleting ? 'Deleting…' : 'Delete'}
                 </button>
+                {selectedIds.size === 1 && (
+                  <button
+                    onClick={handleStartEditSelected}
+                    style={{
+                      height: 32, padding: '0 12px', borderRadius: 9,
+                      border: '1px solid var(--v2-border)', background: 'transparent',
+                      color: 'var(--v2-t1)', fontSize: 12.5, fontWeight: 600,
+                      fontFamily: 'inherit', cursor: 'pointer',
+                    }}
+                  >
+                    Edit
+                  </button>
+                )}
                 {hasSelectedUnpaid && !hasSelectedPaid && (
                   <button
                     onClick={handleBulkMarkPaid}
@@ -792,14 +858,42 @@ export default function LedgerClient({
       )}
 
       {/* Delete confirmation */}
-      {showDeleteConfirm && typeof document !== 'undefined' && createPortal(
+      {deleteIds && typeof document !== 'undefined' && createPortal(
         <ConfirmSheet
-          message={`Delete ${selectedIds.size} expense${selectedIds.size === 1 ? '' : 's'}? This can't be undone.`}
+          message={`Delete ${deleteIds.length} expense${deleteIds.length === 1 ? '' : 's'}? This can't be undone.`}
           confirmLabel="Delete"
           onConfirm={handleConfirmDelete}
-          onCancel={() => setShowDeleteConfirm(false)}
+          onCancel={() => setDeleteIds(null)}
         />,
         document.body
+      )}
+
+      {/* Expense detail sheet */}
+      {detailExpense && (
+        <ExpenseDetailSheet
+          expense={detailExpense}
+          currentUserId={currentUserId}
+          currentUserName={currentUserName}
+          partnerName={partnerName}
+          isClosing={isSheetClosing}
+          onClose={closeSheets}
+          onEdit={handleEditFromDetail}
+          onToggle={handleToggleFromDetail}
+          onDelete={handleDeleteFromDetail}
+        />
+      )}
+
+      {/* Edit expense sheet */}
+      {editExpense && (
+        <ExpenseSheet title="Edit expense" isClosing={isSheetClosing} onClose={closeSheets}>
+          <EditExpenseForm
+            expense={editExpense}
+            currentUserId={currentUserId}
+            currentUserName={currentUserName}
+            partnerName={partnerName}
+            onSuccess={handleEditSuccess}
+          />
+        </ExpenseSheet>
       )}
 
       {/* Help sheet */}
