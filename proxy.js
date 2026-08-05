@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
+import { getVerifiedClaims } from '@/lib/supabase/jwks'
 
 export async function proxy(request) {
   let supabaseResponse = NextResponse.next({ request })
@@ -25,10 +26,12 @@ export async function proxy(request) {
     }
   )
 
-  // Use getUser() — getSession() is unverified (reads cookies only, no server check)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // getClaims() verifies the JWT signature locally against the cached JWKS
+  // (project signs ES256). Do NOT swap this for getSession() — that one is
+  // unverified, it only decodes cookies. Local verification still refreshes an
+  // expired session under the hood, so the cookie-forwarding contract below
+  // is unchanged.
+  const user = await getVerifiedClaims(supabase)
 
   const { pathname } = request.nextUrl
 

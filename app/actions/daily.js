@@ -3,7 +3,7 @@
 import { getActionContext } from '@/lib/data/getActionContext'
 import { revalidatePath } from 'next/cache'
 import { after } from 'next/server'
-import { pickQuestion } from '@/lib/questions'
+import { loadDailyConversation } from '@/lib/data/getDailyConversation'
 import { notifyPartner } from '@/lib/push/send'
 
 function yesterdayOf(dateStr) {
@@ -12,75 +12,15 @@ function yesterdayOf(dateStr) {
   return d.toLocaleDateString('en-CA')
 }
 
+/**
+ * Client-callable entry point. Server components should import
+ * loadDailyConversation directly and pass the auth context they already hold —
+ * calling this action from a server render costs an extra getUser() round-trip.
+ */
 export async function getOrCreateDailyConversation(localDate) {
   const ctx = await getActionContext()
   if (ctx.error) return { error: ctx.error }
-  const { supabase, user, coupleId } = ctx
-
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return { error: 'Invalid date' }
-
-  const question = pickQuestion(coupleId, localDate)
-
-  // Race-safe: ON CONFLICT (couple_id, date) DO NOTHING
-  await supabase
-    .from('daily_conversations')
-    .upsert(
-      { couple_id: coupleId, date: localDate, question: question.text },
-      { onConflict: 'couple_id,date', ignoreDuplicates: true }
-    )
-
-  const { data: conversation } = await supabase
-    .from('daily_conversations')
-    .select('id, date, question')
-    .eq('couple_id', coupleId)
-    .eq('date', localDate)
-    .single()
-
-  if (!conversation) return { error: 'Could not load conversation' }
-
-  const [{ data: answers }, { data: couple }] = await Promise.all([
-    supabase
-      .from('daily_answers')
-      .select('user_id, text, answered_at')
-      .eq('conversation_id', conversation.id),
-    supabase
-      .from('couples')
-      .select('streak, last_completed_date')
-      .eq('id', coupleId)
-      .single(),
-  ])
-
-  const myAnswer = answers?.find(a => a.user_id === user.id) ?? null
-  const partnerAnswer = answers?.find(a => a.user_id !== user.id) ?? null
-
-  let streak = couple?.streak ?? 0
-  let streakBroke = false
-  let previousStreak = 0
-  const yesterdayStr = yesterdayOf(localDate)
-
-  if (streak > 0 && couple?.last_completed_date && couple.last_completed_date < yesterdayStr) {
-    previousStreak = streak
-    streakBroke = true
-    await supabase
-      .from('couples')
-      .update({ streak: 0 })
-      .eq('id', coupleId)
-    streak = 0
-  }
-
-  return {
-    conversation: {
-      id: conversation.id,
-      date: conversation.date,
-      question: conversation.question,
-      emoji: question.emoji,
-    },
-    myAnswer,
-    partnerAnswer,
-    streak,
-    streakBroke,
-    previousStreak,
-  }
+  return loadDailyConversation(ctx, localDate)
 }
 
 export async function submitAnswer(conversationId, text, localDate) {

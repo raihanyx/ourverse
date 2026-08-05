@@ -1,9 +1,13 @@
-import { getAppSession } from '@/lib/data/getAppSession'
+import { getAuthUser } from '@/lib/data/getAppSession'
 import Link from 'next/link'
 import NavLinks from './NavLinks'
 
 export default async function AppLayout({ children }) {
-  const { profile } = await getAppSession()
+  // Auth guard only — the layout renders no user data, so fetching the full
+  // session here was a profile+partner query per page load for nothing.
+  // React-cached, so this shares the page's auth call rather than adding one.
+  // The /onboarding redirect for couple-less accounts lives in the pages.
+  await getAuthUser()
 
   return (
     <div className="min-h-screen bg-[#F8F2EB] dark:bg-[#1A1210]">

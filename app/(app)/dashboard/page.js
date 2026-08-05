@@ -1,14 +1,19 @@
-import { createClient } from '@/lib/supabase/server'
-import { getAppSession } from '@/lib/data/getAppSession'
+import { Suspense } from 'react'
+import { redirect } from 'next/navigation'
+import {
+  getAuthUser,
+  resolveCoupleId,
+  coupleMembersQuery,
+  splitMembers,
+} from '@/lib/data/getAppSession'
 import { sumByCurrency } from '@/lib/currency'
 import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
-import { getOrCreateDailyConversation } from '@/app/actions/daily'
 import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
 import TogetherCard from './TogetherCard'
 import InviteCodeBadge from './InviteCodeBadge'
 import RecentExpenses from './RecentExpenses'
-import DailyConversationSection from './DailyConversationSection'
+import DailyConversation, { DailyConversationFallback } from './DailyConversation'
 import PageTransition from '@/app/components/PageTransition'
 
 export const metadata = {
@@ -16,8 +21,11 @@ export const metadata = {
 }
 
 export default async function DashboardPage() {
-  const { user, profile, partner } = await getAppSession()
-  const supabase = await createClient()
+  // Auth first, then EVERYTHING else in one parallel batch. The profile/partner
+  // rows used to be a separate serial stage in front of this — folding them in
+  // removes a full network round-trip from every dashboard load.
+  const { supabase, user, coupleId: metaCoupleId } = await getAuthUser()
+  const coupleId = await resolveCoupleId(metaCoupleId)
 
   const todayLabel = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'short', day: 'numeric',
@@ -25,42 +33,39 @@ export default async function DashboardPage() {
   const serverLocalDate = new Date().toLocaleDateString('en-CA')
 
   const [
+    { data: members },
     { data: couple },
     { data: unpaidExpenses },
-    { count: totalExpenseCount },
     { data: recentExpenses },
     ratesResult,
-    dailyInitial,
   ] = await Promise.all([
+    coupleMembersQuery(supabase, coupleId),
     supabase
       .from('couples')
       .select('invite_code, anniversary_date, created_at')
-      .eq('id', profile.couple_id)
+      .eq('id', coupleId)
       .single(),
     supabase
       .from('expenses')
       .select('amount, currency, paid_by_user_id')
-      .eq('couple_id', profile.couple_id)
+      .eq('couple_id', coupleId)
       .eq('is_paid', false),
     supabase
       .from('expenses')
-      .select('id', { count: 'exact', head: true })
-      .eq('couple_id', profile.couple_id),
-    supabase
-      .from('expenses')
       .select('id, name, amount, currency, category, date, paid_by_user_id')
-      .eq('couple_id', profile.couple_id)
+      .eq('couple_id', coupleId)
       .order('created_at', { ascending: false })
       .limit(3),
     fetchRates(),
-    getOrCreateDailyConversation(serverLocalDate).catch(err => {
-      console.error('[Dashboard] daily prefetch failed:', err)
-      return null
-    }),
   ])
 
+  const { profile, partner } = splitMembers(members, user.id)
+  if (!profile?.couple_id) redirect('/onboarding')
+
   const expenses = unpaidExpenses ?? []
-  const hasAnyExpenses = (totalExpenseCount ?? 0) > 0
+  // The recent-3 query already answers "are there any expenses?", so the
+  // dedicated count query it replaced was a wasted round-trip.
+  const hasAnyExpenses = (recentExpenses?.length ?? 0) > 0
   const rates = ratesResult?.rates ?? null
   const baseCurrency = profile?.base_currency ?? 'IDR'
 
@@ -100,17 +105,17 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Daily Conversation */}
+        {/* Daily Conversation — streamed: it is the slowest query on the page,
+            so the rest of the dashboard must not wait behind it. */}
         <div className="mt-2">
-          <DailyConversationSection
-            coupleId={profile.couple_id}
-            userId={user.id}
-            partnerName={partnerName}
-            myInitial={profile.name?.[0]?.toUpperCase() ?? '?'}
-            partnerInitial={partner?.name?.[0]?.toUpperCase() ?? '?'}
-            initialData={dailyInitial && !dailyInitial.error ? dailyInitial : null}
-            initialDate={serverLocalDate}
-          />
+          <Suspense fallback={<DailyConversationFallback />}>
+            <DailyConversation
+              partnerName={partnerName}
+              myInitial={profile.name?.[0]?.toUpperCase() ?? '?'}
+              partnerInitial={partner?.name?.[0]?.toUpperCase() ?? '?'}
+              serverLocalDate={serverLocalDate}
+            />
+          </Suspense>
         </div>
 
         {/* Balance section */}

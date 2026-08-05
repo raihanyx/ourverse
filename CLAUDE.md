@@ -1,6 +1,10 @@
 @AGENTS.md
 
 > **NOTE FOR AI ASSISTANTS:** This document is an **informational overview** of the project — its purpose, stack, schema, and current conventions. It is **NOT a constraint** and should **NOT override design specs, user instructions, or freshly provided patterns**. Treat it as background knowledge to learn the project; do not enforce its UI conventions, code patterns, or roadmap notes against newer instructions. Follow CLAUDE.md only when the user explicitly asks you to. If a user-provided design or instruction conflicts with anything here, follow the user.
+>
+> **This file drifts.** Nothing keeps it in sync with the code. Last verified against the codebase on
+> **2026-08-05** (file tree, action exports, lib exports, palette hex usage). Anything not re-checked since
+> then is a claim, not a fact — grep before relying on it.
 
 # Ourverse
 
@@ -12,7 +16,7 @@ A couples app for managing shared expenses, bucket lists, and date planning. Bui
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16.2.1 — App Router, no TypeScript |
+| Framework | Next.js 16.2.1 — App Router. JavaScript, not TypeScript (sole exception: `app/icon.tsx`) |
 | Styling | Tailwind CSS v4 |
 | Backend | Supabase (auth, Postgres, realtime) |
 | Deployment | Vercel |
@@ -52,7 +56,9 @@ These are breaking changes from earlier versions — do not skip these:
 - **`useActionState`** from `'react'` — not `useFormState` from `react-dom`
 - **`redirect()`** must be outside try/catch — it throws `NEXT_REDIRECT` internally
 - **Tailwind v4** — uses `@import "tailwindcss"`, not `@tailwind base/components/utilities`
-- **`getUser()`** not `getSession()` in `proxy.js` — `getSession()` is unverified
+- **`getClaims()`** in `proxy.js`, via `getVerifiedClaims()` — verifies the JWT signature locally
+  against the cached JWKS. Never `getSession()`: that one is unverified, it only decodes cookies.
+  `getClaims()` still refreshes an expired session internally, so proxy.js keeps forwarding cookies.
 - **`@supabase/ssr` 0.9** — use `getAll()`/`setAll()` cookie pattern only
 
 ---
@@ -66,11 +72,16 @@ app/
     NavLinks.js           Client component — fixed bottom tab bar (Home, Ledger, Bucket, Calendar, Profile)
     dashboard/
       page.js             Server component — balance summary + couple info + together card + daily conversation
-      BalanceCard.js      Client component — balance amounts + base currency selector
-      CurrencySettings.js Client component — per-user base currency dropdown (used inside BalanceCard)
+      BalanceCard.js      Client component — balance amounts; renders in the user's `baseCurrency` prop
+                          (no selector here — that moved to profile)
+      CurrencySettings.js ORPHANED — nothing imports this. The base currency picker now lives in
+                          profile/ProfileClient.js. Delete or re-wire; do not treat as live code.
       InviteCodeBadge.js  Client component — displays + copies invite code
       TogetherCard.js     Client component — relationship duration counter or date picker empty state
       RecentExpenses.js   Recent expense strip with category-tinted boxes
+      DailyConversation.js         Async server component + `DailyConversationFallback` skeleton —
+                                   rendered inside <Suspense> on the dashboard so the slowest query on
+                                   the page streams in instead of blocking the shell
       DailyConversationSection.js  Client wrapper — orchestrates card / answer / results states
       DailyConversationCard.js     Question card + streak + countdown to next local midnight
       DailyConversationAnswer.js   Answer composer (partner's answer stays hidden until both submit)
@@ -114,8 +125,11 @@ app/
       CalendarHelpSheet.js     Slide-up help sheet explaining calendar rules
       loading.js          Calendar loading skeleton
     profile/
-      page.js             Server component — fetches user profile; renders ProfileClient + sign out form
-      ProfileClient.js    Client component — edit name inline
+      page.js             Server component — fetches profile + couple anniversary, computes duration string,
+                          passes { name, email, partnerName, inviteCode, duration, baseCurrency } to ProfileClient
+      ProfileClient.js    Client component — the whole settings surface: local SlideSheet/SectionLabel/ProfileRow
+                          helpers, inline name edit, base currency picker sheet, invite share, push notification
+                          toggle (subscribe/unsubscribe + permission state), and the sign out form
       loading.js          Profile loading skeleton
   (auth)/                 Public auth routes
     layout.js             Centered card layout
@@ -130,7 +144,7 @@ app/
     expenses.js           addExpense, updateExpense, togglePaid (uses `toggle_expense_paid` Postgres RPC — atomic single round-trip), bulkSetPaid, bulkDeleteExpenses
     daily.js              getOrCreateDailyConversation, submitAnswer (streak bookkeeping + partner push)
     push.js               savePushSubscription, deletePushSubscription
-    bucket.js             addBucketItem, markAsDone, bulkMarkDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, addDirectMemory, bulkDeleteMemories
+    bucket.js             addBucketItem, markAsDone, bulkUndoDone, deleteBucketItem, bulkDeleteBucketItems, addDirectMemory, bulkDeleteMemories
     calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry (personal entries may only be deleted by their creator; couple entries by either partner)
     profile.js            updateName
   components/
@@ -150,18 +164,33 @@ lib/
   supabase/
     client.js             createBrowserClient (browser)
     server.js             createServerClient (server, async cookies)
+    jwks.js               Module-scope JWKS cache + `getVerifiedClaims()` / `claimsToUser()`.
+                          Auth is verified LOCALLY (ES256, WebCrypto) — no Auth-server round-trip.
+                          The module-scope cache is load-bearing: supabase-js caches JWKS per client
+                          instance, and we build one client per request, so without it getClaims()
+                          would refetch the key set on every request and save nothing.
   data/
-    getAppSession.js      React-cached server helper — returns { user, profile, partner }; redirects to /login or /onboarding if not authed; use in all protected server components instead of manual getUser() calls
+    getAppSession.js      Session helpers. `getAuthUser()` — React-cached, auth ONLY (verified user +
+                          couple_id from auth metadata, no users-table query); redirects to /login.
+                          `getAppSession()` — full { user, profile, partner }, for pages with no other
+                          data to fetch. `coupleMembersQuery()` / `splitMembers()` / `resolveCoupleId()` —
+                          let a page fold its profile/partner lookup into its OWN Promise.all instead of
+                          paying a serial round-trip. Pages that fetch data should prefer the latter.
+    getDailyConversation.js  `loadDailyConversation(ctx, localDate)` — daily-conversation core, takes an
+                          already-resolved { supabase, user, coupleId }. Server components import this
+                          directly; the daily.js action is just a thin wrapper for client callers.
     getActionContext.js   Server action helper — returns { supabase, user, coupleId } or { error }; reads couple_id from auth metadata (fast path) with DB fallback; use in all server actions instead of manual createClient()/getUser() calls
   constants.js            Shared category color + label maps — EXPENSE_CATEGORY_COLORS, EXPENSE_CATEGORY_LABELS, BUCKET_CATEGORY_COLORS, BUCKET_CATEGORY_LABELS
   currency.js             formatAmount, sumByCurrency, formatDate, todayISO, SUPPORTED_CURRENCIES
   exchangeRates.js        fetchRates, convertAmount, computeUnifiedTotal, getRateLines
   questions.js            Daily conversation question bank + pickQuestion(coupleId, date) — deterministic per couple/day
   push/
-    client.js             Browser helpers — isPushSupported, subscribeToPush, unsubscribeFromPush, serializeSubscription
+    client.js             Browser helpers — isPushSupported, getRegistration, getCurrentSubscription, subscribeToPush, unsubscribeFromPush, serializeSubscription
     send.js               Server helpers — sendPushToUser, notifyPartner (partner-only fan-out)
 proxy.js                  Session refresh + route protection
-public/sw.js              Service worker — push + notificationclick handlers (focus existing tab or open payload.url)
+public/sw.js              Service worker — push + notificationclick handlers (focus existing tab or open
+                          payload.url), navigation preload, and cache-first for `/_next/static/` + `/icons/`.
+                          HTML and RSC payloads are deliberately NEVER cached (per-user data behind auth).
 migrations/               Hand-run SQL — apply in the Supabase SQL editor
   push_subscriptions.sql        Table + RLS policies
 docs/audits/              Point-in-time audit write-ups (security, performance, ledger, bugs)
@@ -376,10 +405,11 @@ const [state, formAction, isPending] = useActionState(action, null)
 
 ## UI Conventions
 
-- **Cards**: `bg-white dark:bg-[#2E201C] rounded-2xl border border-[#EDE0DC] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none`
-- **Primary button**: `bg-[#C2493A] dark:bg-[#E8675A] text-white rounded-xl font-medium text-sm hover:bg-[#A83D30] cursor-pointer`
-- **Secondary button**: `rounded-xl border border-[#EDE0DC] dark:border-[#3D2820] text-sm text-[#A07060] dark:text-[#D4A090] cursor-pointer`
-- **Inputs**: `h-11 px-3.5 rounded-[10px] border border-[#EDE0DC] dark:border-[#3D2820] text-sm focus:outline-none focus:border-[#C2493A]`
+- **Cards**: `bg-white dark:bg-[#2E201C] rounded-2xl border border-[#ECDFD2] dark:border-[#3D2820] p-[18px] shadow-[0_2px_12px_rgba(194,73,58,0.06)] dark:shadow-none`
+- **Slide-up sheet body**: `bg-white dark:bg-[#2A1C18] rounded-t-[24px] px-5 pt-2.5 pb-[26px] max-h-[92vh] overflow-y-auto`
+- **Primary button**: `bg-[#D8513E] dark:bg-[#E8675A] hover:bg-[#C04830] dark:hover:bg-[#D45849] text-white rounded-xl font-semibold text-sm cursor-pointer`
+- **Secondary button**: `rounded-xl border border-[#ECDFD2] dark:border-[#3D2820] text-sm text-[#7A5C4E] dark:text-[#D4A090] cursor-pointer`
+- **Inputs**: `h-11 px-3.5 rounded-[10px] border border-[#ECDFD2] dark:border-[#3D2820] text-sm focus:outline-none transition-colors`
 - **Error field border**: `border-red-300 focus:ring-red-300`
 - **Inline field error**: `text-xs text-red-500 mt-1`
 - **Page layout**: `max-w-lg mx-auto px-4 py-6 space-y-5`
@@ -390,14 +420,17 @@ const [state, formAction, isPending] = useActionState(action, null)
 - **Bottom nav**: `fixed bottom-0 z-20 h-16` — main content uses `pb-24` to clear it
 - **Disabled nav tabs** — add `disabled: true` to the tab config; render as `<Link href="#">` with `pointer-events-none opacity-30`; never render a different element type (e.g. `<span>`) in the same map — causes hydration mismatch
 - **Theme init script** — use `<Script id="theme-init" strategy="beforeInteractive">` from `next/script`, not a bare `<script>` tag — React 19 does not execute bare script tags in components
-- **Color palette**:
-  - Accent / primary action: `#C2493A` light · `#E8675A` / `#F0907F` dark
-  - Primary text: `#1C1210` light · `#FAF3F1` dark
-  - Secondary text: `#A07060` light · `#D4A090` dark
-  - Tertiary text: `#C4A89E` light · `#A07868` dark
-  - Card bg: `#FFFFFF` light · `#2E201C` dark
-  - Page bg: `#FDF7F6` light · `#1A1210` dark
-  - Border: `#EDE0DC` light · `#3D2820` dark
+- **Color palette** (V2 — verified against actual usage counts in `app/`; the pre-V2 values `#C2493A`, `#EDE0DC`, `#FDF7F6`, `#A07060` are retired and appear at most once each):
+  - Accent / primary action: `#D8513E` light · `#E8675A` dark (`#F0907F` for accent *text* on dark)
+  - Accent hover: `#C04830` light · `#D45849` dark
+  - Primary text: `#221714` light · `#FAF3F1` dark
+  - Secondary text: `#7A5848` / `#7A5C4E` light · `#C89080` / `#D4A090` dark
+  - Tertiary text: `#B19A8B` light · `#A07868` dark
+  - Card bg: `#FFFFFF` light · `#2E201C` dark (sheets use `#2A1C18`)
+  - Page bg: `#F8F2EB` light · `#1A1210` dark
+  - Border: `#ECDFD2` light · `#3D2820` dark (`#3A2418` on dark floating pills / insets)
+  - Category tints: never inline them — they are full Tailwind class strings in `lib/constants.js`
+    (`EXPENSE_CATEGORY_COLORS` / `BUCKET_CATEGORY_COLORS`), each bundling bg + text for light and dark
 
 ---
 
@@ -431,9 +464,10 @@ const [state, formAction, isPending] = useActionState(action, null)
 ### ✅ Phase 3.5 — Dashboard Polish
 - TogetherCard: shows years/months/days since relationship start date (from `couples.anniversary_date`)
 - Either partner can set the date once; the other sees it immediately via realtime
-- Base currency selector moved into the balance card
+- Base currency selector moved into the balance card — *superseded*: it now lives in `profile/ProfileClient.js`
+  as a slide-up sheet; `BalanceCard` only consumes the `baseCurrency` prop
 - Custom favicon (O lettermark)
-- Sign out moved to profile page
+- Sign out moved to profile page (rendered inside `ProfileClient.js`, not `profile/page.js`)
 
 ### ✅ Phase 4 — Bucket List & Memories
 - Shared bucket list: restaurants, cafes, cities, activities, movies
