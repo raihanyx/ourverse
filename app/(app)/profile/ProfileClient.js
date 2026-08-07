@@ -288,8 +288,7 @@ export default function ProfileClient({ name, email, partnerName, inviteCode, du
                 Invite code
               </p>
               <p
-                className="text-[16px] font-bold tracking-[0.15em] text-[#D8513E] dark:text-[#E8675A]"
-                style={{ fontFamily: 'var(--font-geist-mono), monospace' }}
+                className="text-[16px] font-bold tracking-[0.15em] font-mono text-[#D8513E] dark:text-[#E8675A]"
               >
                 {inviteCode}
               </p>

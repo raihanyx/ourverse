@@ -151,7 +151,7 @@ export default function OnboardingClient({ userName }) {
               fontWeight: 700,
               letterSpacing: '0.25em',
               color: 'var(--auth-accent)',
-              fontFamily: 'var(--font-geist-mono), monospace',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
             }}
           >
             {createState.inviteCode}
@@ -245,7 +245,7 @@ export default function OnboardingClient({ userName }) {
               fontWeight: 700,
               letterSpacing: '0.3em',
               textTransform: 'uppercase',
-              fontFamily: 'var(--font-geist-mono), monospace',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
             }}
           />
         </div>
