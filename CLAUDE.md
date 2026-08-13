@@ -188,13 +188,15 @@ lib/
     client.js             Browser helpers — isPushSupported, getRegistration, getCurrentSubscription, subscribeToPush, unsubscribeFromPush, serializeSubscription
     send.js               Server helpers — sendPushToUser, notifyPartner (partner-only fan-out)
 proxy.js                  Session refresh + route protection
-public/sw.js              Service worker — push + notificationclick handlers (focus existing tab or open
-                          payload.url) and cache-first for `/_next/static/` + `/icons/`.
-                          HTML and RSC payloads are deliberately NEVER cached (per-user data behind auth).
-                          Navigations are NOT intercepted — no `respondWith`, navigation preload disabled.
-                          An earlier version awaited `event.preloadResponse` on navigations; on Safari that
-                          can resolve slowly or never, blocking page load behind the PWA splash screen.
-                          Do not re-add a navigate branch without measuring launch time on a real iPhone.
+public/sw.js              Service worker — push + notificationclick ONLY (focus existing tab or open
+                          payload.url). There is deliberately NO `fetch` handler: registering one forces
+                          the browser to boot the worker before any navigation completes, which on the
+                          installed iOS PWA cost seconds of splash screen. Two earlier versions regressed
+                          launch time — awaiting `event.preloadResponse` (~8-10s launches on iPhone), and
+                          cache-first for `/_next/static/`+`/icons/` (redundant: Next already serves those
+                          `immutable`, so the browser HTTP cache covers it). Measured on a real iPhone:
+                          removing the preload await took 8-10s down to ~5s. Do not add a fetch handler
+                          back without measuring PWA launch time on a device.
 migrations/               Hand-run SQL — apply in the Supabase SQL editor
   push_subscriptions.sql        Table + RLS policies
 docs/audits/              Point-in-time audit write-ups (security, performance, ledger, bugs)

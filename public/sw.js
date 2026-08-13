@@ -1,23 +1,21 @@
-// Ourverse service worker — push notifications + static asset caching
+// Ourverse service worker — push notifications only.
 //
-// CACHING POLICY (read before extending):
-// Only content-hashed, user-agnostic assets are cached. HTML documents and RSC
-// payloads are NEVER cached — they carry per-user ledger data behind auth, and a
-// stale or cross-user response would be both wrong and a privacy problem.
-
-// NAVIGATION POLICY (do not re-add a navigate branch without measuring on iOS):
-// This worker deliberately does NOT call respondWith() for navigation requests.
-// It previously awaited event.preloadResponse, which on Safari can resolve slowly
-// or not at all — and because the page load is blocked on that promise, the app
-// sits on its splash screen the whole time. Letting navigations go straight to
-// the network takes the worker off the critical path for page loads entirely.
-// Navigation preload is left disabled since nothing consumes it.
-
-// Kept at v1 on purpose: cache entries are keyed by content-hashed URLs, so old
-// entries can never go stale. Bumping this would purge them and force a full
-// re-download on the next launch for no correctness gain.
-const CACHE_VERSION = 'v1'
-const ASSET_CACHE = `ourverse-assets-${CACHE_VERSION}`
+// THERE IS DELIBERATELY NO 'fetch' HANDLER. Do not add one without measuring
+// PWA launch time on a real iPhone first.
+//
+// Registering any fetch handler forces the browser to boot this worker before a
+// navigation can complete, putting worker startup on the critical path of every
+// page load. In the installed iOS PWA that was worth multiple seconds of splash
+// screen. Two earlier versions made it worse:
+//   1. Awaiting event.preloadResponse on navigations — on Safari that promise can
+//      resolve slowly or never, and the page load blocks on it. ~8-10s launches.
+//   2. Cache-first for /_next/static/ and /icons/ — redundant, because Next serves
+//      those with `cache-control: public,max-age=31536000,immutable` and the
+//      browser's own HTTP cache already handles them. It bought nothing and still
+//      cost worker startup on every navigation.
+//
+// Push and notificationclick do not require a fetch handler, so the worker now
+// stays entirely off the page-load path.
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -26,63 +24,20 @@ self.addEventListener('install', () => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // Explicitly off: with no navigate branch, an enabled preload would issue a
-      // second request per navigation that nothing reads.
+      // Navigation preload only matters alongside a fetch handler. Off, so the
+      // browser does not issue a second request per navigation that nothing reads.
       if (self.registration.navigationPreload) {
         await self.registration.navigationPreload.disable().catch(() => {})
       }
 
+      // Drop the asset caches previous versions created — nothing reads them now,
+      // and leaving them behind would waste storage on the device forever.
       const keys = await caches.keys()
       await Promise.all(
-        keys.filter((k) => k.startsWith('ourverse-assets-') && k !== ASSET_CACHE)
-            .map((k) => caches.delete(k))
+        keys.filter((k) => k.startsWith('ourverse-assets-')).map((k) => caches.delete(k))
       )
 
       await self.clients.claim()
-    })()
-  )
-})
-
-// Content-hashed build output and static icons — safe to serve cache-first
-// because the filename changes whenever the bytes change.
-function isCacheableAsset(url) {
-  return url.pathname.startsWith('/_next/static/') || url.pathname.startsWith('/icons/')
-}
-
-self.addEventListener('fetch', (event) => {
-  const { request } = event
-
-  // Everything below narrows to content-hashed static assets. Any request that
-  // is not one — navigations, RSC payloads, Supabase calls — falls through
-  // untouched and is handled by the browser as if no worker existed.
-  if (request.method !== 'GET') return
-  if (request.mode === 'navigate') return
-
-  let url
-  try {
-    url = new URL(request.url)
-  } catch {
-    return
-  }
-  if (url.origin !== self.location.origin) return
-  if (!isCacheableAsset(url)) return
-
-  event.respondWith(
-    (async () => {
-      try {
-        const cached = await caches.match(request)
-        if (cached) return cached
-
-        const response = await fetch(request)
-        if (response && response.ok) {
-          const cache = await caches.open(ASSET_CACHE)
-          cache.put(request, response.clone()).catch(() => {})
-        }
-        return response
-      } catch {
-        // Never let a cache failure turn into a failed asset request.
-        return fetch(request)
-      }
     })()
   )
 })
