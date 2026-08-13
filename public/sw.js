@@ -5,6 +5,17 @@
 // payloads are NEVER cached — they carry per-user ledger data behind auth, and a
 // stale or cross-user response would be both wrong and a privacy problem.
 
+// NAVIGATION POLICY (do not re-add a navigate branch without measuring on iOS):
+// This worker deliberately does NOT call respondWith() for navigation requests.
+// It previously awaited event.preloadResponse, which on Safari can resolve slowly
+// or not at all — and because the page load is blocked on that promise, the app
+// sits on its splash screen the whole time. Letting navigations go straight to
+// the network takes the worker off the critical path for page loads entirely.
+// Navigation preload is left disabled since nothing consumes it.
+
+// Kept at v1 on purpose: cache entries are keyed by content-hashed URLs, so old
+// entries can never go stale. Bumping this would purge them and force a full
+// re-download on the next launch for no correctness gain.
 const CACHE_VERSION = 'v1'
 const ASSET_CACHE = `ourverse-assets-${CACHE_VERSION}`
 
@@ -15,10 +26,10 @@ self.addEventListener('install', () => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
-      // Lets the browser start the navigation request in parallel with SW boot,
-      // instead of paying service-worker startup before the request even leaves.
+      // Explicitly off: with no navigate branch, an enabled preload would issue a
+      // second request per navigation that nothing reads.
       if (self.registration.navigationPreload) {
-        await self.registration.navigationPreload.enable().catch(() => {})
+        await self.registration.navigationPreload.disable().catch(() => {})
       }
 
       const keys = await caches.keys()
@@ -41,38 +52,39 @@ function isCacheableAsset(url) {
 self.addEventListener('fetch', (event) => {
   const { request } = event
 
+  // Everything below narrows to content-hashed static assets. Any request that
+  // is not one — navigations, RSC payloads, Supabase calls — falls through
+  // untouched and is handled by the browser as if no worker existed.
   if (request.method !== 'GET') return
+  if (request.mode === 'navigate') return
 
-  const url = new URL(request.url)
+  let url
+  try {
+    url = new URL(request.url)
+  } catch {
+    return
+  }
   if (url.origin !== self.location.origin) return
+  if (!isCacheableAsset(url)) return
 
-  if (isCacheableAsset(url)) {
-    event.respondWith(
-      (async () => {
+  event.respondWith(
+    (async () => {
+      try {
         const cached = await caches.match(request)
         if (cached) return cached
 
         const response = await fetch(request)
         if (response && response.ok) {
           const cache = await caches.open(ASSET_CACHE)
-          cache.put(request, response.clone())
+          cache.put(request, response.clone()).catch(() => {})
         }
         return response
-      })()
-    )
-    return
-  }
-
-  // Navigations: use the preloaded response if the browser produced one.
-  // Never cached — see policy note at the top of this file.
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      (async () => {
-        const preloaded = await event.preloadResponse
-        return preloaded || fetch(request)
-      })()
-    )
-  }
+      } catch {
+        // Never let a cache failure turn into a failed asset request.
+        return fetch(request)
+      }
+    })()
+  )
 })
 
 self.addEventListener('push', (event) => {

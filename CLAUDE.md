@@ -189,8 +189,12 @@ lib/
     send.js               Server helpers — sendPushToUser, notifyPartner (partner-only fan-out)
 proxy.js                  Session refresh + route protection
 public/sw.js              Service worker — push + notificationclick handlers (focus existing tab or open
-                          payload.url), navigation preload, and cache-first for `/_next/static/` + `/icons/`.
+                          payload.url) and cache-first for `/_next/static/` + `/icons/`.
                           HTML and RSC payloads are deliberately NEVER cached (per-user data behind auth).
+                          Navigations are NOT intercepted — no `respondWith`, navigation preload disabled.
+                          An earlier version awaited `event.preloadResponse` on navigations; on Safari that
+                          can resolve slowly or never, blocking page load behind the PWA splash screen.
+                          Do not re-add a navigate branch without measuring launch time on a real iPhone.
 migrations/               Hand-run SQL — apply in the Supabase SQL editor
   push_subscriptions.sql        Table + RLS policies
 docs/audits/              Point-in-time audit write-ups (security, performance, ledger, bugs)
