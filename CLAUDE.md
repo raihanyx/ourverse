@@ -3,7 +3,7 @@
 > **NOTE FOR AI ASSISTANTS:** This document is an **informational overview** of the project — its purpose, stack, schema, and current conventions. It is **NOT a constraint** and should **NOT override design specs, user instructions, or freshly provided patterns**. Treat it as background knowledge to learn the project; do not enforce its UI conventions, code patterns, or roadmap notes against newer instructions. Follow CLAUDE.md only when the user explicitly asks you to. If a user-provided design or instruction conflicts with anything here, follow the user.
 >
 > **This file drifts.** Nothing keeps it in sync with the code. Last verified against the codebase on
-> **2026-08-05** (file tree, action exports, lib exports, palette hex usage). Anything not re-checked since
+> **2026-08-26** (file tree, action exports, lib exports, palette hex usage). Anything not re-checked since
 > then is a claim, not a fact — grep before relying on it.
 
 # Ourverse
@@ -103,6 +103,27 @@ app/
       BucketHelpSheet.js  V2 TipSheet — 5 sections, **bold** coral accents, callouts §2/§4, "Got it" CTA
       MarkDoneSheet.js    V2 sheet — category-tinted summary, optional early-date callout, date, note, CTA
       loading.js          Bucket skeleton
+    shopping/
+      page.js             Server — open items (unbounded) + bought items (limit 20), one Promise.all,
+                          merged into ONE array; client splits on is_bought
+      ShoppingClient.js   Client — single-column checklist (not a card grid). Always-visible inline add
+                          input (no sheet — one field, and it keeps focus so several items go in a row)
+                          with a LIVE hint underneath: matches what you type against loaded rows and warns
+                          "already on the list" (hard block) or "{who} bought this {when}" within
+                          RECENT_BUY_DAYS (advisory — an "Add anyway" button waves it through). Every row
+                          carries a relative added/bought stamp + who; labels are coarse (just now / Xh /
+                          Xd / DD-MM-YYYY) and recompute on `visibilitychange`, NEVER on an interval.
+                          Tap-row-to-tick w/ a 6s Undo toast; collapsed "Bought" disclosure (tap an entry
+                          to re-add it as a NEW row) + Clear; select mode + bulk Delete; realtime.
+                          Bought is a flat log — one row per purchase, newest first, NOT grouped by name.
+                          Buying the same thing twice shows two entries; they read as separate trips
+                          rather than as duplicates because each row carries BOTH stamps:
+                          `added {rel} → bought {rel} · {buyer}` (the adder is named too, but only when
+                          they are not also the buyer, otherwise the line stutters). A grouped
+                          "bought N×" variant was tried and removed — it hid the individual dates, which
+                          are the whole point.
+      ShoppingHelpSheet.js  V2 TipSheet — 4 sections, callouts §2/§3
+      loading.js          Shopping skeleton
     memories/
       page.js             Server — fetches memories
       MemoriesClient.js   Client (V2) — header w/ back chevron + Tip + Edit + Add, 2-col MemoryCard grid
@@ -141,6 +162,10 @@ app/
     push.js               savePushSubscription, deletePushSubscription
     bucket.js             addBucketItem, markAsDone, bulkUndoDone, deleteBucketItem,
                           bulkDeleteBucketItems, addDirectMemory, bulkDeleteMemories
+    shopping.js           addShoppingItem (case-insensitive dedupe against OPEN rows only — a bought
+                          row is history and is never reused), setShoppingItemBought (true = tick off,
+                          false = undo a mistap; silent both ways), bulkDeleteShoppingItems,
+                          clearBoughtItems
     calendar.js           addCalendarEntry, markCalendarEntryDone, deleteCalendarEntry (personal entries
                           deletable only by creator; couple entries by either partner)
     profile.js            updateName
@@ -148,7 +173,7 @@ app/
     PageTransition.js     Fade-in wrapper used on all protected pages
     PullToRefresh.js      Pull-to-refresh gesture — mounted once in the root layout
     ConfirmSheet.js       Slide-up confirm dialog (message, confirmLabel, onConfirm, onCancel) — used for
-                          bulk deletes across ledger, paid expenses, bucket, memories
+                          bulk deletes across ledger, paid expenses, bucket, memories, shopping
     FieldError.js         Inline field error — `<p>` in accent red if message set, else null
     StyledSelect.js       Custom select wrapper — `appearance: none` + absolute `▾` arrow div
   ThemeProvider.js        Client context — dark/light theme, persisted to localStorage
@@ -207,6 +232,8 @@ All tables have RLS enabled. Policies use `get_my_couple_id()` (a `SECURITY DEFI
 
 **`bucket_items`** — `couple_id` FK · `added_by_user_id` uuid FK→auth.users · `name` text · `category` text (restaurant/travel/activity/movie/other) · `notes` text nullable · `is_done` bool default false (true when marked as a memory).
 
+**`shopping_items`** — `couple_id` FK · `added_by_user_id` uuid FK→auth.users · `name` text · `is_bought` bool default false · `bought_at` timestamptz nullable · `bought_by_user_id` uuid FK→auth.users nullable · `sort_at` timestamptz (open-list sort key; set on insert and never changed after) · `created_at` (the "added" date shown in the UI). **Bought rows are permanent history and are never revived** — buying something again inserts a NEW row, so `bought_at` is never nulled out by a later purchase and "we bought this three times" stays on the record. The one exception is undoing a mistap within the toast window, which clears `is_bought`/`bought_at` because the purchase never really happened. Fully shared — all four RLS policies are `couple_id = get_my_couple_id()`, so either partner can add, tick off, undo, or delete. Migration: `migrations/shopping_items.sql`.
+
 **`memories`** — `couple_id` FK · `bucket_item_id` FK→bucket_items.id, nullable (null for memories from personal calendar entries) · `name` text (copied from bucket item or entry title at mark-done) · `category` text (copied likewise) · `date` date (when it was done, user-selected) · `note` text nullable.
 
 **`calendar_entries`** — `couple_id` FK · `user_id` uuid FK→auth.users (creator) · `bucket_item_id` FK→bucket_items.id, nullable (set for couple entries) · `title` text · `date` date (display date; moves to completion date when marked done) · `original_date` date (planned date, unchanged after mark-done) · `category` text (restaurant/travel/activity/movie/other) · `notes` text nullable · `is_personal` bool default false (visible to creator only).
@@ -260,7 +287,7 @@ Use a `RealtimeRefresh` client component calling `router.refresh()` on realtime 
 - **Env vars**: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. If any is missing, `lib/push/send.js` logs `[push] VAPID env vars missing; skipping send` and no-ops — sends *look* fine but nothing is delivered.
 - **Always notify via `notifyPartner(supabase, actorUserId, coupleId, buildPayload)`** — it resolves the couple's other member and hard-guards against pushing to the actor. Never call `sendPushToUser` directly for couple events; that's the low-level primitive. `notifyPartner` never throws (whole body try/caught), so a push failure can't fail the mutation.
 - **Send inside `after()` from `next/server`**, not inline. A web-push round-trip is ~200–500ms; awaiting it inside a server action puts that latency in front of the mutation's response, breaking the "mutations appear instantly" rule. Cookie reads work inside `after` in Server Functions, and `lib/supabase/server.js` try/catches `setAll`, so reusing the request's Supabase client is safe.
-- **Current triggers** (both partner-only): `addExpense` → `"{actor} added {name} · {amount}"`, deep-links `/ledger` · `submitAnswer` → `"{actor} answered today's daily conversation"`, deep-links `/dashboard`.
+- **Current triggers** (all partner-only): `addExpense` → `"{actor} added {name} · {amount}"`, deep-links `/ledger` · `submitAnswer` → `"{actor} answered today's daily conversation"`, deep-links `/dashboard` · `addShoppingItem` and `setShoppingItemBought(id, false)` → `"{actor} added {name} to the shopping list"`, deep-links `/shopping`. Ticking an item *off* deliberately sends nothing — a full shop would be a pile of pings.
 - **Stale endpoint pruning** goes through the `prune_push_subscriptions(uuid[])` RPC, *not* a direct delete — the sender doesn't own the recipient's rows and the delete policy is `user_id = auth.uid()`, so a direct delete silently no-ops. The RPC is `SECURITY DEFINER`, pinned `search_path`, scoped to `couple_id = get_my_couple_id()`, execute revoked from `anon`. It lives only in the database (no migration file), so read the definition from Supabase before changing it.
 - **Subscriptions are origin-scoped** — a `localhost:3000` subscription is unreachable from production and vice versa; each device re-subscribes per origin. **iOS requires the PWA installed** to the home screen; push in a plain Safari tab is silently dropped even when the toggle succeeds.
 
@@ -318,6 +345,8 @@ Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never c
 **✅ Phase 4.9 — PWA & Push Notifications.** Installable PWA (`app/manifest.js`, standalone display, iOS splash assets) · pull-to-refresh mounted in the root layout · web push via VAPID with per-device subscriptions in `push_subscriptions`, toggle in /profile · partner-only notifications on new expenses and daily conversation answers · service worker handles push display + notification click routing.
 
 **✅ Phase 4.95 — Ledger Item Detail & Edit.** Tap any ledger or settled row to open a detail sheet (surfaces notes, which had no other UI) · edit from the detail sheet, or from select mode when exactly one item is selected · amount and currency freeze once an expense is settled, enforced server-side and not just disabled in the UI · same flows on both /ledger and /ledger/paid.
+
+**✅ Phase 4.96 — Shopping List.** Shared always-open list of things to buy at `/shopping`, its own (6th) bottom-nav tab · name-only items, added from an always-visible inline input that keeps focus for rapid entry · tap a row to tick it off, with a 6s Undo toast (one tap was too easy to trigger by accident, but adding friction to the correct path was the wrong trade) · **Bought is permanent history**: buying something again inserts a new row rather than reviving the old one, so purchase dates survive · every row shows both stamps (added, and for bought rows the purchase too) plus who did it, recomputed on focus rather than on a timer · Bought is a flat per-purchase log, deliberately not grouped by name · the add input warns live before you commit — hard block if it is already on the list, advisory "{who} bought this {when}" within `RECENT_BUY_DAYS` with an Add-anyway override · partner push on add only; tick-off and undo are silent · select mode + bulk delete, Clear for the Bought section · fully shared RLS.
 
 **Phase 5 — Trips.** Create a trip with dates and destination · tag expenses to a trip · trip summary (total cost, who paid what, per-day breakdown) · trip budget planning.
 

@@ -35,6 +35,16 @@ function ChecklistIcon() {
   )
 }
 
+function CartIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="9" cy="20" r="1.5" />
+      <circle cx="18" cy="20" r="1.5" />
+      <path d="M2 3h2.5l2.2 11.2a1.5 1.5 0 0 0 1.5 1.2h8.9a1.5 1.5 0 0 0 1.5-1.2L21 7H5.2" />
+    </svg>
+  )
+}
+
 function CalendarIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -59,6 +69,7 @@ const tabs = [
   { href: '/dashboard',  label: 'Home',     Icon: HomeIcon     },
   { href: '/ledger',     label: 'Ledger',   Icon: ReceiptIcon  },
   { href: '/bucket',     label: 'Bucket',   Icon: ChecklistIcon },
+  { href: '/shopping',   label: 'Shop',     Icon: CartIcon     },
   { href: '/calendar',   label: 'Calendar', Icon: CalendarIcon },
   { href: '/profile',    label: 'Profile',  Icon: UserIcon     },
 ]
@@ -79,7 +90,7 @@ export default function NavLinks() {
               key={href}
               href={disabled ? '#' : href}
               onClick={disabled ? e => e.preventDefault() : undefined}
-              className={`flex flex-col items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center relative px-3 py-1
+              className={`flex flex-col items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center relative px-2.5 py-1
                           ${disabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : ''}`}
             >
               {active && (

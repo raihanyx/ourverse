@@ -39,6 +39,7 @@ export async function proxy(request) {
     pathname.startsWith('/dashboard') ||
     pathname.startsWith('/ledger') ||
     pathname.startsWith('/bucket') ||
+    pathname.startsWith('/shopping') ||
     pathname.startsWith('/calendar') ||
     pathname.startsWith('/memories') ||
     pathname.startsWith('/profile') ||
