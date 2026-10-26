@@ -82,10 +82,13 @@ export default function RootLayout({ children }) {
             <link key={`${w}x${h}-dark`} rel="apple-touch-startup-image" media={`${base} and (prefers-color-scheme: dark)`} href={`/icons/splash-${w}x${h}-dark.png`} />,
           ];
         })}
+        {/* Also records the device timezone in the `tz` cookie so the server
+            knows the user's "today" (lib/data/userToday.js). Vercel runs in UTC,
+            which is still yesterday for UTC+7 until 07:00. */}
         <Script
           id="theme-init"
           strategy="beforeInteractive"
-          dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('ourverse-theme');if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}})();` }}
+          dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('ourverse-theme');if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';if(t==='dark')document.documentElement.classList.add('dark');}catch(e){}try{var z=Intl.DateTimeFormat().resolvedOptions().timeZone;if(z)document.cookie='tz='+z+';path=/;max-age=31536000;samesite=lax';}catch(e){}})();` }}
         />
       </head>
       <body className="min-h-full flex flex-col">

@@ -18,9 +18,10 @@ const CAT_DOT_COLOR = {
   other:         'bg-[#6B7280] dark:bg-[#9CA3AF]',
 }
 
-function formatExpenseDate(dateString) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+// `todayStr` is the user's YYYY-MM-DD from the page — this is a server
+// component, and the server's own clock is UTC, not the user's day.
+function formatExpenseDate(dateString, todayStr) {
+  const today = new Date(todayStr + 'T00:00:00')
   const date = new Date(dateString + 'T00:00:00')
   const diffDays = Math.round((date - today) / 86400000)
   if (diffDays === 0) return 'Today'
@@ -28,7 +29,7 @@ function formatExpenseDate(dateString) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
-export default function RecentExpenses({ expenses, userId, partnerName }) {
+export default function RecentExpenses({ expenses, userId, partnerName, today }) {
   return (
     <div>
       <div className="flex items-center gap-2.5 mb-1">
@@ -63,7 +64,7 @@ export default function RecentExpenses({ expenses, userId, partnerName }) {
                 </p>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[12px] text-[#B19A8B] dark:text-[#7A5848]">
-                    {formatExpenseDate(expense.date)}
+                    {formatExpenseDate(expense.date, today)}
                   </span>
                   <span className={`text-[10px] font-semibold px-[7px] py-[2px] rounded-[5px] ${chipColors}`}>
                     {chipLabel}

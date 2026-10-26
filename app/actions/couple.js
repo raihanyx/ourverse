@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { SUPPORTED_CURRENCIES } from '@/lib/currency'
 import { getActionContext } from '@/lib/data/getActionContext'
+import { latestAllowedDateISO } from '@/lib/data/userToday'
 
 function generateInviteCode() {
   // Omit ambiguous chars: 0/O, 1/I/L
@@ -116,10 +117,12 @@ export async function saveAnniversaryDate(_, dateString) {
   if (ctx.error) return { error: ctx.error }
   const { supabase, coupleId } = ctx
 
-  const parsed = new Date(dateString)
-  if (isNaN(parsed.getTime())) return { error: 'Invalid date.' }
-  if (parsed > new Date()) return { error: 'Anniversary date must be in the past.' }
-  const normalized = parsed.toISOString().slice(0, 10)
+  // Compare as YYYY-MM-DD strings against the user's today — `new Date(str)`
+  // is UTC midnight, which sits in the future from 00:00 to 07:00 in UTC+7.
+  if (typeof dateString !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return { error: 'Invalid date.' }
+  if (isNaN(new Date(dateString + 'T00:00:00').getTime())) return { error: 'Invalid date.' }
+  if (dateString > await latestAllowedDateISO()) return { error: 'Anniversary date must be in the past.' }
+  const normalized = dateString
 
   await supabase
     .from('couples')

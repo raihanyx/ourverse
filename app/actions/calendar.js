@@ -1,6 +1,7 @@
 'use server'
 
 import { getActionContext } from '@/lib/data/getActionContext'
+import { latestAllowedDateISO } from '@/lib/data/userToday'
 
 const VALID_CATEGORIES = ['restaurant', 'travel', 'activity', 'movie', 'other']
 const VALID_TYPES      = ['couple', 'personal', 'memory', 'anniversary']
@@ -38,7 +39,7 @@ export async function addCalendarEntry(prevState, formData) {
 
   // Memory direct-log from AddEventSheet — past-only enforcement here.
   if (type === 'memory') {
-    const today = new Date().toLocaleDateString('en-CA')
+    const today = await latestAllowedDateISO()
     if (date > today) return { error: 'Memory must be on today or a past date.' }
 
     const { data: memory, error: memErr } = await supabase.from('memories').insert({

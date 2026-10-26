@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAppSession } from '@/lib/data/getAppSession'
+import { userTodayISO } from '@/lib/data/userToday'
 import PageTransition from '@/app/components/PageTransition'
 import CalendarClient from './CalendarClient'
 
@@ -7,9 +8,11 @@ export default async function CalendarPage() {
   const { profile, partner } = await getAppSession()
   const supabase = await createClient()
 
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth() // 0-indexed
+  // The user's current month, not the server's (UTC) — on the 1st, from 00:00
+  // to 07:00 in UTC+7, the server would still open last month.
+  const [todayYear, todayMonth] = (await userTodayISO()).split('-').map(Number)
+  const year = todayYear
+  const month = todayMonth - 1 // 0-indexed
 
   const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`
   // Use first day of next month to get a clean upper bound

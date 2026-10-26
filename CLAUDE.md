@@ -41,7 +41,9 @@ This app must feel like a fast SPA. Three non-negotiable rules:
 
 If a future change conflicts with any of these rules, stop and ask the user before proceeding.
 
-**Known launch-time budget** (measured Aug 2026, iPhone 13/14 Pro Max, sin1 region): ~3s cold PWA launch, of which ~1.1s is Vercel cold start (functions idle out on Hobby; only fixable by keeping them warm, not by code) and the rest is iOS booting WebKit plus hydration. Warm in-app navigation is ~150ms. If launch time regresses well past ~3s, suspect the service worker first.
+**Function region MUST match Supabase (Singapore → `sin1`).** Until 2026-10-26 the Vercel Function Region was the default `iad1` (Washington DC) while Supabase is in ap-southeast-1, so every server-side Supabase call (JWKS, token refresh, page queries) crossed the Pacific — 7-11s cold / ~5s warm launches. It is set in Vercel → Settings → Functions (no `vercel.json`). Verify with the `x-vercel-id` header on an authenticated page: `sin1::sin1::…` — the FIRST segment is only the edge PoP, the SECOND is the function region (the old "sin1 region" note here misread the first segment).
+
+**Known launch-time budget** (measured Aug 2026, iPhone 13/14 Pro Max — while functions were still in iad1, re-measure): ~3s cold PWA launch, of which ~1.1s is Vercel cold start (functions idle out on Hobby; only fixable by keeping them warm, not by code) and the rest is iOS booting WebKit plus hydration. Warm in-app navigation is ~150ms. If launch time regresses well past ~3s, check the function region, then the service worker.
 
 ---
 
@@ -201,6 +203,10 @@ lib/
                           round-trip. Pages that fetch data should prefer the latter.
     getDailyConversation.js  `loadDailyConversation(ctx, localDate)` — takes an already-resolved
                           { supabase, user, coupleId }. Server components import this directly.
+    userToday.js          Server-only. The user's "today" from the `tz` cookie (written by the theme-init
+                          script in app/layout.js). `userTodayISO()` for display/loading, `latestAllowedDateISO()`
+                          for "cannot be in the future" checks. Servers run in UTC — never use `new Date()` on
+                          the server as the user's date (UTC+7 is a day ahead from 00:00 to 07:00).
     getActionContext.js   Server action helper — { supabase, user, coupleId } or { error }; couple_id from
                           auth metadata (fast path) with DB fallback. Use in all server actions.
   constants.js            EXPENSE_CATEGORY_COLORS/LABELS, BUCKET_CATEGORY_COLORS/LABELS
@@ -297,7 +303,7 @@ Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never c
 ### Formatting & Shared Helpers
 - **Currency**: `formatAmount(amount, currency)` from `lib/currency.js`. IDR → `id-ID` locale (`IDR 2.400.000`) · AUD → `en-AU` (`AUD 1,200.00`) · THB/MMK → 0 decimals.
 - **Dates**: `formatDate(dateString)` from `lib/currency.js` — always `DD-MM-YYYY`. Pass raw DB date strings (YYYY-MM-DD); it appends `T00:00:00` to avoid timezone shifts.
-- **Today (ISO)**: `todayISO()` from `lib/currency.js` — `YYYY-MM-DD` via `en-CA`, safe across timezones. Use as `defaultValue` and as `max` to prevent future dates.
+- **Today (ISO)**: client side, `todayISO()` from `lib/currency.js` — `YYYY-MM-DD` in the device's timezone. Use as `defaultValue` and as `max` to prevent future dates. Server side (actions, server components), use `lib/data/userToday.js` instead — `todayISO()` there returns the UTC date.
 - **Selects**: use the shared `StyledSelect` (`app/components/StyledSelect.js`) — `appearance: none` + absolutely positioned `▾`. Arrow color `#A07060` light / `#D4A090` dark.
 - **Categories**: use `BUCKET_CATEGORY_COLORS` / `BUCKET_CATEGORY_LABELS` and `EXPENSE_CATEGORY_COLORS` / `EXPENSE_CATEGORY_LABELS` from `lib/constants.js` — do not inline category color classes.
 

@@ -3,6 +3,7 @@
 import { after } from 'next/server'
 import { SUPPORTED_CURRENCIES, formatAmount } from '@/lib/currency'
 import { getActionContext } from '@/lib/data/getActionContext'
+import { latestAllowedDateISO } from '@/lib/data/userToday'
 import { notifyPartner } from '@/lib/push/send'
 
 const VALID_CURRENCIES = SUPPORTED_CURRENCIES
@@ -30,7 +31,7 @@ export async function addExpense(prevState, formData) {
   if (!date) errors.date = 'Please select a date.'
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
   else if (isNaN(new Date(date + 'T00:00:00').getTime())) errors.date = 'Please enter a valid date.'
-  else if (date > new Date().toISOString().slice(0, 10)) errors.date = 'Date cannot be in the future.'
+  else if (date > await latestAllowedDateISO()) errors.date = 'Date cannot be in the future.'
   if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
   if (Object.keys(errors).length > 0) return { errors }
 
@@ -112,7 +113,7 @@ export async function updateExpense(prevState, formData) {
   if (!date) errors.date = 'Please select a date.'
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) errors.date = 'Invalid date format.'
   else if (isNaN(new Date(date + 'T00:00:00').getTime())) errors.date = 'Please enter a valid date.'
-  else if (date > new Date().toISOString().slice(0, 10)) errors.date = 'Date cannot be in the future.'
+  else if (date > await latestAllowedDateISO()) errors.date = 'Date cannot be in the future.'
   if (notes && notes.length > 1000) errors.notes = 'Notes must be 1000 characters or fewer.'
   if (Object.keys(errors).length > 0) return { errors }
 

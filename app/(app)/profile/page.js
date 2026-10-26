@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAppSession } from '@/lib/data/getAppSession'
+import { userTodayISO } from '@/lib/data/userToday'
 import PageTransition from '@/app/components/PageTransition'
 import ProfileClient from './ProfileClient'
 
@@ -7,10 +8,12 @@ export const metadata = {
   title: 'Profile | Ourverse',
 }
 
-function formatDuration(anniversaryDate) {
+// `todayStr` is the user's YYYY-MM-DD — the server clock is UTC, a day behind
+// UTC+7 until 07:00.
+function formatDuration(anniversaryDate, todayStr) {
   if (!anniversaryDate) return null
   const start = new Date(anniversaryDate + 'T00:00:00')
-  const now = new Date()
+  const now = new Date(todayStr + 'T00:00:00')
   if (start > now) return null
 
   let years = now.getFullYear() - start.getFullYear()
@@ -28,13 +31,16 @@ export default async function ProfilePage() {
   const { user, profile, partner } = await getAppSession()
   const supabase = await createClient()
 
-  const { data: couple } = await supabase
-    .from('couples')
-    .select('invite_code, anniversary_date')
-    .eq('id', profile.couple_id)
-    .single()
+  const [{ data: couple }, today] = await Promise.all([
+    supabase
+      .from('couples')
+      .select('invite_code, anniversary_date')
+      .eq('id', profile.couple_id)
+      .single(),
+    userTodayISO(),
+  ])
 
-  const duration = formatDuration(couple?.anniversary_date ?? null)
+  const duration = formatDuration(couple?.anniversary_date ?? null, today)
 
   return (
     <PageTransition>

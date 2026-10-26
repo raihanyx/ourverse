@@ -6,6 +6,7 @@ import {
   coupleMembersQuery,
   splitMembers,
 } from '@/lib/data/getAppSession'
+import { getUserTimeZone, todayIn } from '@/lib/data/userToday'
 import { sumByCurrency } from '@/lib/currency'
 import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
 import RealtimeRefresh from './RealtimeRefresh'
@@ -27,10 +28,14 @@ export default async function DashboardPage() {
   const { supabase, user, coupleId: metaCoupleId } = await getAuthUser()
   const coupleId = await resolveCoupleId(metaCoupleId)
 
+  // The user's timezone, not the server's (UTC) — otherwise from 00:00 to 07:00
+  // in UTC+7 the greeting shows yesterday and the daily conversation loads
+  // yesterday's question, which the client then re-fetches after hydration.
+  const timeZone = (await getUserTimeZone()) ?? 'UTC'
   const todayLabel = new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'short', day: 'numeric',
+    weekday: 'long', month: 'short', day: 'numeric', timeZone,
   })
-  const serverLocalDate = new Date().toLocaleDateString('en-CA')
+  const serverLocalDate = todayIn(timeZone)
 
   const [
     { data: members },
@@ -147,6 +152,7 @@ export default async function DashboardPage() {
               expenses={recentExpenses}
               userId={user.id}
               partnerName={partnerName}
+              today={serverLocalDate}
             />
           </div>
         )}
