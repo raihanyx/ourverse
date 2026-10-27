@@ -16,6 +16,8 @@ import InviteCodeBadge from './InviteCodeBadge'
 import RecentExpenses from './RecentExpenses'
 import DailyConversation, { DailyConversationFallback } from './DailyConversation'
 import PageTransition from '@/app/components/PageTransition'
+import PerfBeacon from '@/app/components/PerfBeacon' // [perf]
+import { instanceInfo, perfNow } from '@/lib/perf' // [perf]
 
 export const metadata = {
   title: 'Dashboard | Ourverse',
@@ -25,8 +27,11 @@ export default async function DashboardPage() {
   // Auth first, then EVERYTHING else in one parallel batch. The profile/partner
   // rows used to be a separate serial stage in front of this — folding them in
   // removes a full network round-trip from every dashboard load.
+  const perfStart = perfNow() // [perf]
+  const perfInstance = instanceInfo() // [perf]
   const { supabase, user, coupleId: metaCoupleId } = await getAuthUser()
   const coupleId = await resolveCoupleId(metaCoupleId)
+  const perfAuthDone = perfNow() // [perf]
 
   // The user's timezone, not the server's (UTC) — otherwise from 00:00 to 07:00
   // in UTC+7 the greeting shows yesterday and the daily conversation loads
@@ -63,6 +68,7 @@ export default async function DashboardPage() {
       .limit(3),
     fetchRates(),
   ])
+  const perfQueriesDone = perfNow() // [perf]
 
   const { profile, partner } = splitMembers(members, user.id)
   if (!profile?.couple_id) redirect('/onboarding')
@@ -94,6 +100,16 @@ export default async function DashboardPage() {
     <PageTransition>
       <div>
         <RealtimeRefresh coupleId={profile.couple_id} />
+        {/* [perf] temporary launch-time instrumentation */}
+        <PerfBeacon
+          page={{
+            cold: perfInstance.cold,
+            ageMs: perfInstance.ageMs,
+            authMs: perfAuthDone - perfStart,
+            queriesMs: perfQueriesDone - perfAuthDone,
+            totalMs: perfQueriesDone - perfStart,
+          }}
+        />
 
         {/* Greeting bar */}
         <div className="flex items-start justify-between pb-2">
