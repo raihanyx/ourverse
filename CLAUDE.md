@@ -41,7 +41,7 @@ This app must feel like a fast SPA. Three non-negotiable rules:
 
 If a future change conflicts with any of these rules, stop and ask the user before proceeding.
 
-**Function region MUST match Supabase (Singapore → `sin1`).** Until 2026-10-26 the Vercel Function Region was the default `iad1` (Washington DC) while Supabase is in ap-southeast-1, so every server-side Supabase call (JWKS, token refresh, page queries) crossed the Pacific — 7-11s cold / ~5s warm launches. It is set in Vercel → Settings → Functions (no `vercel.json`). Verify with the `x-vercel-id` header on an authenticated page: `sin1::sin1::…` — the FIRST segment is only the edge PoP, the SECOND is the function region (the old "sin1 region" note here misread the first segment).
+**Function region MUST match Supabase (Singapore → `sin1`).** Until 2026-10-26 the Vercel Function Region was the default `iad1` (Washington DC) while Supabase is in ap-southeast-1, so every server-side Supabase call (JWKS, token refresh, page queries) crossed the Pacific — 7-11s cold / ~5s warm launches. It is set in Vercel → Settings → Functions (no `vercel.json`). Verify with the `x-vercel-id` header on an authenticated page: `sin1::sin1::…` — the FIRST segment is only the edge PoP, the SECOND is the function region (the old "sin1 region" note here misread the first segment). Full launch-time history, on-device measurements and the ranked fix plan: `docs/audits/launch-performance-2026-10-28.md` — read it before touching the launch path.
 
 **Known launch-time budget** (measured Aug 2026, iPhone 13/14 Pro Max — while functions were still in iad1, re-measure): ~3s cold PWA launch, of which ~1.1s is Vercel cold start (functions idle out on Hobby; only fixable by keeping them warm, not by code) and the rest is iOS booting WebKit plus hydration. Warm in-app navigation is ~150ms. If launch time regresses well past ~3s, check the function region, then the service worker.
 
@@ -154,6 +154,8 @@ app/
       loading.js          Profile skeleton
   (auth)/                 Public auth routes — layout.js (centered card) · login/ · signup/ ·
                           onboarding/ (page.js + OnboardingClient.js — create or join a couple space)
+  api/warm/route.js       Keep-warm target for an external 5-min pinger (cron-job.org). Warms proxy +
+                          app function, JWKS, supabase-js and the Supabase connection pool. Returns 204.
   actions/                Server Actions ('use server')
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
@@ -194,6 +196,9 @@ lib/
                           verified LOCALLY (ES256, WebCrypto) — no Auth-server round-trip. The cache is
                           load-bearing: supabase-js caches JWKS per client instance and we build one client
                           per request, so without it getClaims() refetches the key set every request.
+                          The PUBLIC keys are also fetched once at build time by next.config.mjs and
+                          inlined as SUPABASE_JWKS_BUILD, so a cold instance needs no JWKS fetch at all
+                          (unknown kid → supabase-js falls back to the live endpoint).
   data/
     getAppSession.js      `getAuthUser()` — React-cached, auth ONLY (verified user + couple_id from auth
                           metadata, no users-table query); redirects to /login. `getAppSession()` — full
