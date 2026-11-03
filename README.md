@@ -46,6 +46,7 @@ Built for long-distance, multi-currency couples (IDR, THB, AUD, MMK). The core c
 - Realtime sync with your partner
 
 ### Dashboard
+- Opens instantly with your last-seen data, then refreshes in the background
 - Balance summary showing what each side owes, converted to your base currency
 - "Together since" card with days, months, and years since your relationship start date
 - Invite code to connect with your partner
@@ -74,7 +75,8 @@ Built for long-distance, multi-currency couples (IDR, THB, AUD, MMK). The core c
 
 The app uses Next.js App Router with a clean split between server and client:
 
-- **Server components** handle all data fetching with no client-side API calls for initial loads
+- **Server components** handle data fetching for most pages
+- **The dashboard is the exception:** it is the PWA's launch screen, so it is a static page served from the CDN. It shows the last-seen data saved on the device instantly, then loads fresh data from the browser straight to Supabase (protected by RLS). Opening the app therefore never waits for a server to start.
 - **Server actions** handle all mutations; form submissions go directly to the server
 - **Client components** manage realtime subscriptions, local UI state, and interactivity
 - **Supabase RLS** (Row Level Security) enforces data isolation at the database level; each couple's data is inaccessible to anyone else

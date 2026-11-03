@@ -19,6 +19,15 @@ column in [§6](#6-fix-plan) as fixes land, and add new measurement rounds to [�
 - **Next fixes, best first:** keep the functions warm (route + external pinger) → embed the
   JWKS public key → lengthen the Supabase access-token lifetime → stop exchange rates from
   blocking the dashboard. See [§6](#6-fix-plan).
+- **2026-11-04 — architecture change (fix #7):** the dashboard (the PWA launch screen) is now a
+  **static page served from Vercel's CDN** that shows the last-seen data from the phone instantly,
+  then loads fresh data **from the phone straight to Supabase**. No Vercel function is on the
+  app-open path any more, so cold starts can no longer delay opening the app. See
+  [§3.1](#31-new-launch-path-fix-7-2026-11-04). Awaiting Round 4.
+- **2026-11-03 (Round 3a, 5 opens):** exchange rates are NOT the problem (0.12–0.16s). Cold opens
+  are dominated by the fresh Vercel instance: Supabase requests from it took 1–8s each (0.1–0.4s
+  warm), plus up to ~6.7s before our code ran. A new instance was started even 25s after the
+  previous open, which is why keep-warm could not work.
 - **2026-11-03:** fix #4 shipped. The dashboard no longer waits more than 0.4s for exchange
   rates, and each dashboard query is now timed separately. Awaiting Round 3. Cron job deleted.
 - **2026-11-03 (Round 2b):** #2, #3, #8 confirmed working. #1 (pinger) did not work. Cold opens
@@ -45,7 +54,8 @@ column in [§6](#6-fix-plan) as fixes land, and add new measurement rounds to [�
 | 2026-10-28 | Fix #1: `app/api/warm/route.js` + external 5-min pinger | ❌ No effect (Round 2b). Cron job deleted 2026-11-03 |
 | 2026-10-28 | Fix #8: backfilled `couple_id` into Koko's auth metadata (SQL) | Koko page auth ~1.0s → 0.04–0.08s |
 | 2026-10-28 | Fix #3: access-token expiry 3600s → 86400s | Refreshes 9/11 → 6/14 opens |
-| 2026-11-03 | Fix #4: `getRatesFast()` (memo + 400ms cap) on the dashboard; per-query `[perf]` timing | Pending Round 3 |
+| 2026-11-03 | Fix #4: `getRatesFast()` (memo + 400ms cap) on the dashboard; per-query `[perf]` timing | Rates were 0.12–0.16s, not the cause. Showed cold Supabase requests at 1–8s (Round 3a) |
+| 2026-11-04 | **Fix #7: static launch screen + on-device snapshot + browser → Supabase data** (supersedes #4's `getRatesFast`, #5 and "daily conversation in parallel") | Pending Round 4 |
 
 ### Why the region problem went unnoticed for months
 
@@ -58,7 +68,60 @@ column in [§6](#6-fix-plan) as fixes land, and add new measurement rounds to [�
 
 ---
 
-## 3. How a launch works (request path)
+## 3.1 New launch path (fix #7, 2026-11-04)
+
+```
+tap icon
+ └─ iOS boots WebKit (~1s, unavoidable)
+     └─ GET /dashboard → Vercel CDN (static HTML, NO function, proxy.js skipped)
+         └─ JS from HTTP cache → hydrate
+             ├─ snapshot in localStorage? → render it immediately (last-seen data)
+             │   else → render the skeleton
+             └─ browser Supabase client (all in parallel, no Vercel involved):
+                  getSession()  (local cookie; refreshes over the network ~once/day)
+                  members · couple · unpaid · recent · daily conversation  → Supabase (RLS)
+                  /api/rates                                              → Vercel CDN (ISR, 1h)
+                  → swap in fresh data, save the new snapshot
+     └─ after the session settles: prefetch the other tabs (also wakes Vercel in the background)
+```
+
+What still touches Vercel functions: the other tabs' server pages (first visit may show their
+skeleton while a cold function starts; the background prefetch makes this less likely) and
+mutations (server actions).
+
+Design notes:
+- **Static page.** `dashboard/page.js` has no dynamic APIs, and `(app)/layout.js` no longer calls
+  `getAuthUser()`. Every other `(app)` page authenticates itself, and proxy.js still guards them.
+- **Auth in the browser.** No session → `/login`. A network error during a token refresh → keep
+  showing the snapshot (offline). Missing `couple_id` → `/onboarding`.
+- **Snapshot safety.** Tagged with the user id, hidden if a different user signs in, cleared on
+  sign-out (`ProfileClient`). A daily question from a previous day is never shown from the
+  snapshot.
+- **Refresh-token race.** With the proxy off the launch path, the browser refreshes an expired
+  token itself. Next's automatic tab prefetch would hit proxy.js at the same moment with the old
+  refresh token, and a cold start could push that past Supabase's 10s reuse window, which revokes
+  the session and signs the user out. So tab Links are `prefetch={false}` and `NavLinks`
+  prefetches them only after `getSession()` resolves.
+### 3.2 Known trade-offs of fix #7
+
+| Trade-off | Impact | Mitigation / note |
+|---|---|---|
+| **Old data for a moment.** The snapshot is shown first, so for ~0.5–2s the numbers can be out of date (e.g. an expense the partner just added) | Low. Anything you act on (ledger, edit sheets) loads fresh | Swapped automatically. Realtime and focus reloads keep it current |
+| **A brief skeleton → content swap.** The static HTML always contains the skeleton; the snapshot renders a few hundred ms later after JS hydrates | Cosmetic flicker on some opens | Could be removed later by rendering the snapshot before hydration |
+| **Dashboard data stored on the phone** (`localStorage`): names, balances, recent expenses, today's question and answers | Anyone who can open the unlocked phone could already open the app; not a new exposure class (Supabase session cookies are already readable by JS) | User-tagged, never shown to another account, cleared on sign-out |
+| **No offline launch.** With no network the phone cannot fetch the `/dashboard` HTML (`max-age=0`), so the app does not open, same as before | The "keep showing the snapshot" path only covers *flaky* networks (HTML loads, Supabase unreachable) | A service-worker cached shell would fix it, but needs on-device measurement first (rule 3) |
+| **Other tabs are still server-rendered.** The first switch to Ledger/Bucket/… after opening can hit a cold function (skeleton for a few seconds) | Moves part of the wait from "opening" to "first tab switch" | Background prefetch after the session settles warms the server; not guaranteed (Vercel instance routing). Same pattern can be applied per tab later |
+| **Mutations still go through server actions** (Vercel) | Saving can be slow on a cold function, though the UI updates instantly (optimistic) | Unchanged from before |
+| **Residual refresh-token race.** On a day the token has expired, a tab tap within the first ~0.5s (before `getSession()` resolves) sends a request with the old token, so the proxy also refreshes | Only a problem if that proxy refresh lands >10s later (very slow cold start) → Supabase revokes the session → signed out | Prefetch is gated. Tapping that fast is unlikely. Raising the Supabase reuse interval (max 300s) would remove the risk |
+| **Rates up to 1h old**, and `{rates: null}` for up to an hour if OER fails at revalidation | Converted totals hidden or slightly stale | The last good rates are kept from the snapshot |
+| **The layout no longer guards auth.** Defence in depth is one layer thinner | A new `(app)` page that forgets to authenticate would rely on proxy.js alone | Documented in CLAUDE.md. RLS still protects all data |
+| **Dashboard logic now lives in the browser** (queries, balance maths, daily-conversation creation and streak reset) | Slightly more JS work on the phone; trivial for this data size | RLS policies are the same ones the server used |
+
+- **Not done (rule 3):** a service worker serving the shell from the phone would also remove the
+  CDN round-trip, but CLAUDE.md forbids a fetch handler without on-device measurement. Revisit
+  only if Round 4 shows the CDN fetch matters.
+
+## 3. How a launch works (request path, before fix #7)
 
 ```
 tap icon
@@ -261,7 +324,56 @@ auth/queries split.
   function boot itself (before any of our code runs) plus the streamed daily conversation. On the
   Hobby plan this cannot be removed by code; only #7 hides it.
 
-### Round 3 — after #4 (pending)
+### Round 3a — after #4 (03 Nov 2026, Koko, 5 opens back-to-back, with stopwatch)
+
+| Opened | Stopwatch | Screen (log) | Instance | Supabase requests (each) | Rates | Daily |
+|---|---|---|---|---|---|---|
+| 14:34:39 (first of the day) | ~9.x s | 8.2s | fresh | ~0.95s | 0.16s | 0.28s |
+| 14:35:04 | 10.57s | 11.6s | **fresh again** | **6.8–8.2s** | 0.12s | **3.0s** |
+| 14:35:14 | <2s | 1.1s | warm | 0.27–0.39s | 0.12s | 0.29s |
+| 14:35:18 | <2s | 0.6s | warm | ~0.2s | 0s (memo) | 0.15s |
+| 14:35:23 | <2s | 0.4s | warm | ~0.1s | 0s (memo) | 0.12s |
+
+Read-out: the logs match the stopwatch to ~1s (the iOS boot). Rates are not the cause. Warm is
+fast. On a fresh instance, either the instance boot (~6.7s unexplained in row 1) or Supabase
+requests from it (row 2) dominate, and Vercel started a fresh instance even 25s after the
+previous open. Conclusion: remove Vercel from the launch path entirely → fix #7.
+
+### Round 4 — after #7 (pending)
+
+The proxy no longer runs on launch, so `proxy` is null. New fields: `shown` = ms from navigation
+start until real content (snapshot or fresh) was on screen; `fresh` = when fresh data arrived;
+`had_snap` = whether a snapshot existed.
+
+```sql
+select json_agg(t) from (
+  select
+    to_char(p.created_at at time zone 'Asia/Jakarta', 'DD Mon HH24:MI:SS') as opened,
+    u.name,
+    p.data->>'sinceLastOpenMin'        as idle_min,
+    p.data->'page'->>'mode'            as mode,
+    p.data->'page'->>'hadSnapshot'     as had_snap,
+    p.data->>'fcp'                     as fcp,
+    p.data->'page'->>'shownAt'         as shown,
+    p.data->'page'->>'authMs'          as auth,
+    p.data->'page'->'q'->>'members'    as q_members,
+    p.data->'page'->'q'->>'unpaid'     as q_unpaid,
+    p.data->'page'->'q'->>'rates'      as q_rates,
+    p.data->'page'->'q'->>'daily'      as q_daily,
+    p.data->'page'->>'freshAt'         as fresh,
+    p.data->>'htmlDone'                as html_done
+  from perf_logs p
+  join users u on u.id = p.user_id
+  where p.data->'page'->>'mode' = 'static-shell'
+  order by p.created_at desc
+  limit 60
+) t;
+```
+
+Success looks like: `html_done` < 0.5s, `shown` < ~0.8s with a snapshot, `fresh` mostly < 1.5s,
+and the stopwatch about 1–1.5s from tap to seeing the dashboard on every open, cold or not.
+
+### Round 3 query (for reference)
 
 Run this after a day of normal use, both phones. Compared with earlier rounds it adds the
 per-query timings (`q_*`, in ms), where the rates came from (`rates_src`: memo / fresh / stale /
@@ -322,11 +434,11 @@ Ranked by expected gain per effort. Re-measure (same query) after each one befor
 | 1 | ~~**Keep functions warm**~~ — `app/api/warm/route.js` (pre-loads JWKS, evaluates supabase-js, does one anon RLS query to open the connection pool to Supabase), pinged every 5 min from cron-job.org | Most opens behave like rows 9–10: **~1–2.5s** instead of 4–8s | Small code + 2 min setup | ~288 tiny invocations/day, far inside Hobby limits. Does not help if Vercel routes the real request to a *new* instance anyway — verify with `proxy.cold` | ❌ Did not work (Round 2b: proxy cold 10/14 despite 5-min pings). Delete the cron job; `app/api/warm` can stay (harmless) or be removed |
 | 2 | **Embed the JWKS public key** — fetched once per build in `next.config.mjs`, inlined as `SUPABASE_JWKS_BUILD`, returned by `getJwks()` with no network call. No manual env var needed | ~0.4–0.9s on any cold open that still happens (proxy + page) | Small | The key is public. Rotation: an unknown `kid` makes supabase-js `fetchJwk` fall back to the live endpoint (verified in `auth-js` source). A *revoked* key stays trusted until the next deploy — redeploy after any key revocation. A failed build-time fetch silently falls back to the old runtime fetch | ✅ Confirmed on-device: `jwksMs` 0 on all Round 2a/2b opens |
 | 3 | **Longer access-token lifetime** — Supabase → Auth → JWT expiry 3600s → e.g. 86400s | ~0.4–0.65s on most opens (refresh skipped) | Setting | A signed-out or revoked device keeps a valid token until it expires | ✅ Set to 86400s 2026-10-28 (Auth → Sessions → Access token expiry). Refresh-token reuse detection left on (default), reuse interval 10s. Round 2b: refreshes 9/11 → 6/14 (≈ once a day). Optional: 604800 (1 week) |
-| 4 | **Time each dashboard query, and take exchange rates off the critical path** — `getRatesFast()` in `lib/exchangeRates.js`: per-instance memo (1h), else waits at most **400ms** for `fetchRates()`, then falls back to the stale memo or `null` (converted "≈ total" line hidden for that load); the fetch keeps running and fills the memo. Dashboard only; the ledger still uses `fetchRates()`. Each query in the dashboard `Promise.all` is timed (`page.q`), plus the streamed daily conversation (`marks.dailyMs`) | Up to 3–5s on the worst cold opens *if* rates are the slow part; otherwise the timings point at Supabase (→ #5, #7) | Small | On a rare cold miss the converted total is missing for one load. Streaming the rates later would not help, because the iOS splash waits for the whole stream (§4.6) | 🟡 Shipped 2026-11-03 · unit-tested (slow API → page waits 0.4s, then memo hit 0ms) · awaiting Round 3 |
-| 5 | **Collapse `loadDailyConversation` into one Postgres RPC** | 2–4 sequential round-trips → 1, inside the stream the splash screen waits for (§4.6) | Medium (SQL function) | Needs a migration | ⬜ |
+| 4 | **Time each dashboard query, and take exchange rates off the critical path** — `getRatesFast()` in `lib/exchangeRates.js`: per-instance memo (1h), else waits at most **400ms** for `fetchRates()`, then falls back to the stale memo or `null` (converted "≈ total" line hidden for that load); the fetch keeps running and fills the memo. Dashboard only; the ledger still uses `fetchRates()`. Each query in the dashboard `Promise.all` is timed (`page.q`), plus the streamed daily conversation (`marks.dailyMs`) | Up to 3–5s on the worst cold opens *if* rates are the slow part; otherwise the timings point at Supabase (→ #5, #7) | Small | On a rare cold miss the converted total is missing for one load. Streaming the rates later would not help, because the iOS splash waits for the whole stream (§4.6) | ✅ Done → answered: rates were not the bottleneck (Round 3a). `getRatesFast` removed again in #7; the dashboard now uses `/api/rates` (CDN) |
+| 5 | **Collapse `loadDailyConversation` into one Postgres RPC** | 2–4 sequential round-trips → 1, inside the stream the splash screen waits for (§4.6) | Medium (SQL function) | Needs a migration | ➖ Superseded by #7 (the daily conversation loads from the browser in parallel with everything else) |
 | 6 | **Narrow the proxy matcher** to app pages (skip `sw.js`, manifest, `/api/vitals`) | Fewer proxy invocations; small | Small | Keep auth redirects intact | ⬜ |
 | 8 | **Backfill `couple_id` into auth metadata** for accounts that pre-date 2026-04-10 (§4.9) — one SQL update, no code | ~0.7–1.0s per cold open, ~0.3s warm, for the affected user, plus a query saved on every server action | SQL, 1 min | Writes to `auth.users.raw_user_meta_data` | ✅ Confirmed: Koko page auth ~1.0s → 0.04–0.08s cold |
-| 7 | **Instant shell from a local snapshot** — dashboard renders last-known data from localStorage immediately, then refreshes | Launch *feels* ~1s whatever the server does (also hides §4.7) | Large | Stale numbers flash for a moment. Bigger architectural change | ⬜ |
+| 7 | **Instant shell from a local snapshot** — dashboard renders last-known data from localStorage immediately, then refreshes | Launch *feels* ~1s whatever the server does (also hides §4.7) | Large | Stale numbers flash for a moment. Bigger architectural change | 🟡 Shipped 2026-11-04 · verified locally (static `/dashboard` from cache, proxy skipped, `/api/rates` ISR, other pages still guarded) · awaiting Round 4 on-device |
 
 **Suggested order:** 1 + 2 together (one deploy) → set up the pinger → collect a day of data →
 decide on 3 → confirm §4.4 with finer timing → 4 → re-measure → consider 5 and 7 only if still
@@ -373,12 +485,13 @@ Region check at any time: on the logged-in dashboard, in the browser console,
 
 ## 8. Cleanup when done
 
-Remove everything tagged `[perf]`. Do NOT remove the build-time JWKS or `getRatesFast()`: those
-are permanent fixes. `app/api/warm` is unused since the cron job was deleted, so remove it too or
-keep it for a future retry. `[perf]` items include `timed()` in the dashboard, and `PerfMark` in
-`DailyConversation.js`:
+Remove everything tagged `[perf]`. Do NOT remove the build-time JWKS, `/api/rates`, the
+dashboard snapshot or the static launch screen: those are permanent fixes. `app/api/warm` is unused
+since the cron job was deleted, so remove it too or keep it for a future retry. `[perf]` items
+include the `timed()` calls in `lib/data/dashboardData.js` and the `perfPage`/`PerfBeacon` bits
+in `DashboardClient.js`:
 - `lib/perf.js`, `app/components/PerfBeacon.js`, `app/api/vitals/route.js`, `migrations/perf_logs.sql`
-- the `[perf]` lines in `proxy.js` and `app/(app)/dashboard/page.js`
+- the `[perf]` lines in `proxy.js` and `app/(app)/dashboard/DashboardClient.js`
 - Supabase SQL: `drop table public.perf_logs;`
 
 Keep this document.

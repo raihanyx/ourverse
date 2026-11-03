@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { updateName } from '@/app/actions/profile'
 import { updateBaseCurrency } from '@/app/actions/couple'
 import { logout } from '@/app/actions/auth'
+import { clearDashboardSnapshot } from '@/lib/dashboardSnapshot'
 import { savePushSubscription, deletePushSubscription } from '@/app/actions/push'
 import {
   isPushSupported,
@@ -398,7 +399,8 @@ export default function ProfileClient({ name, email, partnerName, inviteCode, du
       )}
 
       {/* Sign out */}
-      <form action={logout}>
+      {/* Drop the on-device dashboard snapshot before signing out. */}
+      <form action={async () => { clearDashboardSnapshot(); await logout() }}>
         <button
           type="submit"
           className="w-full h-[46px] bg-transparent border border-[#ECDFD2] dark:border-[#3A2418] text-[#7A5C4E] dark:text-[#7A5848] text-[14px] font-medium rounded-[14px] cursor-pointer transition-colors hover:border-[#D8513E] hover:text-[#D8513E] dark:hover:border-[#E8675A] dark:hover:text-[#E8675A]"

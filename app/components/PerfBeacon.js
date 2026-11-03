@@ -29,7 +29,6 @@ function readProxyTimings() {
 }
 
 function collect({ page, hydrated, sinceLastOpenMin, proxy }) {
-  const marks = window.__perfMarks ?? null
   const nav = performance.getEntriesByType('navigation')[0]
   if (!nav) return null
   const fcp = performance.getEntriesByName('first-contentful-paint')[0]
@@ -62,7 +61,6 @@ function collect({ page, hydrated, sinceLastOpenMin, proxy }) {
     },
     proxy,
     page,
-    marks,
   }
 }
 
@@ -102,13 +100,3 @@ export default function PerfBeacon({ page }) {
   return null
 }
 
-/**
- * [perf] Lets a streamed server component (rendered after the page's own
- * PerfBeacon props were fixed) add a timing to the same report.
- */
-export function PerfMark({ name, value }) {
-  useEffect(() => {
-    window.__perfMarks = { ...(window.__perfMarks ?? {}), [name]: value }
-  }, [name, value])
-  return null
-}

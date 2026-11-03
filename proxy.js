@@ -91,8 +91,12 @@ export async function proxy(request) {
   return supabaseResponse
 }
 
+// /dashboard is the static PWA launch screen and must not wake this function
+// (a cold start here cost 3-11s per app open). It authenticates in the
+// browser instead. /api/rates is CDN-cached and needs no session;
+// /api/vitals verifies the session itself.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|dashboard|api/rates|api/vitals|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

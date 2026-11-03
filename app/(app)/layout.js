@@ -1,14 +1,12 @@
-import { getAuthUser } from '@/lib/data/getAppSession'
 import Link from 'next/link'
 import NavLinks from './NavLinks'
 
-export default async function AppLayout({ children }) {
-  // Auth guard only — the layout renders no user data, so fetching the full
-  // session here was a profile+partner query per page load for nothing.
-  // React-cached, so this shares the page's auth call rather than adding one.
-  // The /onboarding redirect for couple-less accounts lives in the pages.
-  await getAuthUser()
-
+// Deliberately static — no auth call here. A dynamic layout would make every
+// child route dynamic, including the static /dashboard launch screen. Every
+// server-rendered page under (app) authenticates itself (getAuthUser /
+// getAppSession redirect to /login), proxy.js guards them too, and the
+// dashboard checks the session in the browser.
+export default function AppLayout({ children }) {
   return (
     <div className="min-h-screen bg-[#F8F2EB] dark:bg-[#1A1210]">
       <header className="bg-[#F8F2EB] dark:bg-[#1A1210] border-b border-[#ECDFD2] dark:border-[#2E1E1A] sticky top-0 z-10">

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import { saveAnniversaryDate } from '@/app/actions/couple'
 
 function getTimeTogether(dateString) {
@@ -27,8 +26,7 @@ function formatAnniversary(dateString) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-export default function TogetherCard({ anniversaryDate, coupleId }) {
-  const router = useRouter()
+export default function TogetherCard({ anniversaryDate, coupleId, onSaved }) {
   const [date, setDate] = useState('')
   const [isPending, startTransition] = useTransition()
 
@@ -38,7 +36,8 @@ export default function TogetherCard({ anniversaryDate, coupleId }) {
     if (!date) return
     startTransition(async () => {
       await saveAnniversaryDate(coupleId, date)
-      router.refresh()
+      // The dashboard is client-rendered — reload its data, not the route.
+      onSaved?.()
     })
   }
 

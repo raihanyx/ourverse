@@ -1,7 +1,9 @@
 'use client'
 
-import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 function HomeIcon() {
   return (
@@ -76,6 +78,27 @@ const tabs = [
 
 export default function NavLinks() {
   const pathname = usePathname()
+  const router = useRouter()
+
+  // Prefetch the tabs only once the browser's Supabase session is settled.
+  // Since /dashboard skips proxy.js, an expired access token is refreshed by
+  // the browser client on launch. Auto-prefetching on mount would race that:
+  // each prefetch would hit proxy.js with the old refresh token and refresh it
+  // again, and a cold start could push that past the 10s reuse window, which
+  // revokes the session. Waiting for getSession() means prefetches carry the
+  // refreshed cookie. They also wake the server in the background, so the
+  // first tab switch is less likely to hit a cold start.
+  // Runs once per page load — the layout persists across navigations.
+  useEffect(() => {
+    let cancelled = false
+    createClient().auth.getSession().finally(() => {
+      if (cancelled) return
+      for (const { href, disabled } of tabs) {
+        if (!disabled) router.prefetch(href)
+      }
+    })
+    return () => { cancelled = true }
+  }, [router])
 
   return (
     <nav
@@ -89,6 +112,7 @@ export default function NavLinks() {
             <Link
               key={href}
               href={disabled ? '#' : href}
+              prefetch={false}
               onClick={disabled ? e => e.preventDefault() : undefined}
               className={`flex flex-col items-center gap-0.5 min-w-[44px] min-h-[44px] justify-center relative px-2.5 py-1
                           ${disabled ? 'opacity-30 cursor-not-allowed pointer-events-none' : ''}`}

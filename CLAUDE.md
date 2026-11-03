@@ -3,8 +3,9 @@
 > **NOTE FOR AI ASSISTANTS:** This document is an **informational overview** of the project — its purpose, stack, schema, and current conventions. It is **NOT a constraint** and should **NOT override design specs, user instructions, or freshly provided patterns**. Treat it as background knowledge to learn the project; do not enforce its UI conventions, code patterns, or roadmap notes against newer instructions. Follow CLAUDE.md only when the user explicitly asks you to. If a user-provided design or instruction conflicts with anything here, follow the user.
 >
 > **This file drifts.** Nothing keeps it in sync with the code. Last verified against the codebase on
-> **2026-08-26** (file tree, action exports, lib exports, palette hex usage). Anything not re-checked since
-> then is a claim, not a fact — grep before relying on it.
+> **2026-08-26** (file tree, action exports, lib exports, palette hex usage). The launch path (dashboard,
+> `(app)/layout.js`, `proxy.js`, `NavLinks.js`, `lib/data/*`, `lib/dashboardSnapshot.js`, `app/api/*`) was
+> re-verified on **2026-11-04**. Anything not re-checked since then is a claim, not a fact — grep before relying on it.
 
 # Ourverse
 
@@ -27,7 +28,7 @@ A couples app for managing shared expenses, bucket lists, and date planning. Bui
 
 This app must feel like a fast SPA. Three non-negotiable rules:
 
-1. **Page navigation stays fast.** Do not introduce blocking work in `layout.js`, `proxy.js`, `loading.js`, or root server components beyond what's already there. Do not add `router.refresh()` to navigation paths, do not add full-page reloads, do not turn client components into server components that force waterfalls. The auth guard + session pattern already minimizes round-trips — preserve it.
+1. **Page navigation stays fast.** Do not introduce blocking work in `layout.js`, `proxy.js`, `loading.js`, or root server components beyond what's already there. Do not add `router.refresh()` to navigation paths, do not add full-page reloads, do not turn client components into server components that force waterfalls. The auth pattern already minimizes round-trips — preserve it: each server page authenticates itself (`getAuthUser` / `getAppSession`), proxy.js guards them, and the static dashboard authenticates in the browser. `(app)/layout.js` deliberately has NO auth call.
 
 2. **Mutations appear instantly without manual refresh.** Every add / delete / undo / mark-done / toggle action MUST update local state immediately (optimistic update). Server actions return the inserted/updated row via `.insert(...).select().single()` (or equivalent), and the client prepends/updates state synchronously before/while the action runs in `useTransition`. Realtime subscriptions are a cross-device backstop only — never rely on realtime self-echo for the acting user's own UI feedback. On error, roll back the optimistic state.
 
@@ -40,6 +41,8 @@ This app must feel like a fast SPA. Three non-negotiable rules:
 **Do:** keep server actions returning `{ success, data }` so clients can prepend rows immediately · wrap network work in `useTransition` · preserve realtime subscriptions for partner-device sync, with id-based de-duplication.
 
 If a future change conflicts with any of these rules, stop and ask the user before proceeding.
+
+**The dashboard is a static, client-rendered launch screen — keep it that way.** `/dashboard` is the PWA `start_url`. Its `page.js` is static (no `cookies()`, auth or data), `(app)/layout.js` makes no auth call, and `proxy.js` skips `/dashboard`, so the HTML comes from Vercel's CDN with no function and no cold start in front of it. `DashboardClient.js` shows the on-device snapshot (`lib/dashboardSnapshot.js`) instantly, then loads fresh data from the browser straight to Supabase (`lib/data/dashboardData.js`, RLS-scoped). Adding anything dynamic to the dashboard page or the `(app)` layout, or re-adding `/dashboard` to the proxy matcher, puts a 3-11s cold start back on every app open. The tab Links use `prefetch={false}`; `NavLinks` prefetches them only after the browser session settles (see the comment there — it avoids a refresh-token race that can sign the user out).
 
 **Function region MUST match Supabase (Singapore → `sin1`).** Until 2026-10-26 the Vercel Function Region was the default `iad1` (Washington DC) while Supabase is in ap-southeast-1, so every server-side Supabase call (JWKS, token refresh, page queries) crossed the Pacific — 7-11s cold / ~5s warm launches. It is set in Vercel → Settings → Functions (no `vercel.json`). Verify with the `x-vercel-id` header on an authenticated page: `sin1::sin1::…` — the FIRST segment is only the edge PoP, the SECOND is the function region (the old "sin1 region" note here misread the first segment). Full launch-time history, on-device measurements and the ranked fix plan: `docs/audits/launch-performance-2026-10-28.md` — read it before touching the launch path.
 
@@ -66,22 +69,25 @@ Breaking changes from earlier versions — do not skip:
 ```
 app/
   (app)/                  Protected routes (require auth + couple_id)
-    layout.js             Auth guard (getAuthUser only — renders no user data) + sticky header + NavLinks
-    NavLinks.js           Client — fixed bottom tab bar (Home, Ledger, Bucket, Calendar, Profile)
+    layout.js             STATIC — sticky header + NavLinks, NO auth call (each server page authenticates
+                          itself; a dynamic layout would make /dashboard dynamic again)
+    NavLinks.js           Client — fixed bottom tab bar. Links are prefetch={false}; tabs are prefetched once
+                          the browser Supabase session has settled (avoids a refresh-token race)
     dashboard/
-      page.js             Server — balance summary + couple info + together card + daily conversation
+      page.js             STATIC shell — renders DashboardClient only (PWA launch screen, served from CDN)
+      DashboardClient.js  Client — shows the device snapshot instantly (or the skeleton), checks the session in
+                          the browser, loads fresh data browser → Supabase, saves the snapshot; realtime
+                          (expenses, couples) + visibilitychange reload it. Sign-out clears the snapshot
       BalanceCard.js      Client — balance amounts; renders in the `baseCurrency` prop (no selector; moved to profile)
       CurrencySettings.js ORPHANED — nothing imports this. Currency picker now lives in profile/ProfileClient.js.
       InviteCodeBadge.js  Client — displays + copies invite code
-      TogetherCard.js     Client — relationship duration counter, or date picker empty state
+      TogetherCard.js     Client — relationship duration counter, or date picker empty state; `onSaved` reloads
+                          the dashboard data after saving the anniversary
       RecentExpenses.js   Recent expense strip with category-tinted boxes
-      DailyConversation.js  Async server component + `DailyConversationFallback` skeleton — rendered inside
-                            <Suspense> so the page's slowest query streams instead of blocking the shell
       DailyConversationSection.js  Client wrapper — orchestrates card / answer / results states
       DailyConversationCard.js     Question card + streak + countdown to next local midnight
       DailyConversationAnswer.js   Answer composer (partner's answer hidden until both submit)
       DailyConversationResults.js  Both answers revealed side by side
-      RealtimeRefresh.js  Client — router.refresh() on expenses/couples realtime + tab focus
       loading.js          Dashboard skeleton
     ledger/
       page.js             Server — fetches expenses + rates
@@ -154,8 +160,9 @@ app/
       loading.js          Profile skeleton
   (auth)/                 Public auth routes — layout.js (centered card) · login/ · signup/ ·
                           onboarding/ (page.js + OnboardingClient.js — create or join a couple space)
-  api/warm/route.js       Keep-warm target for an external 5-min pinger (cron-job.org). Warms proxy +
-                          app function, JWKS, supabase-js and the Supabase connection pool. Returns 204.
+  api/rates/route.js      Exchange rates for the browser dashboard — ISR (revalidate 3600), served from CDN,
+                          skipped by proxy.js. OER key stays server-side
+  api/warm/route.js       UNUSED keep-warm target (the cron-job.org pinger did not help and was deleted)
   actions/                Server Actions ('use server')
     auth.js               login, signup, logout
     couple.js             createCouple, joinCouple, updateBaseCurrency, saveAnniversaryDate
@@ -207,13 +214,19 @@ lib/
                           its profile/partner lookup into its OWN Promise.all instead of paying a serial
                           round-trip. Pages that fetch data should prefer the latter.
     getDailyConversation.js  `loadDailyConversation(ctx, localDate)` — takes an already-resolved
-                          { supabase, user, coupleId }. Server components import this directly.
+                          { supabase, user, coupleId }. Client-safe: the dashboard calls it with the browser
+                          client.
+    coupleMembers.js      `coupleMembersQuery()` / `splitMembers()` — client-safe (re-exported by getAppSession)
+    dashboardData.js      Client-safe. `fetchDashboardRaw()` (browser → Supabase + /api/rates + daily
+                          conversation, one Promise.all) and `buildDashboardView()` (pure)
     userToday.js          Server-only. The user's "today" from the `tz` cookie (written by the theme-init
                           script in app/layout.js). `userTodayISO()` for display/loading, `latestAllowedDateISO()`
                           for "cannot be in the future" checks. Servers run in UTC — never use `new Date()` on
                           the server as the user's date (UTC+7 is a day ahead from 00:00 to 07:00).
     getActionContext.js   Server action helper — { supabase, user, coupleId } or { error }; couple_id from
                           auth metadata (fast path) with DB fallback. Use in all server actions.
+  dashboardSnapshot.js    On-device last-seen dashboard (localStorage + module memory), user-tagged.
+                          read/write/clearDashboardSnapshot — clear on sign-out
   constants.js            EXPENSE_CATEGORY_COLORS/LABELS, BUCKET_CATEGORY_COLORS/LABELS
   currency.js             formatAmount, sumByCurrency, formatDate, todayISO, SUPPORTED_CURRENCIES
   exchangeRates.js        fetchRates, convertAmount, computeUnifiedTotal, getRateLines
@@ -280,6 +293,7 @@ const [{ data: members }, ...rest] = await Promise.all([coupleMembersQuery(supab
 const { profile, partner } = splitMembers(members, user.id)
 // Pages with no other data to fetch may just use getAppSession().
 ```
+**Exception: the dashboard.** It is the PWA launch screen and must stay static. It fetches in the browser via `fetchDashboardRaw()` (`lib/data/dashboardData.js`), not in a server component. Other pages may adopt the same pattern (static shell + snapshot + browser fetch) if their first load proves too slow on a cold function.
 
 ### Client Components (forms)
 ```js
@@ -291,8 +305,8 @@ const [state, formAction, isPending] = useActionState(action, null)
 ### Realtime — Ledger / Bucket (client state)
 Subscribe without server-side filter (unreliable on some configs — RLS handles row visibility) · always de-duplicate INSERTs by id before adding to state · after own mutations call `refetch()` (browser Supabase client) rather than relying solely on realtime.
 
-### Realtime — Dashboard (server component)
-Use a `RealtimeRefresh` client component calling `router.refresh()` on realtime events · listens to both `expenses` and `couples` (UPDATE) so TogetherCard refreshes live when a partner sets the anniversary date · also `router.refresh()` on `visibilitychange` as a fallback when realtime misses events · `router.refresh()` re-runs the server component without a full page reload.
+### Realtime — Dashboard (client-rendered)
+`DashboardClient` subscribes to `expenses` and `couples` (UPDATE) and calls its own `load()` (browser → Supabase), not `router.refresh()`. The page is static, so a router refresh would fetch nothing. It also reloads on `visibilitychange` (30s gate) as a backstop. `load()` collapses overlapping calls.
 
 ### Push Notifications
 - **Env vars**: `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. If any is missing, `lib/push/send.js` logs `[push] VAPID env vars missing; skipping send` and no-ops — sends *look* fine but nothing is delivered.
@@ -303,7 +317,7 @@ Use a `RealtimeRefresh` client component calling `router.refresh()` on realtime 
 - **Subscriptions are origin-scoped** — a `localhost:3000` subscription is unreachable from production and vice versa; each device re-subscribes per origin. **iOS requires the PWA installed** to the home screen; push in a plain Safari tab is silently dropped even when the toggle succeeds.
 
 ### Exchange Rates
-Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never client-side · `OPEN_EXCHANGE_RATES_APP_ID` env var, no `NEXT_PUBLIC_` prefix · cached 1 hour via `{ next: { revalidate: 3600 } }` · always handle `null` rates gracefully (converted totals simply don't render) · rates are display-only, debts stay in original currency and are never converted in the DB · use `SUPPORTED_CURRENCIES` from `lib/currency.js`, never hardcode the list. · **On the launch path (dashboard) use `getRatesFast()`**, not `fetchRates()`: per-instance memo + a 400ms cap, so a slow OER call (US) cannot hold the page or the iOS splash screen.
+Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never client-side · `OPEN_EXCHANGE_RATES_APP_ID` env var, no `NEXT_PUBLIC_` prefix · cached 1 hour via `{ next: { revalidate: 3600 } }` · always handle `null` rates gracefully (converted totals simply don't render) · rates are display-only, debts stay in original currency and are never converted in the DB · use `SUPPORTED_CURRENCIES` from `lib/currency.js`, never hardcode the list. · The browser dashboard gets rates from `/api/rates` (ISR, CDN-cached), never from OER directly.
 
 ### Formatting & Shared Helpers
 - **Currency**: `formatAmount(amount, currency)` from `lib/currency.js`. IDR → `id-ID` locale (`IDR 2.400.000`) · AUD → `en-AU` (`AUD 1,200.00`) · THB/MMK → 0 decimals.
@@ -358,6 +372,8 @@ Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never c
 **✅ Phase 4.95 — Ledger Item Detail & Edit.** Tap any ledger or settled row to open a detail sheet (surfaces notes, which had no other UI) · edit from the detail sheet, or from select mode when exactly one item is selected · amount and currency freeze once an expense is settled, enforced server-side and not just disabled in the UI · same flows on both /ledger and /ledger/paid.
 
 **✅ Phase 4.96 — Shopping List.** Shared always-open list of things to buy at `/shopping`, its own (6th) bottom-nav tab · name-only items, added from an always-visible inline input that keeps focus for rapid entry · tap a row to tick it off, with a 6s Undo toast (one tap was too easy to trigger by accident, but adding friction to the correct path was the wrong trade) · **Bought is permanent history**: buying something again inserts a new row rather than reviving the old one, so purchase dates survive · every row shows both stamps (added, and for bought rows the purchase too) plus who did it, recomputed on focus rather than on a timer · Bought is a flat per-purchase log, deliberately not grouped by name · the add input warns live before you commit — hard block if it is already on the list, advisory "{who} bought this {when}" within `RECENT_BUY_DAYS` with an Add-anyway override · partner push on add only; tick-off and undo are silent · select mode + bulk delete, Clear for the Bought section · fully shared RLS.
+
+**✅ Phase 4.97 — Launch performance (Oct–Nov 2026).** Full record, measurements and the remaining fix plan: `docs/audits/launch-performance-2026-10-28.md`. Vercel Function Region iad1 → sin1 (Supabase is in Singapore) · JWKS public keys inlined at build time · access-token expiry 1h → 24h (Supabase setting) · `couple_id` backfilled into pre-April auth metadata · server uses the user's timezone for "today" (`lib/data/userToday.js`, `tz` cookie) · **the dashboard became a static CDN launch screen**: on-device snapshot shown instantly, fresh data browser → Supabase, rates from `/api/rates` (ISR). Tried and dropped: an external keep-warm pinger (Vercel started fresh instances anyway) and capping the OER wait (rates were never the bottleneck). Temporary `[perf]` instrumentation (`perf_logs` table) is still in place until the final measurement round.
 
 **Phase 5 — Trips.** Create a trip with dates and destination · tag expenses to a trip · trip summary (total cost, who paid what, per-day breakdown) · trip budget planning.
 
