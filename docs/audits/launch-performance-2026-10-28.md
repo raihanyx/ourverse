@@ -19,6 +19,12 @@ column in [§6](#6-fix-plan) as fixes land, and add new measurement rounds to [�
 - **Next fixes, best first:** keep the functions warm (route + external pinger) → embed the
   JWKS public key → lengthen the Supabase access-token lifetime → stop exchange rates from
   blocking the dashboard. See [§6](#6-fix-plan).
+- **2026-11-03:** fix #4 shipped. The dashboard no longer waits more than 0.4s for exchange
+  rates, and each dashboard query is now timed separately. Awaiting Round 3. Cron job deleted.
+- **2026-11-03 (Round 2b):** #2, #3, #8 confirmed working. #1 (pinger) did not work. Cold opens
+  are now a median of ~4.3s (from ~5.7s), warm 0.7–1.7s. The biggest remaining block is the
+  dashboard query batch (1–5s cold). Next: per-query timing + exchange rates off the critical
+  path (#4), then #7 (instant snapshot) for the unavoidable cold boot.
 - **2026-10-28:** fixes #1 (keep-warm route) and #2 (build-time JWKS) shipped. The pinger needs
   setting up once ([§6.1](#61-keep-warm-pinger-setup-cron-joborg)). Awaiting Round 2 measurements.
 
@@ -36,7 +42,10 @@ column in [§6](#6-fix-plan) as fixes land, and add new measurement rounds to [�
 | 2026-10-26 (`68b471c`) | Server uses the user's timezone for "today" (`lib/data/userToday.js`) | Fixed the "date cannot be in the future" bug after midnight; also removes an extra server action call the dashboard made between 00:00 and 07:00 |
 | 2026-10-27 (`0c97ebc`) | Temporary `[perf]` instrumentation → `perf_logs` table | Produced the data in §5 |
 | 2026-10-28 | Fix #2: JWKS public keys fetched at build time and inlined (`next.config.mjs` → `lib/supabase/jwks.js`) | Local cold proxy: JWKS 443ms → **0ms**. On-device: pending Round 2 |
-| 2026-10-28 | Fix #1: `app/api/warm/route.js` + external 5-min pinger | Pending Round 2 |
+| 2026-10-28 | Fix #1: `app/api/warm/route.js` + external 5-min pinger | ❌ No effect (Round 2b). Cron job deleted 2026-11-03 |
+| 2026-10-28 | Fix #8: backfilled `couple_id` into Koko's auth metadata (SQL) | Koko page auth ~1.0s → 0.04–0.08s |
+| 2026-10-28 | Fix #3: access-token expiry 3600s → 86400s | Refreshes 9/11 → 6/14 opens |
+| 2026-11-03 | Fix #4: `getRatesFast()` (memo + 400ms cap) on the dashboard; per-query `[perf]` timing | Pending Round 3 |
 
 ### Why the region problem went unnoticed for months
 
@@ -114,6 +123,44 @@ conversation, has arrived. Perceived launch time therefore equals full server ti
 Row 1 (28 Oct 16:45): `requestStart` = 4.06s, so the phone waited 4s before sending the request.
 This is iOS-side (radio wake or WebKit), not the server. Watch whether it repeats.
 
+### 4.9 CONFIRMED (Round 2a): Koko's token lacks `couple_id`, adding 2 serial DB queries to every page
+
+Checked 2026-10-28: Moe `true`, **Koko `false`** (other test accounts also `false`).
+
+`getAuthUser()` takes `couple_id` from the JWT's `user_metadata`. When it is missing,
+`resolveCoupleId()` falls back to `getAppSession()`, which runs a profile query and then a
+partner query **one after the other**, before the page's own `Promise.all` can start. Server
+actions pay a similar fallback query in `getActionContext()`.
+
+The metadata write was only added on 2026-04-10 (`f7007d0`), so an account that created or joined
+its couple before that date has no `couple_id` in its token. This fits the data:
+- Koko's page auth: ~1.0s cold, 0.23–0.33s warm, i.e. two round trips.
+- Moe's page auth: 0.02–0.15s, i.e. no DB query.
+
+**Check** (Supabase SQL editor, read-only):
+
+```sql
+select u.name,
+       au.raw_user_meta_data->>'couple_id' is not null as has_couple_id_in_token
+from auth.users au
+join public.users u on u.id = au.id;
+```
+
+**Fix if `false`:** backfill the metadata once. It takes effect at the next token refresh (≤1h).
+
+```sql
+update auth.users au
+set raw_user_meta_data = coalesce(au.raw_user_meta_data, '{}'::jsonb)
+                         || jsonb_build_object('couple_id', u.couple_id::text)
+from public.users u
+where u.id = au.id
+  and u.couple_id is not null
+  and au.raw_user_meta_data->>'couple_id' is null;
+```
+
+Safe by design: `couple_id` from metadata is only used to scope queries. RLS still enforces
+`couple_id = get_my_couple_id()` from the `users` table, so a wrong value can read nothing.
+
 ### 4.8 Measurement caveats
 - **`ttfb` / `serverMs` from Safari are unreliable here** (e.g. ttfb 85ms while the proxy alone
   took 770ms). Use `htmlDone` and `fcp` instead.
@@ -147,11 +194,112 @@ Collected by the `[perf]` instrumentation (`lib/perf.js`, `app/components/PerfBe
 | 10 | 27 Oct 13:43 | Koko | 0m | no | no | 0.00 | 0.36 (0.23 / 0.13) | 0.91 | **1.00** |
 | 11 | 27 Oct 13:43 | Koko | first | yes | yes | 0.81 (0.45 / 0.36) | 1.99 (1.05 / 0.94) | 5.44 | 5.56 |
 
-### Round 2 — after fixes #1 + #2 (pending)
+### Round 2a — first few hours after fixes #1 + #2 (28 Oct 2026, Koko only, 5 opens)
 
-_Run the query below after a day of normal use with the pinger active and paste the table here._
+| # | Opened (WIB) | Who | Idle | Proxy cold | Refresh | Proxy (JWKS / auth) | Page (auth / queries) | HTML done | Screen |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 28 Oct 19:46 | Koko | 57m | yes | yes | 0.58 (**0** / 0.58) | 1.50 (1.11 / 0.40) | 3.80 | 3.95 |
+| 2 | 28 Oct 18:50 | Koko | 41m | yes | no | 0.03 (**0** / 0.03) | 1.40 (1.02 / 0.38) | 3.16 | 3.30 |
+| 3 | 28 Oct 18:00 | Koko | 49m | yes | yes | 0.60 (**0** / 0.59) | 1.37 (0.98 / 0.38) | 3.85 | 3.99 |
+| 4 | 28 Oct 17:11 | Koko | 0m | no | no | 0.00 | 0.60 (0.33 / 0.27) | 1.03 | **1.13** |
+| 5 | 28 Oct 17:11 | Koko | 26m | no | no | 0.02 | 1.08 (0.67 / 0.40) | 2.30 | 2.41 |
 
-Query used (Supabase SQL editor):
+**Read-out:**
+- **Fix #2 works.** `jwksMs` is 0 on every open, cold or not. Cold opens improved from typically
+  5.6–6.3s (Round 1) to **3.3–4.0s**.
+- **Fix #1 is not working yet.** The proxy was cold on 3 of the 3 opens after 17:11. The two warm
+  opens at 17:11 were warmed by a manual `curl` at 17:05, not by the pinger (instance age ≈ 339s).
+  **Checked:** cron-job.org history shows a successful `204` every 5 minutes since 17:10, mostly
+  ~1.0–1.3s (from Germany), with occasional ~4.5s cold spikes. So the pings land and keep *an*
+  instance warm, but the phone's requests still hit **fresh proxy instances** (`ageMs` 4ms).
+  Likely cause: Vercel does not route the phone's requests (sin1 edge) to the instance the pings
+  (fra1 edge) keep alive. The pinger has not helped the proxy so far. Keep it running through
+  Round 2b to see whether it helps the page/DB side, then decide whether to delete it.
+- **New suspect — Koko's page `authMs` is ~1.0s cold even with no JWKS fetch and no refresh**
+  (row 2). Moe's was 0.02–0.15s in Round 1. See §4.9.
+- The session refresh still costs ~0.6s whenever the token has expired (fix #3).
+
+### Round 2b — after #1, #2, #3, #8 (28 Oct 21:00 → 2 Nov, both phones, 14 opens)
+
+Times in seconds. Columns as Round 1, but compact: proxy and page totals only, plus the page's
+auth/queries split.
+
+| # | Opened (WIB) | Who | Idle | Proxy cold | Refresh | Proxy | Page (auth / queries) | HTML done | Screen |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | 02 Nov 21:33 | Moe | 4.1d | no | yes | 0.49 | 0.55 (0.01 / 0.54) | 1.53 | 1.67 |
+| 2 | 02 Nov 21:28 | Koko | 23.7h | yes | yes | 1.22 | 3.59 (0.08 / **3.51**) | 7.33 | **7.43** |
+| 3 | 01 Nov 21:49 | Koko | 3.6h | yes | no | 0.03 | 1.76 (0.08 / 1.68) | 3.94 | 4.07 |
+| 4 | 01 Nov 18:15 | Koko | 2.3h | yes | yes | 0.53 | 1.39 (0.07 / 1.31) | 4.49 | 4.83 |
+| 5 | 01 Nov 15:58 | Koko | 2.5h | yes | no | 0.04 | 1.19 (0.08 / 1.11) | 3.32 | 3.44 |
+| 6 | 01 Nov 13:27 | Koko | 20.5h | yes | no | 0.03 | 1.74 (0.08 / 1.65) | 4.17 | 4.29 |
+| 7 | 31 Oct 16:59 | Koko | 42.7h | yes | yes | 0.72 | 3.74 (0.04 / **3.70**) | 6.88 | **6.97** |
+| 8 | 29 Oct 22:19 | Koko | 53m | yes | yes | 0.83 | 5.40 (0.04 / **5.36**) | 8.46 | **8.58** |
+| 9 | 29 Oct 21:26 | Koko | 3.4h | yes | no | 0.03 | 1.10 (0.04 / 1.06) | 3.04 | 3.17 |
+| 10 | 29 Oct 18:01 | Koko | 0m | no | no | 0.00 | 0.48 (0.06 / 0.41) | 0.90 | **0.96** |
+| 11 | 29 Oct 18:00 | Moe | 25m | no | no | 0.00 | 0.30 (0.02 / 0.28) | 0.65 | **0.74** |
+| 12 | 29 Oct 17:38 | Koko | 19.4h | no | no | 0.00 | 0.93 (0.02 / 0.91) | 1.55 | 1.70 |
+| 13 | 29 Oct 17:35 | Moe | 21.2h | yes | no | 0.03 | 1.11 (0.04 / 1.07) | 3.30 | 3.42 |
+| 14 | 28 Oct 22:15 | Koko | 1.8h | yes | yes | 0.70 | 1.50 (0.04 / 1.46) | 4.16 | 4.30 |
+
+**Read-out:**
+- **#8 (couple_id backfill) works.** Koko's page auth went from ~1.0s cold to **0.04–0.08s**,
+  the same as Moe's.
+- **#2 (build-time JWKS) works.** `jwksMs` is 0 on every open.
+- **#3 (24h token) helps partially.** Refresh fell from 9 of 11 opens (Round 1) to 6 of 14. The
+  remaining refreshes are the roughly once-a-day expiry. A refresh costs 0.5–1.2s on a cold proxy.
+- **#1 (pinger) does not work.** The proxy was cold on 10 of 14 opens despite a ping every 5
+  minutes. Every warm open came right after the other partner had used the app. Decision: remove
+  the cron job (see §6).
+- **Cold opens improved but not enough:** median screen **~4.3s** (Round 1 ~5.7s). Warm opens
+  **0.7–1.7s**.
+- **The biggest remaining measured block is the dashboard's `Promise.all`:** 0.3–0.4s warm, but
+  **1.1–1.7s typical cold and 3.5–5.4s in the three worst opens** (rows 2, 7, 8). The three worst
+  opens are exactly the three slow-query ones. The current data cannot say whether that is the
+  Supabase queries on a cold connection or `fetchRates()` (Open Exchange Rates, US). Next step:
+  time each query separately (§6 #4).
+- **~1.5–2.5s per cold open is still unaccounted for** (`htmlDone` minus proxy minus page): the
+  function boot itself (before any of our code runs) plus the streamed daily conversation. On the
+  Hobby plan this cannot be removed by code; only #7 hides it.
+
+### Round 3 — after #4 (pending)
+
+Run this after a day of normal use, both phones. Compared with earlier rounds it adds the
+per-query timings (`q_*`, in ms), where the rates came from (`rates_src`: memo / fresh / stale /
+none) and the daily conversation time (`daily`).
+
+```sql
+select json_agg(t) from (
+  select
+    to_char(p.created_at at time zone 'Asia/Jakarta', 'DD Mon HH24:MI') as opened,
+    u.name,
+    p.data->>'sinceLastOpenMin'          as idle_min,
+    p.data->'proxy'->>'cold'             as px_cold,
+    p.data->'proxy'->>'refreshed'        as refreshed,
+    p.data->'proxy'->>'totalMs'          as px_ms,
+    p.data->'page'->>'authMs'            as pg_auth,
+    p.data->'page'->>'queriesMs'         as pg_queries,
+    p.data->'page'->'q'->>'members'      as q_members,
+    p.data->'page'->'q'->>'couple'       as q_couple,
+    p.data->'page'->'q'->>'unpaid'       as q_unpaid,
+    p.data->'page'->'q'->>'recent'       as q_recent,
+    p.data->'page'->'q'->>'rates'        as q_rates,
+    p.data->'page'->>'ratesSource'       as rates_src,
+    p.data->'marks'->>'dailyMs'          as daily,
+    p.data->>'htmlDone'                  as html_done,
+    p.data->>'fcp'                       as fcp
+  from perf_logs p
+  join users u on u.id = p.user_id
+  where p.created_at > '2026-11-03 18:00:00+07'
+  order by p.created_at desc
+  limit 120
+) t;
+```
+
+**How to read it:** if `q_rates` is the largest and `rates_src` is `none`/`stale` on the slow
+opens, OER was the bottleneck and #4 fixed it. If the `q_*` Supabase timings are the large ones
+on cold opens, the cost is Supabase on a cold connection → #5 (fewer round-trips) and #7.
+
+Query used for Rounds 1–2 (Supabase SQL editor):
 
 ```sql
 select json_agg(t) from (
@@ -171,12 +319,13 @@ Ranked by expected gain per effort. Re-measure (same query) after each one befor
 | # | Fix | Expected gain | Effort | Risk / trade-off | Status |
 |---|---|---|---|---|---|
 | 0 | Function Region iad1 → sin1 | 7–11s → 5–6s cold | Setting | None | ✅ Done 2026-10-26 |
-| 1 | **Keep functions warm** — `app/api/warm/route.js` (pre-loads JWKS, evaluates supabase-js, does one anon RLS query to open the connection pool to Supabase), pinged every 5 min from cron-job.org | Most opens behave like rows 9–10: **~1–2.5s** instead of 4–8s | Small code + 2 min setup | ~288 tiny invocations/day, far inside Hobby limits. Does not help if Vercel routes the real request to a *new* instance anyway — verify with `proxy.cold` | 🟡 Code shipped 2026-10-28 · pinger setup [§6.1](#61-keep-warm-pinger-setup-cron-joborg) · awaiting Round 2 |
-| 2 | **Embed the JWKS public key** — fetched once per build in `next.config.mjs`, inlined as `SUPABASE_JWKS_BUILD`, returned by `getJwks()` with no network call. No manual env var needed | ~0.4–0.9s on any cold open that still happens (proxy + page) | Small | The key is public. Rotation: an unknown `kid` makes supabase-js `fetchJwk` fall back to the live endpoint (verified in `auth-js` source). A *revoked* key stays trusted until the next deploy — redeploy after any key revocation. A failed build-time fetch silently falls back to the old runtime fetch | 🟡 Shipped 2026-10-28 · verified locally (JWKS 0ms) · awaiting Round 2 |
-| 3 | **Longer access-token lifetime** — Supabase → Auth → JWT expiry 3600s → e.g. 86400s | ~0.4–0.65s on most opens (refresh skipped) | Setting | A signed-out or revoked device keeps a valid token until it expires | ⬜ |
-| 4 | **Exchange rates off the critical path** — module-scope memo + short timeout (e.g. 300ms → `null`, rates simply don't render), or stream converted totals behind Suspense | Up to ~0.5–3s on cold opens *if* §4.4 holds | Small | Converted totals may be missing on a rare cold miss. Add timing first to confirm | ⬜ |
+| 1 | ~~**Keep functions warm**~~ — `app/api/warm/route.js` (pre-loads JWKS, evaluates supabase-js, does one anon RLS query to open the connection pool to Supabase), pinged every 5 min from cron-job.org | Most opens behave like rows 9–10: **~1–2.5s** instead of 4–8s | Small code + 2 min setup | ~288 tiny invocations/day, far inside Hobby limits. Does not help if Vercel routes the real request to a *new* instance anyway — verify with `proxy.cold` | ❌ Did not work (Round 2b: proxy cold 10/14 despite 5-min pings). Delete the cron job; `app/api/warm` can stay (harmless) or be removed |
+| 2 | **Embed the JWKS public key** — fetched once per build in `next.config.mjs`, inlined as `SUPABASE_JWKS_BUILD`, returned by `getJwks()` with no network call. No manual env var needed | ~0.4–0.9s on any cold open that still happens (proxy + page) | Small | The key is public. Rotation: an unknown `kid` makes supabase-js `fetchJwk` fall back to the live endpoint (verified in `auth-js` source). A *revoked* key stays trusted until the next deploy — redeploy after any key revocation. A failed build-time fetch silently falls back to the old runtime fetch | ✅ Confirmed on-device: `jwksMs` 0 on all Round 2a/2b opens |
+| 3 | **Longer access-token lifetime** — Supabase → Auth → JWT expiry 3600s → e.g. 86400s | ~0.4–0.65s on most opens (refresh skipped) | Setting | A signed-out or revoked device keeps a valid token until it expires | ✅ Set to 86400s 2026-10-28 (Auth → Sessions → Access token expiry). Refresh-token reuse detection left on (default), reuse interval 10s. Round 2b: refreshes 9/11 → 6/14 (≈ once a day). Optional: 604800 (1 week) |
+| 4 | **Time each dashboard query, and take exchange rates off the critical path** — `getRatesFast()` in `lib/exchangeRates.js`: per-instance memo (1h), else waits at most **400ms** for `fetchRates()`, then falls back to the stale memo or `null` (converted "≈ total" line hidden for that load); the fetch keeps running and fills the memo. Dashboard only; the ledger still uses `fetchRates()`. Each query in the dashboard `Promise.all` is timed (`page.q`), plus the streamed daily conversation (`marks.dailyMs`) | Up to 3–5s on the worst cold opens *if* rates are the slow part; otherwise the timings point at Supabase (→ #5, #7) | Small | On a rare cold miss the converted total is missing for one load. Streaming the rates later would not help, because the iOS splash waits for the whole stream (§4.6) | 🟡 Shipped 2026-11-03 · unit-tested (slow API → page waits 0.4s, then memo hit 0ms) · awaiting Round 3 |
 | 5 | **Collapse `loadDailyConversation` into one Postgres RPC** | 2–4 sequential round-trips → 1, inside the stream the splash screen waits for (§4.6) | Medium (SQL function) | Needs a migration | ⬜ |
 | 6 | **Narrow the proxy matcher** to app pages (skip `sw.js`, manifest, `/api/vitals`) | Fewer proxy invocations; small | Small | Keep auth redirects intact | ⬜ |
+| 8 | **Backfill `couple_id` into auth metadata** for accounts that pre-date 2026-04-10 (§4.9) — one SQL update, no code | ~0.7–1.0s per cold open, ~0.3s warm, for the affected user, plus a query saved on every server action | SQL, 1 min | Writes to `auth.users.raw_user_meta_data` | ✅ Confirmed: Koko page auth ~1.0s → 0.04–0.08s cold |
 | 7 | **Instant shell from a local snapshot** — dashboard renders last-known data from localStorage immediately, then refreshes | Launch *feels* ~1s whatever the server does (also hides §4.7) | Large | Stale numbers flash for a moment. Bigger architectural change | ⬜ |
 
 **Suggested order:** 1 + 2 together (one deploy) → set up the pinger → collect a day of data →
@@ -224,8 +373,10 @@ Region check at any time: on the logged-in dashboard, in the browser console,
 
 ## 8. Cleanup when done
 
-Remove everything tagged `[perf]` (NOT `app/api/warm` or the build-time JWKS — those are
-permanent fixes):
+Remove everything tagged `[perf]`. Do NOT remove the build-time JWKS or `getRatesFast()`: those
+are permanent fixes. `app/api/warm` is unused since the cron job was deleted, so remove it too or
+keep it for a future retry. `[perf]` items include `timed()` in the dashboard, and `PerfMark` in
+`DailyConversation.js`:
 - `lib/perf.js`, `app/components/PerfBeacon.js`, `app/api/vitals/route.js`, `migrations/perf_logs.sql`
 - the `[perf]` lines in `proxy.js` and `app/(app)/dashboard/page.js`
 - Supabase SQL: `drop table public.perf_logs;`

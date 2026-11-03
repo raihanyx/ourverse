@@ -8,7 +8,7 @@ import {
 } from '@/lib/data/getAppSession'
 import { getUserTimeZone, todayIn } from '@/lib/data/userToday'
 import { sumByCurrency } from '@/lib/currency'
-import { fetchRates, computeUnifiedTotal } from '@/lib/exchangeRates'
+import { getRatesFast, computeUnifiedTotal } from '@/lib/exchangeRates'
 import RealtimeRefresh from './RealtimeRefresh'
 import BalanceCard from './BalanceCard'
 import TogetherCard from './TogetherCard'
@@ -17,7 +17,7 @@ import RecentExpenses from './RecentExpenses'
 import DailyConversation, { DailyConversationFallback } from './DailyConversation'
 import PageTransition from '@/app/components/PageTransition'
 import PerfBeacon from '@/app/components/PerfBeacon' // [perf]
-import { instanceInfo, perfNow } from '@/lib/perf' // [perf]
+import { instanceInfo, perfNow, timed } from '@/lib/perf' // [perf]
 
 export const metadata = {
   title: 'Dashboard | Ourverse',
@@ -42,6 +42,7 @@ export default async function DashboardPage() {
   })
   const serverLocalDate = todayIn(timeZone)
 
+  const perfQ = {} // [perf] per-query ms, filled by timed()
   const [
     { data: members },
     { data: couple },
@@ -49,24 +50,26 @@ export default async function DashboardPage() {
     { data: recentExpenses },
     ratesResult,
   ] = await Promise.all([
-    coupleMembersQuery(supabase, coupleId),
-    supabase
+    timed('members', coupleMembersQuery(supabase, coupleId), perfQ),
+    timed('couple', supabase
       .from('couples')
       .select('invite_code, anniversary_date, created_at')
       .eq('id', coupleId)
-      .single(),
-    supabase
+      .single(), perfQ),
+    timed('unpaid', supabase
       .from('expenses')
       .select('amount, currency, paid_by_user_id')
       .eq('couple_id', coupleId)
-      .eq('is_paid', false),
-    supabase
+      .eq('is_paid', false), perfQ),
+    timed('recent', supabase
       .from('expenses')
       .select('id, name, amount, currency, category, date, paid_by_user_id')
       .eq('couple_id', coupleId)
       .order('created_at', { ascending: false })
-      .limit(3),
-    fetchRates(),
+      .limit(3), perfQ),
+    // Capped wait — rates only feed the converted "≈ total" line, so a slow
+    // Open Exchange Rates call must not hold the page (and the iOS splash).
+    timed('rates', getRatesFast(), perfQ),
   ])
   const perfQueriesDone = perfNow() // [perf]
 
@@ -108,6 +111,8 @@ export default async function DashboardPage() {
             authMs: perfAuthDone - perfStart,
             queriesMs: perfQueriesDone - perfAuthDone,
             totalMs: perfQueriesDone - perfStart,
+            q: perfQ,
+            ratesSource: ratesResult?.source ?? null,
           }}
         />
 

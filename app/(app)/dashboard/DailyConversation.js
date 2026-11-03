@@ -1,6 +1,8 @@
 import { getAuthUser, resolveCoupleId } from '@/lib/data/getAppSession'
 import { loadDailyConversation } from '@/lib/data/getDailyConversation'
 import DailyConversationSection from './DailyConversationSection'
+import { PerfMark } from '@/app/components/PerfBeacon' // [perf]
+import { perfNow } from '@/lib/perf' // [perf]
 
 /** Skeleton shown while the daily conversation streams in. */
 export function DailyConversationFallback() {
@@ -29,6 +31,7 @@ export default async function DailyConversation({
   const coupleId = await resolveCoupleId(metaCoupleId)
 
   let initialData = null
+  const perfStart = perfNow() // [perf]
   try {
     const result = await loadDailyConversation({ supabase, user, coupleId }, serverLocalDate)
     initialData = result && !result.error ? result : null
@@ -36,7 +39,11 @@ export default async function DailyConversation({
     console.error('[Dashboard] daily prefetch failed:', err)
   }
 
+  const perfDailyMs = perfNow() - perfStart // [perf]
+
   return (
+    <>
+    <PerfMark name="dailyMs" value={perfDailyMs} />
     <DailyConversationSection
       coupleId={coupleId}
       userId={user.id}
@@ -46,5 +53,6 @@ export default async function DailyConversation({
       initialData={initialData}
       initialDate={serverLocalDate}
     />
+    </>
   )
 }

@@ -303,7 +303,7 @@ Use a `RealtimeRefresh` client component calling `router.refresh()` on realtime 
 - **Subscriptions are origin-scoped** — a `localhost:3000` subscription is unreachable from production and vice versa; each device re-subscribes per origin. **iOS requires the PWA installed** to the home screen; push in a plain Safari tab is silently dropped even when the toggle succeeds.
 
 ### Exchange Rates
-Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never client-side · `OPEN_EXCHANGE_RATES_APP_ID` env var, no `NEXT_PUBLIC_` prefix · cached 1 hour via `{ next: { revalidate: 3600 } }` · always handle `null` rates gracefully (converted totals simply don't render) · rates are display-only, debts stay in original currency and are never converted in the DB · use `SUPPORTED_CURRENCIES` from `lib/currency.js`, never hardcode the list.
+Fetch via `fetchRates()` in `lib/exchangeRates.js` — server-side only, never client-side · `OPEN_EXCHANGE_RATES_APP_ID` env var, no `NEXT_PUBLIC_` prefix · cached 1 hour via `{ next: { revalidate: 3600 } }` · always handle `null` rates gracefully (converted totals simply don't render) · rates are display-only, debts stay in original currency and are never converted in the DB · use `SUPPORTED_CURRENCIES` from `lib/currency.js`, never hardcode the list. · **On the launch path (dashboard) use `getRatesFast()`**, not `fetchRates()`: per-instance memo + a 400ms cap, so a slow OER call (US) cannot hold the page or the iOS splash screen.
 
 ### Formatting & Shared Helpers
 - **Currency**: `formatAmount(amount, currency)` from `lib/currency.js`. IDR → `id-ID` locale (`IDR 2.400.000`) · AUD → `en-AU` (`AUD 1,200.00`) · THB/MMK → 0 decimals.
