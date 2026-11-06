@@ -1,8 +1,13 @@
 'use client'
 
-import { useState, useEffect, useTransition, useRef } from 'react'
+import { useState, useEffect, useTransition, useRef, useCallback, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
+import { isAuthRetryableFetchError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
+import { createPageSnapshot, clearPageSnapshots } from '@/lib/pageSnapshot'
+import { fetchLedgerRaw } from '@/lib/data/ledgerData'
+import LedgerLoading from './loading'
 import { togglePaid, bulkSetPaid, bulkDeleteExpenses } from '@/app/actions/expenses'
 import { formatAmount, sumByCurrency, formatDate } from '@/lib/currency'
 import { computeUnifiedTotal, getRateLines } from '@/lib/exchangeRates'
@@ -256,8 +261,187 @@ function ExpenseRow({ expense, onToggle, isPending, isSelecting, isSelected, onS
   )
 }
 
-export default function LedgerClient({
-  initialExpenses,
+/**
+ * /ledger is a static page (see page.js), so this component owns its data:
+ *
+ * - On mount it shows the last-seen ledger from the device (lib/pageSnapshot)
+ *   immediately, or the skeleton on a first-ever open.
+ * - It then checks the session and loads fresh data from the browser straight
+ *   to Supabase (lib/data/ledgerData), and swaps it in. Realtime + tab focus
+ *   keep it fresh while open.
+ *
+ * A fresh load must never undo an optimistic change. Every local change bumps
+ * `epoch`, and every server action runs through `track()`, which counts it as
+ * pending. A load whose rows may predate a local change (epoch moved, or an
+ * action still in flight) is thrown away and redone once nothing is pending.
+ */
+
+const ledgerSnapshot = createPageSnapshot('ledger')
+const subscribeNoop = () => () => {}
+const serverSnapshot = () => null
+
+export default function LedgerClient() {
+  const router = useRouter()
+
+  // null during prerender/hydration (no localStorage on the server), then the
+  // stored value right after — no hydration mismatch.
+  const snapshot = useSyncExternalStore(subscribeNoop, ledgerSnapshot.read, serverSnapshot)
+
+  // Who/what from this session's fresh load: { userId, coupleId, profile, partner, rates }.
+  const [fresh, setFresh] = useState(null)
+  // The live expense list once anything has touched it; null → the snapshot's.
+  const [localExpenses, setLocalExpenses] = useState(null)
+  // Set once auth resolves; hides a snapshot that belongs to another account.
+  const [sessionUserId, setSessionUserId] = useState(null)
+
+  const epoch = useRef(0)
+  const pending = useRef(0)
+  const staleAfterPending = useRef(false)
+  const loading = useRef(false)
+  const rerun = useRef(false)
+
+  const load = useCallback(async () => {
+    if (loading.current) {
+      rerun.current = true
+      return
+    }
+    loading.current = true
+    try {
+      const supabase = createClient()
+      // Local cookie read; only touches the network when the access token has
+      // expired and needs refreshing (about once a day).
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (!session) {
+        // Offline / Supabase unreachable: keep showing the snapshot.
+        if (error && isAuthRetryableFetchError(error)) return
+        clearPageSnapshots()
+        router.replace('/login')
+        return
+      }
+      const user = session.user
+      setSessionUserId(user.id)
+
+      let coupleId = user.user_metadata?.couple_id ?? null
+      if (!coupleId) {
+        const { data: row } = await supabase.from('users').select('couple_id').eq('id', user.id).single()
+        coupleId = row?.couple_id ?? null
+      }
+      if (!coupleId) {
+        router.replace('/onboarding')
+        return
+      }
+
+      const startEpoch = epoch.current
+      const raw = await fetchLedgerRaw(supabase, { userId: user.id, coupleId })
+      if (!raw.profile?.couple_id) {
+        router.replace('/onboarding')
+        return
+      }
+      // Keep the last good rates if the rates endpoint had nothing this time.
+      const rates = raw.rates ?? ledgerSnapshot.read()?.rates ?? null
+
+      setFresh({ userId: user.id, coupleId, profile: raw.profile, partner: raw.partner, rates })
+      if (pending.current > 0) {
+        // An action is still saving; these rows may not include it yet.
+        staleAfterPending.current = true
+      } else if (epoch.current !== startEpoch) {
+        // Something changed locally while loading; these rows may predate it.
+        rerun.current = true
+      } else {
+        setLocalExpenses(raw.expenses)
+      }
+    } catch (err) {
+      // Network or query failure: keep whatever is on screen.
+      console.error('[ledger] refresh failed:', err)
+    } finally {
+      loading.current = false
+      if (rerun.current) {
+        rerun.current = false
+        load()
+      }
+    }
+  }, [router])
+
+  // Initial load.
+  useEffect(() => {
+    load()
+  }, [load])
+
+  // Backstop for missed realtime events: refresh on return to the app.
+  useEffect(() => {
+    let last = Date.now()
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      if (Date.now() - last < 30_000) return
+      last = Date.now()
+      load()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [load])
+
+  // Every local change to the list goes through here (optimistic updates,
+  // rollbacks, add/edit results, realtime events).
+  const setExpenses = useCallback(update => {
+    epoch.current++
+    setLocalExpenses(prev => {
+      const base = prev ?? ledgerSnapshot.read()?.expenses ?? []
+      return typeof update === 'function' ? update(base) : update
+    })
+  }, [])
+
+  // Wrap every server action call: `await track(togglePaid(id))`.
+  const track = useCallback(async promise => {
+    pending.current++
+    epoch.current++
+    try {
+      return await promise
+    } finally {
+      pending.current--
+      epoch.current++
+      if (pending.current === 0 && staleAfterPending.current) {
+        staleAfterPending.current = false
+        load()
+      }
+    }
+  }, [load])
+
+  // Never show another account's data, e.g. after switching users.
+  const snapshotOk = !!snapshot && (!sessionUserId || snapshot.userId === sessionUserId)
+  const meta = fresh ?? (snapshotOk ? snapshot : null)
+  const expenses = localExpenses ?? (snapshotOk ? snapshot.expenses : null)
+  const ready = !!meta && !!expenses
+
+  // Keep the device snapshot in step with what is on screen, so leaving and
+  // coming back never flashes a pre-change state. Only once this session's
+  // user is known.
+  useEffect(() => {
+    if (!fresh || !localExpenses) return
+    ledgerSnapshot.write({ v: 1, ...fresh, expenses: localExpenses, savedAt: Date.now() })
+  }, [fresh, localExpenses])
+
+  if (!ready) return <LedgerLoading />
+
+  return (
+    <LedgerView
+      expenses={expenses}
+      setExpenses={setExpenses}
+      track={track}
+      currentUserId={meta.userId}
+      currentUserName={meta.profile?.name}
+      partnerId={meta.partner?.id ?? null}
+      partnerName={meta.partner?.name ?? 'your partner'}
+      coupleId={meta.coupleId}
+      baseCurrency={meta.profile?.base_currency ?? 'IDR'}
+      rates={meta.rates ?? null}
+    />
+  )
+}
+
+function LedgerView({
+  expenses,
+  setExpenses,
+  track,
   currentUserId,
   currentUserName,
   partnerId,
@@ -266,7 +450,6 @@ export default function LedgerClient({
   baseCurrency,
   rates,
 }) {
-  const [expenses, setExpenses] = useState(initialExpenses)
   const [activeTab, setActiveTab] = useState('owe_me')
   const [tabAnimClass, setTabAnimClass] = useState('')
   const prevTabRef = useRef('owe_me')
@@ -303,7 +486,7 @@ export default function LedgerClient({
       })
       .subscribe()
     return () => { supabase.removeChannel(channel) }
-  }, [coupleId])
+  }, [coupleId, setExpenses])
 
   function handleClose() {
     setIsClosing(true)
@@ -329,7 +512,7 @@ export default function LedgerClient({
     setBulkError(null)
     setExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, is_paid: !e.is_paid } : e))
     startTransition(async () => {
-      const result = await togglePaid(expenseId)
+      const result = await track(togglePaid(expenseId))
       if (result?.error) {
         setExpenses(prev => prev.map(e => e.id === expenseId ? { ...e, is_paid: !e.is_paid } : e))
         setBulkError('Something went wrong. Please try again.')
@@ -355,7 +538,7 @@ export default function LedgerClient({
     setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: true } : e))
     setIsSelecting(false); setSelectedIds(new Set())
     startTransition(async () => {
-      const result = await bulkSetPaid(ids, true)
+      const result = await track(bulkSetPaid(ids, true))
       if (result?.error) {
         setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: false } : e))
         setBulkError('Something went wrong. Please try again.')
@@ -370,7 +553,7 @@ export default function LedgerClient({
     setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: false } : e))
     setIsSelecting(false); setSelectedIds(new Set())
     startTransition(async () => {
-      const result = await bulkSetPaid(ids, false)
+      const result = await track(bulkSetPaid(ids, false))
       if (result?.error) {
         setExpenses(prev => prev.map(e => ids.includes(e.id) ? { ...e, is_paid: true } : e))
         setBulkError('Something went wrong. Please try again.')
@@ -428,7 +611,7 @@ export default function LedgerClient({
     setExpenses(prev => prev.filter(e => !ids.includes(e.id)))
     setIsSelecting(false); setSelectedIds(new Set())
     startDeleteTransition(async () => {
-      const result = await bulkDeleteExpenses(ids)
+      const result = await track(bulkDeleteExpenses(ids))
       if (result?.error) {
         setExpenses(prev => [...removed, ...prev])
         setBulkError('Something went wrong. Please try again.')

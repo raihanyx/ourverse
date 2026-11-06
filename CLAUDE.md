@@ -90,8 +90,10 @@ app/
       DailyConversationResults.js  Both answers revealed side by side
       loading.js          Dashboard skeleton
     ledger/
-      page.js             Server — fetches expenses + rates
-      LedgerClient.js     Client — tabs, realtime, header Add button, select mode, detail/edit sheets
+      page.js             STATIC shell (like /dashboard) — renders LedgerClient only; proxy.js skips /ledger
+      LedgerClient.js     Client — owns its data: device snapshot (lib/pageSnapshot.js) instantly, then fresh
+                          rows browser → Supabase (lib/data/ledgerData.js); epoch/track() guard so a fresh load
+                          never undoes an optimistic change. Tabs, realtime, header Add, select mode, sheets
       AddExpenseForm.js   Slide-up add form (uses StyledSelect for custom arrows)
       EditExpenseForm.js  Slide-up edit form — prefilled; amount + currency disabled once is_paid
       ExpenseSheet.js     Reusable sheet shell (grabber, title row, close X) for detail/edit

@@ -121,6 +121,31 @@ Design notes:
   CDN round-trip, but CLAUDE.md forbids a fetch handler without on-device measurement. Revisit
   only if Round 4 shows the CDN fetch matters.
 
+### 3.3 Ledger as a static shell (2026-11-03, trial)
+
+**Problem after fix #7:** the app opened instantly, but tapping another tab right after opening
+did nothing for several seconds. The tabs were dynamic server pages with `prefetch={false}`, and
+Next.js navigates to an unprefetched dynamic route only once the server has rendered it, so every
+tap waited on a cold proxy + page function. The dashboard's own loading was not the cause.
+
+**Change (ledger only, to measure before doing the other tabs):** `/ledger` gets the dashboard
+treatment. `page.js` is static, `LedgerClient` shows the on-device snapshot (`lib/pageSnapshot.js`,
+key `ourverse-page-ledger-v1`) and loads fresh rows browser → Supabase (`lib/data/ledgerData.js`),
+and proxy.js skips exactly `/ledger` (`ledger(?!/)` in the matcher — `/ledger/paid` is still
+proxied and server-rendered). Static pages are prefetched in full from the CDN, so the tab switch
+needs no function. Server actions posted from `/ledger` also skip the proxy; they authenticate
+themselves (`getActionContext`), as the dashboard's already do.
+
+**Optimistic-update guard:** a fresh load must never undo a change the user just made. Local
+changes bump an `epoch` counter and server actions run through `track()`, which counts them as
+pending; a load that may predate a change is dropped and redone once nothing is pending.
+
+**Sign-out** calls `clearPageSnapshots()` (sweeps every `ourverse-page-*` key).
+
+**To check on device:** tap Ledger within the first second of opening the app → it should switch
+at once (snapshot, or skeleton on a first-ever visit) and then update. If it does, apply the same
+pattern to the other tabs.
+
 ## 3. How a launch works (request path, before fix #7)
 
 ```
